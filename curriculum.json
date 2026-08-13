@@ -1,8 +1,15 @@
 {
   "core_days": 182,
   "daily_output": {
-    "required": ["可运行脚本或明确的阻塞复现", "运行证据", "学习记录", "Git 提交"],
-    "time_box_minutes": 90
+    "required": ["知识重点和知识验收", "与知识直接对应的可运行脚本或工程产出", "运行证据", "学习记录", "Git 提交"],
+    "time_box_minutes": 90,
+    "timebox": {
+      "study_minutes": 20,
+      "practice_minutes": 50,
+      "verification_minutes": 15,
+      "reflection_minutes": 5
+    },
+    "daily_loop": ["study", "practice", "verification", "reflection"]
   },
   "phases": [
     {
@@ -93,7 +100,7 @@
     {
       "id": "phase-6",
       "name": "高级质量专项",
-      "project": "qa-automation-learning",
+      "project": "advanced-quality",
       "days": 28,
       "objective": "覆盖真实团队常见的非功能质量问题",
       "week_themes": ["契约、Mock 和异步", "视觉、可访问性和移动端", "权限、网络和异常注入", "测试架构和质量模型"],
@@ -147,19 +154,51 @@
     "tracks": [
       {
         "name": "自动化框架架构",
-        "tasks": ["抽象公共层", "减少重复代码", "增加插件接口", "优化并行执行", "重构配置", "补充开发文档", "发布一个可复用组件"]
+        "tasks": [
+          {"task": "抽象公共层", "learn": "识别跨项目共享逻辑与项目专属逻辑的边界", "deliverable": "提取一个公共层并补充测试与迁移说明", "file": "test-projects/03-restful-booker-api/src/shared_layer.py", "run": "pytest test-projects/03-restful-booker-api/tests -q"},
+          {"task": "减少重复代码", "learn": "用组合、fixture 或 helper 消除重复而不隐藏测试意图", "deliverable": "消除一处重复代码并保留行为回归测试", "file": "test-projects/03-restful-booker-api/src/helpers.py", "run": "pytest test-projects/03-restful-booker-api/tests -q"},
+          {"task": "增加插件接口", "learn": "设计稳定扩展点与最小接口契约", "deliverable": "增加一个插件接口并实现一个最小插件", "file": "test-projects/03-restful-booker-api/src/plugins.py", "run": "pytest test-projects/03-restful-booker-api/tests -q"},
+          {"task": "优化并行执行", "learn": "理解测试隔离、共享状态与并行安全", "deliverable": "让一组测试支持并行运行并记录收益与限制", "file": "test-projects/03-restful-booker-api/pytest.ini", "run": "pytest test-projects/03-restful-booker-api/tests -q"},
+          {"task": "重构配置", "learn": "区分环境配置、运行参数和业务数据", "deliverable": "重构一处配置并增加缺失配置的失败提示", "file": "test-projects/03-restful-booker-api/config.py", "run": "pytest test-projects/03-restful-booker-api/tests -q"},
+          {"task": "补充开发文档", "learn": "面向维护者编写可执行的开发文档", "deliverable": "补充一份从安装到调试的开发指南", "file": "test-projects/03-restful-booker-api/DEVELOPMENT.md", "run": "git diff --check"},
+          {"task": "发布一个可复用组件", "learn": "理解版本化、兼容性和发布边界", "deliverable": "发布一个带示例、变更记录和版本号的组件", "file": "test-projects/03-restful-booker-api/release/component-release.md", "run": "git diff --check"}
+        ]
       },
       {
         "name": "性能与容量",
-        "tasks": ["建立流量模型", "增加数据规模", "设计峰值测试", "做一次长稳测试", "观察资源趋势", "定位瓶颈", "更新容量结论"]
+        "tasks": [
+          {"task": "建立流量模型", "learn": "把业务场景转换为并发、吞吐和到达率模型", "deliverable": "为本地服务写一份可解释的流量模型", "file": "test-projects/04-petstore-performance/scenarios/traffic-model.md", "run": "git diff --check"},
+          {"task": "增加数据规模", "learn": "理解数据规模对响应时间和资源消耗的影响", "deliverable": "生成一档更大测试数据并比较关键指标", "file": "test-projects/04-petstore-performance/data/generate_scale.py", "run": "pytest test-projects/04-petstore-performance -q"},
+          {"task": "设计峰值测试", "learn": "区分基线、峰值和超载测试的目标", "deliverable": "设计并执行一次峰值测试，记录拐点", "file": "test-projects/04-petstore-performance/scenarios/peak-test.yml", "run": "pytest test-projects/04-petstore-performance -q"},
+          {"task": "做一次长稳测试", "learn": "识别长时间运行中的泄漏、退化和错误累积", "deliverable": "执行一次长稳测试并保存趋势证据", "file": "test-projects/04-petstore-performance/reports/soak-test.md", "run": "git diff --check"},
+          {"task": "观察资源趋势", "learn": "用时间序列关联 CPU、内存、连接池和错误率", "deliverable": "补充资源趋势采集并输出一张分析图", "file": "test-projects/04-petstore-performance/reports/resource-trends.md", "run": "git diff --check"},
+          {"task": "定位瓶颈", "learn": "用分层证据缩小慢请求的瓶颈范围", "deliverable": "定位一次慢接口并写出证据链与假设", "file": "test-projects/04-petstore-performance/reports/bottleneck-analysis.md", "run": "git diff --check"},
+          {"task": "更新容量结论", "learn": "把性能结果转化为容量、风险和安全并发建议", "deliverable": "更新容量报告并明确适用条件与局限", "file": "test-projects/04-petstore-performance/reports/capacity.md", "run": "git diff --check"}
+        ]
       },
       {
         "name": "安全与韧性",
-        "tasks": ["验证认证边界", "验证授权边界", "覆盖输入异常", "模拟依赖故障", "验证超时重试", "验证恢复流程", "输出风险清单"]
+        "tasks": [
+          {"task": "验证认证边界", "learn": "区分身份认证失败、过期和伪造凭据风险", "deliverable": "补充认证边界测试并记录敏感信息处理方式", "file": "advanced-quality/security/test_authentication.py", "run": "pytest advanced-quality/security/test_authentication.py -q"},
+          {"task": "验证授权边界", "learn": "区分水平越权、垂直越权和资源归属校验", "deliverable": "增加跨用户访问测试并确认无数据泄漏", "file": "advanced-quality/security/test_authorization.py", "run": "pytest advanced-quality/security/test_authorization.py -q"},
+          {"task": "覆盖输入异常", "learn": "用边界和恶意输入验证系统的安全失败方式", "deliverable": "建立输入异常参数集并补充安全断言", "file": "advanced-quality/security/test_input_handling.py", "run": "pytest advanced-quality/security/test_input_handling.py -q"},
+          {"task": "模拟依赖故障", "learn": "理解依赖不可用、错误响应和降级策略", "deliverable": "模拟一个下游故障并验证用户可见行为", "file": "advanced-quality/resilience/test_dependency_failure.py", "run": "pytest advanced-quality -q"},
+          {"task": "验证超时重试", "learn": "设计超时、重试次数和幂等边界", "deliverable": "增加超时重试测试并记录重复副作用风险", "file": "advanced-quality/resilience/test_retry_timeout.py", "run": "pytest advanced-quality -q"},
+          {"task": "验证恢复流程", "learn": "用故障注入验证恢复条件和数据一致性", "deliverable": "执行一次故障恢复演练并保留时间线证据", "file": "advanced-quality/resilience/test_recovery.py", "run": "pytest advanced-quality -q"},
+          {"task": "输出风险清单", "learn": "按影响、可能性和证据对风险排序", "deliverable": "输出带优先级、证据和后续动作的风险清单", "file": "advanced-quality/reports/risk-register.md", "run": "git diff --check"}
+        ]
       },
       {
         "name": "工具与协作",
-        "tasks": ["改进 CI", "增加质量门禁", "整理缺陷模板", "增加测试指标", "写代码审查清单", "完善贡献指南", "做一次团队式复盘"]
+        "tasks": [
+          {"task": "改进 CI", "learn": "理解持续集成中反馈速度、稳定性和可诊断性", "deliverable": "改进一条 CI 流程并让失败信息可定位", "file": ".github/workflows/repository-validation.yml", "run": "python tools/validate_repo.py"},
+          {"task": "增加质量门禁", "learn": "把风险标准转换为可自动执行的质量门禁", "deliverable": "增加一条质量门禁并验证通过与失败分支", "file": "QUALITY-GATES.md", "run": "python tools/validate_repo.py"},
+          {"task": "整理缺陷模板", "learn": "用最小可复现信息提高缺陷沟通效率", "deliverable": "整理缺陷模板并用一个真实问题演练", "file": "templates/defect.md", "run": "git diff --check"},
+          {"task": "增加测试指标", "learn": "区分通过率、耗时、覆盖率和缺陷指标的含义", "deliverable": "增加一份测试指标报告并说明解读边界", "file": "reports/test-metrics.md", "run": "git diff --check"},
+          {"task": "写代码审查清单", "learn": "从可维护性、风险和证据角度审查测试代码", "deliverable": "写一份代码审查清单并审查一个改动", "file": "REVIEW-CHECKLIST.md", "run": "git diff --check"},
+          {"task": "完善贡献指南", "learn": "让新贡献者能独立完成环境准备、验证和提交", "deliverable": "完善贡献指南并按干净环境走通一次", "file": "CONTRIBUTING.md", "run": "python tools/validate_repo.py"},
+          {"task": "做一次团队式复盘", "learn": "用事实、影响和行动项组织团队复盘", "deliverable": "完成一次复盘并形成明确的改进行动项", "file": "reports/retrospective.md", "run": "git diff --check"}
+        ]
       }
     ]
   }

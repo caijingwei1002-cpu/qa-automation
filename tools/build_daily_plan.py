@@ -9,15 +9,25 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+DAILY_METHOD = {
+    "study_minutes": 20,
+    "practice_minutes": 50,
+    "verification_minutes": 15,
+    "reflection_minutes": 5,
+}
+
 
 def task(title: str, learn: str, deliverable: str, file: str, run: str, done: str, stretch: str) -> dict[str, str]:
     return {
         "title": title,
         "learn": learn,
+        "study": f"先用 20 分钟掌握一个核心知识点：{learn}。重点理解它解决什么问题，以及一个常见错误。",
+        "practice": f"把上面的知识应用到本日小练习：{deliverable}。只完成当前目标范围，不提前扩展到后续框架。",
         "deliverable": deliverable,
         "file": file,
         "run": run,
         "done": done,
+        "knowledge_check": f"不看资料，能说明“{learn}”如何具体体现在本日的代码或文档产出中。",
         "stretch": stretch,
     }
 
@@ -29,7 +39,7 @@ PHASES = [
         "project": "test-projects/01-todomvc-ui",
         "objective": "建立 UI 自动化基本功",
         "tasks": [
-            task("环境与首个 UI 测试", "理解 Playwright、pytest、浏览器和断言的职责", "初始化项目并完成新增 Todo 测试", "test-projects/01-todomvc-ui/tests/test_todos.py", "pytest test-projects/01-todomvc-ui/tests/test_todos.py::test_add_todo -q", "输入 Todo 后，列表文本和未完成计数断言通过", "保存首个失败截图"),
+            task("环境与首个 UI 测试", "理解 pytest 调用 Playwright 完成 UI 断言的执行链", "初始化项目并完成新增 Todo 测试", "test-projects/01-todomvc-ui/tests/test_todos.py", "pytest test-projects/01-todomvc-ui/tests/test_todos.py::test_add_todo -q", "输入 Todo 后，列表文本和未完成计数断言通过", "保存首个失败截图"),
             task("完成状态", "掌握 checkbox 交互与状态断言", "完成一个 Todo 并验证 completed 状态", "test-projects/01-todomvc-ui/tests/test_todos.py", "pytest test-projects/01-todomvc-ui/tests/test_todos.py::test_complete_todo -q", "复选框、样式状态和计数变化均被断言", "增加取消完成场景"),
             task("删除行为", "理解操作后的 DOM 与业务状态校验", "新增删除 Todo 测试", "test-projects/01-todomvc-ui/tests/test_todos.py", "pytest test-projects/01-todomvc-ui/tests/test_todos.py::test_delete_todo -q", "目标项消失且剩余项目不受影响", "验证最后一项删除后页脚消失"),
             task("筛选功能", "掌握可见性和集合断言", "覆盖 All、Active、Completed 三种筛选", "test-projects/01-todomvc-ui/tests/test_filters.py", "pytest test-projects/01-todomvc-ui/tests/test_filters.py -q", "每种筛选只展示正确状态的数据", "验证刷新后的筛选状态"),
@@ -104,7 +114,7 @@ PHASES = [
             task("日志与诊断", "学习请求上下文和脱敏", "记录 method、URL、耗时和状态码", "test-projects/03-restful-booker-api/src/logging_config.py", "pytest test-projects/03-restful-booker-api/tests -q", "失败日志足够定位且 Token 被脱敏", "添加 correlation id"),
             task("重试边界", "理解可重试与不可重试错误", "为幂等 GET 设计有限重试", "test-projects/03-restful-booker-api/src/retry.py", "pytest test-projects/03-restful-booker-api/tests/test_retry.py -q", "只对明确瞬态错误重试并有次数上限", "测试退避策略"),
             task("并行隔离", "理解并行导致的数据碰撞", "用 xdist 并行运行唯一数据测试", "test-projects/03-restful-booker-api/tests/conftest.py", "pytest test-projects/03-restful-booker-api/tests -n 2 -q", "并行运行无共享数据冲突", "比较执行耗时"),
-            task("测试标记", "建立 smoke、regression、negative 分类", "标记并验证不同套件", "test-projects/03-restful-booker-api/pytest.ini", "pytest test-projects/03-restful-booker-api/tests -m smoke -q", "套件边界清晰且无 marker 警告", "生成 marker 清单"),
+            task("测试标记", "理解按风险对测试套件分层的原则", "标记并验证不同套件", "test-projects/03-restful-booker-api/pytest.ini", "pytest test-projects/03-restful-booker-api/tests -m smoke -q", "套件边界清晰且无 marker 警告", "生成 marker 清单"),
             task("报告", "把接口证据组织成可阅读报告", "接入 JUnit/Allure 并附加请求摘要", "test-projects/03-restful-booker-api/README.md", "pytest test-projects/03-restful-booker-api/tests -q --junitxml=reports/api.xml", "报告可定位失败接口和数据", "统计错误类型"),
             task("缺陷案例", "训练高质量 Bug 表达", "基于异常行为写一份缺陷报告", "test-projects/03-restful-booker-api/reports/defect-001.md", "pytest test-projects/03-restful-booker-api/tests/test_invalid_payloads.py -q", "包含复现、预期、实际、证据和影响", "补充最小 curl"),
             task("阶段验收", "验证独立设计 API 自动化能力", "独立新增一个资源链路并完成阶段报告", "test-projects/03-restful-booker-api/reports/phase-review.md", "pytest test-projects/03-restful-booker-api/tests -q", "框架全套通过或失败可解释，文档可一键运行", "绘制 API 测试架构图"),
@@ -287,6 +297,12 @@ def build_plan() -> list[dict[str, object]]:
                     "phase_day": index,
                     "phase_total_days": len(phase["tasks"]),
                     "week": (index - 1) // 7 + 1,
+                    "timebox": dict(DAILY_METHOD),
+                    "evidence": f"artifacts/day-{day:03d}/",
+                    "learning_output_link": (
+                        f"知识：{item['learn']} → 产出：{item['deliverable']} → "
+                        f"验证：{item['done']}"
+                    ),
                     **item,
                 }
             )
@@ -296,15 +312,24 @@ def build_plan() -> list[dict[str, object]]:
 
 def write_outputs(plan: list[dict[str, object]]) -> None:
     (ROOT / "daily-plan.json").write_text(
-        json.dumps({"core_days": len(plan), "session_minutes": 90, "days": plan}, ensure_ascii=False, indent=2) + "\n",
+        json.dumps(
+            {
+                "core_days": len(plan),
+                "session_minutes": sum(DAILY_METHOD.values()),
+                "daily_method": DAILY_METHOD,
+                "days": plan,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ) + "\n",
         encoding="utf-8",
     )
     lines = [
         "# 逐日学习计划",
         "",
-        "每天默认 90 分钟：10 分钟理解主题，50 分钟写脚本或工程改进，20 分钟运行并保存证据，10 分钟复盘和提交。",
+        "每天固定 90 分钟闭环：20 分钟学习一个知识重点，50 分钟把它落实为当日产出，15 分钟运行验证，5 分钟复盘。",
         "",
-        "每天必须留下：可运行脚本或阻塞复现、运行证据、学习记录、Git 提交。性能测试只对本地或明确授权环境执行。",
+        "每天必须留下：知识→产出对应关系、可运行脚本或阻塞复现、运行证据、学习记录、Git 提交。性能测试只对本地或明确授权环境执行。",
         "",
     ]
     current_phase = ""
@@ -315,11 +340,15 @@ def write_outputs(plan: list[dict[str, object]]) -> None:
         lines.extend(
             [
                 f"### Day {item['day']}：{item['title']}",
-                f"- 学习重点：{item['learn']}",
-                f"- 今日产出：{item['deliverable']}",
+                f"- 学习内容（20 分钟）：{item['study']}",
+                f"- 动手实践（50 分钟）：{item['practice']}",
+                f"- 可提交产出：{item['deliverable']}",
                 f"- 目标文件：`{item['file']}`",
-                f"- 运行命令：`{item['run']}`",
+                f"- 知识→产出对应：{item['learning_output_link']}",
+                f"- 知识验收（5 分钟）：{item['knowledge_check']}",
+                f"- 运行验证（15 分钟）：`{item['run']}`",
                 f"- 完成标准：{item['done']}",
+                f"- 证据目录：`{item['evidence']}`",
                 f"- 可选挑战：{item['stretch']}",
                 "",
             ]

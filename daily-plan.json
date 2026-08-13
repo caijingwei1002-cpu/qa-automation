@@ -1,6 +1,12 @@
 {
   "core_days": 182,
   "session_minutes": 90,
+  "daily_method": {
+    "study_minutes": 20,
+    "practice_minutes": 50,
+    "verification_minutes": 15,
+    "reflection_minutes": 5
+  },
   "days": [
     {
       "day": 1,
@@ -11,12 +17,23 @@
       "phase_day": 1,
       "phase_total_days": 14,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-001/",
+      "learning_output_link": "知识：理解 pytest 调用 Playwright 完成 UI 断言的执行链 → 产出：初始化项目并完成新增 Todo 测试 → 验证：输入 Todo 后，列表文本和未完成计数断言通过",
       "title": "环境与首个 UI 测试",
-      "learn": "理解 Playwright、pytest、浏览器和断言的职责",
+      "learn": "理解 pytest 调用 Playwright 完成 UI 断言的执行链",
+      "study": "先用 20 分钟掌握一个核心知识点：理解 pytest 调用 Playwright 完成 UI 断言的执行链。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：初始化项目并完成新增 Todo 测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "初始化项目并完成新增 Todo 测试",
       "file": "test-projects/01-todomvc-ui/tests/test_todos.py",
       "run": "pytest test-projects/01-todomvc-ui/tests/test_todos.py::test_add_todo -q",
       "done": "输入 Todo 后，列表文本和未完成计数断言通过",
+      "knowledge_check": "不看资料，能说明“理解 pytest 调用 Playwright 完成 UI 断言的执行链”如何具体体现在本日的代码或文档产出中。",
       "stretch": "保存首个失败截图"
     },
     {
@@ -28,12 +45,23 @@
       "phase_day": 2,
       "phase_total_days": 14,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-002/",
+      "learning_output_link": "知识：掌握 checkbox 交互与状态断言 → 产出：完成一个 Todo 并验证 completed 状态 → 验证：复选框、样式状态和计数变化均被断言",
       "title": "完成状态",
       "learn": "掌握 checkbox 交互与状态断言",
+      "study": "先用 20 分钟掌握一个核心知识点：掌握 checkbox 交互与状态断言。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：完成一个 Todo 并验证 completed 状态。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "完成一个 Todo 并验证 completed 状态",
       "file": "test-projects/01-todomvc-ui/tests/test_todos.py",
       "run": "pytest test-projects/01-todomvc-ui/tests/test_todos.py::test_complete_todo -q",
       "done": "复选框、样式状态和计数变化均被断言",
+      "knowledge_check": "不看资料，能说明“掌握 checkbox 交互与状态断言”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加取消完成场景"
     },
     {
@@ -45,12 +73,23 @@
       "phase_day": 3,
       "phase_total_days": 14,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-003/",
+      "learning_output_link": "知识：理解操作后的 DOM 与业务状态校验 → 产出：新增删除 Todo 测试 → 验证：目标项消失且剩余项目不受影响",
       "title": "删除行为",
       "learn": "理解操作后的 DOM 与业务状态校验",
+      "study": "先用 20 分钟掌握一个核心知识点：理解操作后的 DOM 与业务状态校验。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：新增删除 Todo 测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "新增删除 Todo 测试",
       "file": "test-projects/01-todomvc-ui/tests/test_todos.py",
       "run": "pytest test-projects/01-todomvc-ui/tests/test_todos.py::test_delete_todo -q",
       "done": "目标项消失且剩余项目不受影响",
+      "knowledge_check": "不看资料，能说明“理解操作后的 DOM 与业务状态校验”如何具体体现在本日的代码或文档产出中。",
       "stretch": "验证最后一项删除后页脚消失"
     },
     {
@@ -62,12 +101,23 @@
       "phase_day": 4,
       "phase_total_days": 14,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-004/",
+      "learning_output_link": "知识：掌握可见性和集合断言 → 产出：覆盖 All、Active、Completed 三种筛选 → 验证：每种筛选只展示正确状态的数据",
       "title": "筛选功能",
       "learn": "掌握可见性和集合断言",
+      "study": "先用 20 分钟掌握一个核心知识点：掌握可见性和集合断言。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖 All、Active、Completed 三种筛选。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖 All、Active、Completed 三种筛选",
       "file": "test-projects/01-todomvc-ui/tests/test_filters.py",
       "run": "pytest test-projects/01-todomvc-ui/tests/test_filters.py -q",
       "done": "每种筛选只展示正确状态的数据",
+      "knowledge_check": "不看资料，能说明“掌握可见性和集合断言”如何具体体现在本日的代码或文档产出中。",
       "stretch": "验证刷新后的筛选状态"
     },
     {
@@ -79,12 +129,23 @@
       "phase_day": 5,
       "phase_total_days": 14,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-005/",
+      "learning_output_link": "知识：学习等价类和边界值 → 产出：覆盖空白、前后空格、重复文本和长文本 → 验证：至少四组边界数据有明确预期与断言",
       "title": "边界输入",
       "learn": "学习等价类和边界值",
+      "study": "先用 20 分钟掌握一个核心知识点：学习等价类和边界值。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖空白、前后空格、重复文本和长文本。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖空白、前后空格、重复文本和长文本",
       "file": "test-projects/01-todomvc-ui/tests/test_input_validation.py",
       "run": "pytest test-projects/01-todomvc-ui/tests/test_input_validation.py -q",
       "done": "至少四组边界数据有明确预期与断言",
+      "knowledge_check": "不看资料，能说明“学习等价类和边界值”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加 Unicode 和 emoji 输入"
     },
     {
@@ -96,12 +157,23 @@
       "phase_day": 6,
       "phase_total_days": 14,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-006/",
+      "learning_output_link": "知识：掌握 pytest.mark.parametrize → 产出：把多组 Todo 输入改为参数化测试 → 验证：一份测试函数稳定运行多组数据",
       "title": "参数化",
       "learn": "掌握 pytest.mark.parametrize",
+      "study": "先用 20 分钟掌握一个核心知识点：掌握 pytest.mark.parametrize。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：把多组 Todo 输入改为参数化测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "把多组 Todo 输入改为参数化测试",
       "file": "test-projects/01-todomvc-ui/tests/test_todo_data.py",
       "run": "pytest test-projects/01-todomvc-ui/tests/test_todo_data.py -q",
       "done": "一份测试函数稳定运行多组数据",
+      "knowledge_check": "不看资料，能说明“掌握 pytest.mark.parametrize”如何具体体现在本日的代码或文档产出中。",
       "stretch": "为失败数据增加可读 id"
     },
     {
@@ -113,12 +185,23 @@
       "phase_day": 7,
       "phase_total_days": 14,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-007/",
+      "learning_output_link": "知识：理解测试前置、后置和隔离 → 产出：用 fixture 统一打开页面和准备数据 → 验证：测试之间互不污染且公共准备代码减少",
       "title": "Fixture",
       "learn": "理解测试前置、后置和隔离",
+      "study": "先用 20 分钟掌握一个核心知识点：理解测试前置、后置和隔离。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：用 fixture 统一打开页面和准备数据。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "用 fixture 统一打开页面和准备数据",
       "file": "test-projects/01-todomvc-ui/tests/conftest.py",
       "run": "pytest test-projects/01-todomvc-ui/tests -q",
       "done": "测试之间互不污染且公共准备代码减少",
+      "knowledge_check": "不看资料，能说明“理解测试前置、后置和隔离”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加 browser context fixture"
     },
     {
@@ -130,12 +213,23 @@
       "phase_day": 8,
       "phase_total_days": 14,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-008/",
+      "learning_output_link": "知识：比较 role、label、text、CSS 定位 → 产出：重构脆弱定位器并写定位规则 → 验证：关键定位优先使用语义定位且全套通过",
       "title": "稳定定位",
       "learn": "比较 role、label、text、CSS 定位",
+      "study": "先用 20 分钟掌握一个核心知识点：比较 role、label、text、CSS 定位。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：重构脆弱定位器并写定位规则。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "重构脆弱定位器并写定位规则",
       "file": "test-projects/01-todomvc-ui/tests/test_locators.py",
       "run": "pytest test-projects/01-todomvc-ui/tests -q",
       "done": "关键定位优先使用语义定位且全套通过",
+      "knowledge_check": "不看资料，能说明“比较 role、label、text、CSS 定位”如何具体体现在本日的代码或文档产出中。",
       "stretch": "故意改 DOM 验证定位韧性"
     },
     {
@@ -147,12 +241,23 @@
       "phase_day": 9,
       "phase_total_days": 14,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-009/",
+      "learning_output_link": "知识：理解自动等待与显式等待边界 → 产出：移除固定 sleep 并增加状态等待测试 → 验证：代码无固定 sleep，异步状态有可解释等待",
       "title": "自动等待",
       "learn": "理解自动等待与显式等待边界",
+      "study": "先用 20 分钟掌握一个核心知识点：理解自动等待与显式等待边界。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：移除固定 sleep 并增加状态等待测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "移除固定 sleep 并增加状态等待测试",
       "file": "test-projects/01-todomvc-ui/tests/test_waiting.py",
       "run": "pytest test-projects/01-todomvc-ui/tests/test_waiting.py -q",
       "done": "代码无固定 sleep，异步状态有可解释等待",
+      "knowledge_check": "不看资料，能说明“理解自动等待与显式等待边界”如何具体体现在本日的代码或文档产出中。",
       "stretch": "模拟较慢交互"
     },
     {
@@ -164,12 +269,23 @@
       "phase_day": 10,
       "phase_total_days": 14,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-010/",
+      "learning_output_link": "知识：掌握 screenshot、trace、日志用途 → 产出：配置失败截图和 Trace 保留 → 验证：制造一次失败后可找到截图或 Trace",
       "title": "失败证据",
       "learn": "掌握 screenshot、trace、日志用途",
+      "study": "先用 20 分钟掌握一个核心知识点：掌握 screenshot、trace、日志用途。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：配置失败截图和 Trace 保留。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "配置失败截图和 Trace 保留",
       "file": "test-projects/01-todomvc-ui/conftest.py",
       "run": "pytest test-projects/01-todomvc-ui/tests -q",
       "done": "制造一次失败后可找到截图或 Trace",
+      "knowledge_check": "不看资料，能说明“掌握 screenshot、trace、日志用途”如何具体体现在本日的代码或文档产出中。",
       "stretch": "记录如何打开 Trace"
     },
     {
@@ -181,12 +297,23 @@
       "phase_day": 11,
       "phase_total_days": 14,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-011/",
+      "learning_output_link": "知识：学习 smoke、regression 标记策略 → 产出：标记并拆分冒烟与回归测试 → 验证：smoke 只包含关键路径且可单独执行",
       "title": "标记与套件",
       "learn": "学习 smoke、regression 标记策略",
+      "study": "先用 20 分钟掌握一个核心知识点：学习 smoke、regression 标记策略。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：标记并拆分冒烟与回归测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "标记并拆分冒烟与回归测试",
       "file": "test-projects/01-todomvc-ui/pytest.ini",
       "run": "pytest test-projects/01-todomvc-ui/tests -m smoke -q",
       "done": "smoke 只包含关键路径且可单独执行",
+      "knowledge_check": "不看资料，能说明“学习 smoke、regression 标记策略”如何具体体现在本日的代码或文档产出中。",
       "stretch": "添加 slow 标记"
     },
     {
@@ -198,12 +325,23 @@
       "phase_day": 12,
       "phase_total_days": 14,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-012/",
+      "learning_output_link": "知识：区分测试数据、动作和断言 → 产出：提取 Todo 数据工厂或辅助函数 → 验证：测试主体更短且断言仍保留在测试中",
       "title": "数据与辅助函数",
       "learn": "区分测试数据、动作和断言",
+      "study": "先用 20 分钟掌握一个核心知识点：区分测试数据、动作和断言。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：提取 Todo 数据工厂或辅助函数。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "提取 Todo 数据工厂或辅助函数",
       "file": "test-projects/01-todomvc-ui/tests/helpers.py",
       "run": "pytest test-projects/01-todomvc-ui/tests -q",
       "done": "测试主体更短且断言仍保留在测试中",
+      "knowledge_check": "不看资料，能说明“区分测试数据、动作和断言”如何具体体现在本日的代码或文档产出中。",
       "stretch": "随机生成唯一文本"
     },
     {
@@ -215,12 +353,23 @@
       "phase_day": 13,
       "phase_total_days": 14,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-013/",
+      "learning_output_link": "知识：学习按风险选择回归范围 → 产出：执行完整回归并整理失败清单 → 验证：全套结果可复现，失败有原因和证据",
       "title": "小型回归",
       "learn": "学习按风险选择回归范围",
+      "study": "先用 20 分钟掌握一个核心知识点：学习按风险选择回归范围。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：执行完整回归并整理失败清单。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "执行完整回归并整理失败清单",
       "file": "test-projects/01-todomvc-ui/tests/test_regression.py",
       "run": "pytest test-projects/01-todomvc-ui/tests -q",
       "done": "全套结果可复现，失败有原因和证据",
+      "knowledge_check": "不看资料，能说明“学习按风险选择回归范围”如何具体体现在本日的代码或文档产出中。",
       "stretch": "生成 JUnit XML"
     },
     {
@@ -232,12 +381,23 @@
       "phase_day": 14,
       "phase_total_days": 14,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-014/",
+      "learning_output_link": "知识：总结 UI 自动化基础与局限 → 产出：独立新增 Clear completed 端到端测试并写阶段总结 → 验证：不看示例完成新场景，全套通过并写阶段复盘",
       "title": "阶段验收",
       "learn": "总结 UI 自动化基础与局限",
+      "study": "先用 20 分钟掌握一个核心知识点：总结 UI 自动化基础与局限。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：独立新增 Clear completed 端到端测试并写阶段总结。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "独立新增 Clear completed 端到端测试并写阶段总结",
       "file": "test-projects/01-todomvc-ui/tests/test_clear_completed.py",
       "run": "pytest test-projects/01-todomvc-ui/tests -q",
       "done": "不看示例完成新场景，全套通过并写阶段复盘",
+      "knowledge_check": "不看资料，能说明“总结 UI 自动化基础与局限”如何具体体现在本日的代码或文档产出中。",
       "stretch": "说明三个最常见 flaky 来源"
     },
     {
@@ -249,12 +409,23 @@
       "phase_day": 1,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-015/",
+      "learning_output_link": "知识：理解电商业务流和测试边界 → 产出：初始化 SauceDemo 项目并完成标准用户登录 → 验证：登录后 URL 和商品页标题断言通过",
       "title": "项目初始化",
       "learn": "理解电商业务流和测试边界",
+      "study": "先用 20 分钟掌握一个核心知识点：理解电商业务流和测试边界。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：初始化 SauceDemo 项目并完成标准用户登录。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "初始化 SauceDemo 项目并完成标准用户登录",
       "file": "test-projects/02-saucedemo-ui/tests/test_login.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_login.py::test_standard_user_login -q",
       "done": "登录后 URL 和商品页标题断言通过",
+      "knowledge_check": "不看资料，能说明“理解电商业务流和测试边界”如何具体体现在本日的代码或文档产出中。",
       "stretch": "保存登录页元素清单"
     },
     {
@@ -266,12 +437,23 @@
       "phase_day": 2,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-016/",
+      "learning_output_link": "知识：学习负向场景与错误信息断言 → 产出：覆盖错误密码和空用户名 → 验证：错误类型对应正确提示且不会进入商品页",
       "title": "登录异常",
       "learn": "学习负向场景与错误信息断言",
+      "study": "先用 20 分钟掌握一个核心知识点：学习负向场景与错误信息断言。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖错误密码和空用户名。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖错误密码和空用户名",
       "file": "test-projects/02-saucedemo-ui/tests/test_login.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_login.py -q",
       "done": "错误类型对应正确提示且不会进入商品页",
+      "knowledge_check": "不看资料，能说明“学习负向场景与错误信息断言”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加空密码"
     },
     {
@@ -283,12 +465,23 @@
       "phase_day": 3,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-017/",
+      "learning_output_link": "知识：理解测试账号代表的风险场景 → 产出：覆盖 locked_out_user 与 problem_user → 验证：锁定用户行为正确，问题用户异常被记录",
       "title": "特殊用户",
       "learn": "理解测试账号代表的风险场景",
+      "study": "先用 20 分钟掌握一个核心知识点：理解测试账号代表的风险场景。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖 locked_out_user 与 problem_user。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖 locked_out_user 与 problem_user",
       "file": "test-projects/02-saucedemo-ui/tests/test_users.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_users.py -q",
       "done": "锁定用户行为正确，问题用户异常被记录",
+      "knowledge_check": "不看资料，能说明“理解测试账号代表的风险场景”如何具体体现在本日的代码或文档产出中。",
       "stretch": "研究 performance_glitch_user"
     },
     {
@@ -300,12 +493,23 @@
       "phase_day": 4,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-018/",
+      "learning_output_link": "知识：学习列表完整性与集合断言 → 产出：验证商品名称、价格、图片和数量 → 验证：列表数量与每项关键字段都有断言",
       "title": "商品列表",
       "learn": "学习列表完整性与集合断言",
+      "study": "先用 20 分钟掌握一个核心知识点：学习列表完整性与集合断言。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：验证商品名称、价格、图片和数量。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "验证商品名称、价格、图片和数量",
       "file": "test-projects/02-saucedemo-ui/tests/test_inventory.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_inventory.py -q",
       "done": "列表数量与每项关键字段都有断言",
+      "knowledge_check": "不看资料，能说明“学习列表完整性与集合断言”如何具体体现在本日的代码或文档产出中。",
       "stretch": "校验价格格式"
     },
     {
@@ -317,12 +521,23 @@
       "phase_day": 5,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-019/",
+      "learning_output_link": "知识：掌握列表到详情的导航验证 → 产出：验证进入详情和返回列表 → 验证：详情名称价格与列表一致",
       "title": "商品详情",
       "learn": "掌握列表到详情的导航验证",
+      "study": "先用 20 分钟掌握一个核心知识点：掌握列表到详情的导航验证。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：验证进入详情和返回列表。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "验证进入详情和返回列表",
       "file": "test-projects/02-saucedemo-ui/tests/test_product_detail.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_product_detail.py -q",
       "done": "详情名称价格与列表一致",
+      "knowledge_check": "不看资料，能说明“掌握列表到详情的导航验证”如何具体体现在本日的代码或文档产出中。",
       "stretch": "参数化多个商品"
     },
     {
@@ -334,12 +549,23 @@
       "phase_day": 6,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-020/",
+      "learning_output_link": "知识：学习从页面提取数据并验证排序 → 产出：覆盖名称和价格四种排序 → 验证：提取值与排序期望完全一致",
       "title": "商品排序",
       "learn": "学习从页面提取数据并验证排序",
+      "study": "先用 20 分钟掌握一个核心知识点：学习从页面提取数据并验证排序。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖名称和价格四种排序。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖名称和价格四种排序",
       "file": "test-projects/02-saucedemo-ui/tests/test_sorting.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_sorting.py -q",
       "done": "提取值与排序期望完全一致",
+      "knowledge_check": "不看资料，能说明“学习从页面提取数据并验证排序”如何具体体现在本日的代码或文档产出中。",
       "stretch": "处理浮点价格"
     },
     {
@@ -351,12 +577,23 @@
       "phase_day": 7,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-021/",
+      "learning_output_link": "知识：理解跨页面状态断言 → 产出：加入单个商品并验证徽标和购物车内容 → 验证：徽标、名称和价格一致",
       "title": "加入购物车",
       "learn": "理解跨页面状态断言",
+      "study": "先用 20 分钟掌握一个核心知识点：理解跨页面状态断言。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：加入单个商品并验证徽标和购物车内容。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "加入单个商品并验证徽标和购物车内容",
       "file": "test-projects/02-saucedemo-ui/tests/test_cart.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_cart.py::test_add_one_item -q",
       "done": "徽标、名称和价格一致",
+      "knowledge_check": "不看资料，能说明“理解跨页面状态断言”如何具体体现在本日的代码或文档产出中。",
       "stretch": "从详情页添加"
     },
     {
@@ -368,12 +605,23 @@
       "phase_day": 8,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-022/",
+      "learning_output_link": "知识：学习集合与合计准备 → 产出：加入多个商品并验证集合 → 验证：购物车集合与选择集合一致",
       "title": "多商品购物车",
       "learn": "学习集合与合计准备",
+      "study": "先用 20 分钟掌握一个核心知识点：学习集合与合计准备。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：加入多个商品并验证集合。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "加入多个商品并验证集合",
       "file": "test-projects/02-saucedemo-ui/tests/test_cart.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_cart.py -q",
       "done": "购物车集合与选择集合一致",
+      "knowledge_check": "不看资料，能说明“学习集合与合计准备”如何具体体现在本日的代码或文档产出中。",
       "stretch": "验证展示顺序"
     },
     {
@@ -385,12 +633,23 @@
       "phase_day": 9,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-023/",
+      "learning_output_link": "知识：掌握状态回退和幂等思路 → 产出：从列表和购物车分别移除商品 → 验证：徽标和购物车内容同步变化",
       "title": "移除商品",
       "learn": "掌握状态回退和幂等思路",
+      "study": "先用 20 分钟掌握一个核心知识点：掌握状态回退和幂等思路。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：从列表和购物车分别移除商品。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "从列表和购物车分别移除商品",
       "file": "test-projects/02-saucedemo-ui/tests/test_cart_remove.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_cart_remove.py -q",
       "done": "徽标和购物车内容同步变化",
+      "knowledge_check": "不看资料，能说明“掌握状态回退和幂等思路”如何具体体现在本日的代码或文档产出中。",
       "stretch": "移除全部商品"
     },
     {
@@ -402,12 +661,23 @@
       "phase_day": 10,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-024/",
+      "learning_output_link": "知识：学习表单验证与字段组合 → 产出：覆盖姓名、姓氏、邮编必填错误 → 验证：每个缺失字段对应正确提示",
       "title": "结算校验",
       "learn": "学习表单验证与字段组合",
+      "study": "先用 20 分钟掌握一个核心知识点：学习表单验证与字段组合。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖姓名、姓氏、邮编必填错误。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖姓名、姓氏、邮编必填错误",
       "file": "test-projects/02-saucedemo-ui/tests/test_checkout_validation.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_checkout_validation.py -q",
       "done": "每个缺失字段对应正确提示",
+      "knowledge_check": "不看资料，能说明“学习表单验证与字段组合”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加特殊字符"
     },
     {
@@ -419,12 +689,23 @@
       "phase_day": 11,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-025/",
+      "learning_output_link": "知识：学习金额与业务计算断言 → 产出：验证商品小计、税费和总价 → 验证：总价等于商品小计加税费",
       "title": "结算概览",
       "learn": "学习金额与业务计算断言",
+      "study": "先用 20 分钟掌握一个核心知识点：学习金额与业务计算断言。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：验证商品小计、税费和总价。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "验证商品小计、税费和总价",
       "file": "test-projects/02-saucedemo-ui/tests/test_checkout_summary.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_checkout_summary.py -q",
       "done": "总价等于商品小计加税费",
+      "knowledge_check": "不看资料，能说明“学习金额与业务计算断言”如何具体体现在本日的代码或文档产出中。",
       "stretch": "使用 Decimal 计算"
     },
     {
@@ -436,12 +717,23 @@
       "phase_day": 12,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-026/",
+      "learning_output_link": "知识：建立关键端到端业务流 → 产出：完成登录到订单成功的 E2E 测试 → 验证：订单完成标题和购物车状态正确",
       "title": "完整下单",
       "learn": "建立关键端到端业务流",
+      "study": "先用 20 分钟掌握一个核心知识点：建立关键端到端业务流。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：完成登录到订单成功的 E2E 测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "完成登录到订单成功的 E2E 测试",
       "file": "test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py -q",
       "done": "订单完成标题和购物车状态正确",
+      "knowledge_check": "不看资料，能说明“建立关键端到端业务流”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试取消结算"
     },
     {
@@ -453,12 +745,23 @@
       "phase_day": 13,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-027/",
+      "learning_output_link": "知识：理解认证状态和直接访问 → 产出：验证登出后不能直接进入商品页 → 验证：登出清理会话且受保护页面不可访问",
       "title": "登出和会话",
       "learn": "理解认证状态和直接访问",
+      "study": "先用 20 分钟掌握一个核心知识点：理解认证状态和直接访问。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：验证登出后不能直接进入商品页。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "验证登出后不能直接进入商品页",
       "file": "test-projects/02-saucedemo-ui/tests/test_session.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_session.py -q",
       "done": "登出清理会话且受保护页面不可访问",
+      "knowledge_check": "不看资料，能说明“理解认证状态和直接访问”如何具体体现在本日的代码或文档产出中。",
       "stretch": "刷新页面验证会话"
     },
     {
@@ -470,12 +773,23 @@
       "phase_day": 14,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-028/",
+      "learning_output_link": "知识：理解页面对象职责边界 → 产出：创建 LoginPage 并重构登录测试 → 验证：定位和动作进入页面类，业务断言仍清晰",
       "title": "Page Object 登录页",
       "learn": "理解页面对象职责边界",
+      "study": "先用 20 分钟掌握一个核心知识点：理解页面对象职责边界。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建 LoginPage 并重构登录测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建 LoginPage 并重构登录测试",
       "file": "test-projects/02-saucedemo-ui/pages/login_page.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_login.py -q",
       "done": "定位和动作进入页面类，业务断言仍清晰",
+      "knowledge_check": "不看资料，能说明“理解页面对象职责边界”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加组件对象"
     },
     {
@@ -487,12 +801,23 @@
       "phase_day": 15,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-029/",
+      "learning_output_link": "知识：减少重复选择器和操作 → 产出：创建 InventoryPage 与 CartPage → 验证：相关测试无重复关键定位器",
       "title": "Page Object 商品页",
       "learn": "减少重复选择器和操作",
+      "study": "先用 20 分钟掌握一个核心知识点：减少重复选择器和操作。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建 InventoryPage 与 CartPage。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建 InventoryPage 与 CartPage",
       "file": "test-projects/02-saucedemo-ui/pages/inventory_page.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_inventory.py test-projects/02-saucedemo-ui/tests/test_cart.py -q",
       "done": "相关测试无重复关键定位器",
+      "knowledge_check": "不看资料，能说明“减少重复选择器和操作”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加按商品名操作"
     },
     {
@@ -504,12 +829,23 @@
       "phase_day": 16,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-030/",
+      "learning_output_link": "知识：组织多页面业务流程 → 产出：创建 Checkout 页面对象并重构 E2E → 验证：E2E 测试读起来像业务步骤",
       "title": "结算页面对象",
       "learn": "组织多页面业务流程",
+      "study": "先用 20 分钟掌握一个核心知识点：组织多页面业务流程。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建 Checkout 页面对象并重构 E2E。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建 Checkout 页面对象并重构 E2E",
       "file": "test-projects/02-saucedemo-ui/pages/checkout_page.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py -q",
       "done": "E2E 测试读起来像业务步骤",
+      "knowledge_check": "不看资料，能说明“组织多页面业务流程”如何具体体现在本日的代码或文档产出中。",
       "stretch": "避免万能 BasePage"
     },
     {
@@ -521,12 +857,23 @@
       "phase_day": 17,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-031/",
+      "learning_output_link": "知识：学习账号和商品数据管理 → 产出：集中管理用户、地址和商品数据 → 验证：变化数据不散落在测试中",
       "title": "测试数据模型",
       "learn": "学习账号和商品数据管理",
+      "study": "先用 20 分钟掌握一个核心知识点：学习账号和商品数据管理。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：集中管理用户、地址和商品数据。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "集中管理用户、地址和商品数据",
       "file": "test-projects/02-saucedemo-ui/test_data.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests -q",
       "done": "变化数据不散落在测试中",
+      "knowledge_check": "不看资料，能说明“学习账号和商品数据管理”如何具体体现在本日的代码或文档产出中。",
       "stretch": "使用 dataclass"
     },
     {
@@ -538,12 +885,23 @@
       "phase_day": 18,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-032/",
+      "learning_output_link": "知识：掌握 base_url 和环境切换 → 产出：加入 test 配置与命令行选项 → 验证：base_url 不硬编码且错误配置明确失败",
       "title": "环境配置",
       "learn": "掌握 base_url 和环境切换",
+      "study": "先用 20 分钟掌握一个核心知识点：掌握 base_url 和环境切换。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：加入 test 配置与命令行选项。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "加入 test 配置与命令行选项",
       "file": "test-projects/02-saucedemo-ui/config.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests -m smoke -q",
       "done": "base_url 不硬编码且错误配置明确失败",
+      "knowledge_check": "不看资料，能说明“掌握 base_url 和环境切换”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加 .env.example"
     },
     {
@@ -555,12 +913,23 @@
       "phase_day": 19,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-033/",
+      "learning_output_link": "知识：理解兼容性矩阵和执行成本 → 产出：在 Chromium、Firefox 运行 smoke → 验证：两种浏览器结果被记录",
       "title": "多浏览器",
       "learn": "理解兼容性矩阵和执行成本",
+      "study": "先用 20 分钟掌握一个核心知识点：理解兼容性矩阵和执行成本。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：在 Chromium、Firefox 运行 smoke。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "在 Chromium、Firefox 运行 smoke",
       "file": "test-projects/02-saucedemo-ui/pytest.ini",
       "run": "pytest test-projects/02-saucedemo-ui/tests -m smoke -q",
       "done": "两种浏览器结果被记录",
+      "knowledge_check": "不看资料，能说明“理解兼容性矩阵和执行成本”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加移动视口"
     },
     {
@@ -572,12 +941,23 @@
       "phase_day": 20,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-034/",
+      "learning_output_link": "知识：区分产品缺陷、脚本缺陷和环境问题 → 产出：接入 HTML/Allure 报告并分析一次失败 → 验证：报告包含步骤、失败证据和分类结论",
       "title": "报告与 flaky 分析",
       "learn": "区分产品缺陷、脚本缺陷和环境问题",
+      "study": "先用 20 分钟掌握一个核心知识点：区分产品缺陷、脚本缺陷和环境问题。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：接入 HTML/Allure 报告并分析一次失败。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "接入 HTML/Allure 报告并分析一次失败",
       "file": "test-projects/02-saucedemo-ui/README.md",
       "run": "pytest test-projects/02-saucedemo-ui/tests -q",
       "done": "报告包含步骤、失败证据和分类结论",
+      "knowledge_check": "不看资料，能说明“区分产品缺陷、脚本缺陷和环境问题”如何具体体现在本日的代码或文档产出中。",
       "stretch": "统计最慢测试"
     },
     {
@@ -589,12 +969,23 @@
       "phase_day": 21,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-035/",
+      "learning_output_link": "知识：验证框架可维护性和独立开发能力 → 产出：独立新增跨页面回归场景并写架构说明 → 验证：全套可运行、README 清楚、能解释 Page Object 取舍",
       "title": "阶段验收",
       "learn": "验证框架可维护性和独立开发能力",
+      "study": "先用 20 分钟掌握一个核心知识点：验证框架可维护性和独立开发能力。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：独立新增跨页面回归场景并写架构说明。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "独立新增跨页面回归场景并写架构说明",
       "file": "test-projects/02-saucedemo-ui/tests/test_portfolio_scenario.py",
       "run": "pytest test-projects/02-saucedemo-ui/tests -q",
       "done": "全套可运行、README 清楚、能解释 Page Object 取舍",
+      "knowledge_check": "不看资料，能说明“验证框架可维护性和独立开发能力”如何具体体现在本日的代码或文档产出中。",
       "stretch": "写五分钟演示脚本"
     },
     {
@@ -606,12 +997,23 @@
       "phase_day": 1,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-036/",
+      "learning_output_link": "知识：理解请求、响应、状态码和超时 → 产出：初始化 API 项目并验证健康检查 → 验证：状态码、响应体和超时都有断言",
       "title": "HTTP 与健康检查",
       "learn": "理解请求、响应、状态码和超时",
+      "study": "先用 20 分钟掌握一个核心知识点：理解请求、响应、状态码和超时。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：初始化 API 项目并验证健康检查。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "初始化 API 项目并验证健康检查",
       "file": "test-projects/03-restful-booker-api/tests/test_health.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_health.py -q",
       "done": "状态码、响应体和超时都有断言",
+      "knowledge_check": "不看资料，能说明“理解请求、响应、状态码和超时”如何具体体现在本日的代码或文档产出中。",
       "stretch": "记录响应头"
     },
     {
@@ -623,12 +1025,23 @@
       "phase_day": 2,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-037/",
+      "learning_output_link": "知识：掌握 GET 与集合响应 → 产出：查询 booking IDs 并校验结构 → 验证：列表类型和 bookingid 字段被校验",
       "title": "查询列表",
       "learn": "掌握 GET 与集合响应",
+      "study": "先用 20 分钟掌握一个核心知识点：掌握 GET 与集合响应。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：查询 booking IDs 并校验结构。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "查询 booking IDs 并校验结构",
       "file": "test-projects/03-restful-booker-api/tests/test_get_bookings.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_get_bookings.py -q",
       "done": "列表类型和 bookingid 字段被校验",
+      "knowledge_check": "不看资料，能说明“掌握 GET 与集合响应”如何具体体现在本日的代码或文档产出中。",
       "stretch": "按姓名过滤"
     },
     {
@@ -640,12 +1053,23 @@
       "phase_day": 3,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-038/",
+      "learning_output_link": "知识：掌握 POST 与 JSON 请求体 → 产出：创建预订并断言完整返回 → 验证：id 存在且所有业务字段一致",
       "title": "创建预订",
       "learn": "掌握 POST 与 JSON 请求体",
+      "study": "先用 20 分钟掌握一个核心知识点：掌握 POST 与 JSON 请求体。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建预订并断言完整返回。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建预订并断言完整返回",
       "file": "test-projects/03-restful-booker-api/tests/test_create_booking.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_create_booking.py -q",
       "done": "id 存在且所有业务字段一致",
+      "knowledge_check": "不看资料，能说明“掌握 POST 与 JSON 请求体”如何具体体现在本日的代码或文档产出中。",
       "stretch": "保存响应样例"
     },
     {
@@ -657,12 +1081,23 @@
       "phase_day": 4,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-039/",
+      "learning_output_link": "知识：学习动态 ID 的接口关联 → 产出：创建后按 id 查询并比较数据 → 验证：创建与查询结果一致",
       "title": "查询单条",
       "learn": "学习动态 ID 的接口关联",
+      "study": "先用 20 分钟掌握一个核心知识点：学习动态 ID 的接口关联。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建后按 id 查询并比较数据。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建后按 id 查询并比较数据",
       "file": "test-projects/03-restful-booker-api/tests/test_booking_flow.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_booking_flow.py -q",
       "done": "创建与查询结果一致",
+      "knowledge_check": "不看资料，能说明“学习动态 ID 的接口关联”如何具体体现在本日的代码或文档产出中。",
       "stretch": "验证不存在 id"
     },
     {
@@ -674,12 +1109,23 @@
       "phase_day": 5,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-040/",
+      "learning_output_link": "知识：学习 query 参数和组合 → 产出：覆盖姓名和日期过滤 → 验证：每种过滤返回符合条件的数据",
       "title": "过滤查询",
       "learn": "学习 query 参数和组合",
+      "study": "先用 20 分钟掌握一个核心知识点：学习 query 参数和组合。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖姓名和日期过滤。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖姓名和日期过滤",
       "file": "test-projects/03-restful-booker-api/tests/test_filters.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_filters.py -q",
       "done": "每种过滤返回符合条件的数据",
+      "knowledge_check": "不看资料，能说明“学习 query 参数和组合”如何具体体现在本日的代码或文档产出中。",
       "stretch": "组合多个参数"
     },
     {
@@ -691,12 +1137,23 @@
       "phase_day": 6,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-041/",
+      "learning_output_link": "知识：理解认证接口和凭据管理 → 产出：获取 Token 并验证无效凭据 → 验证：成功 Token 与失败原因都有断言",
       "title": "Token 鉴权",
       "learn": "理解认证接口和凭据管理",
+      "study": "先用 20 分钟掌握一个核心知识点：理解认证接口和凭据管理。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：获取 Token 并验证无效凭据。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "获取 Token 并验证无效凭据",
       "file": "test-projects/03-restful-booker-api/tests/test_auth.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_auth.py -q",
       "done": "成功 Token 与失败原因都有断言",
+      "knowledge_check": "不看资料，能说明“理解认证接口和凭据管理”如何具体体现在本日的代码或文档产出中。",
       "stretch": "Token 不打印到日志"
     },
     {
@@ -708,12 +1165,23 @@
       "phase_day": 7,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-042/",
+      "learning_output_link": "知识：理解资源替换和认证头 → 产出：创建后完整更新预订 → 验证：更新响应和二次查询一致",
       "title": "完整更新 PUT",
       "learn": "理解资源替换和认证头",
+      "study": "先用 20 分钟掌握一个核心知识点：理解资源替换和认证头。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建后完整更新预订。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建后完整更新预订",
       "file": "test-projects/03-restful-booker-api/tests/test_update_booking.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_update_booking.py -q",
       "done": "更新响应和二次查询一致",
+      "knowledge_check": "不看资料，能说明“理解资源替换和认证头”如何具体体现在本日的代码或文档产出中。",
       "stretch": "验证无 Token"
     },
     {
@@ -725,12 +1193,23 @@
       "phase_day": 8,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-043/",
+      "learning_output_link": "知识：理解 PUT 与 PATCH 差异 → 产出：只修改价格和附加需求 → 验证：目标字段变化，其他字段保持",
       "title": "部分更新 PATCH",
       "learn": "理解 PUT 与 PATCH 差异",
+      "study": "先用 20 分钟掌握一个核心知识点：理解 PUT 与 PATCH 差异。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：只修改价格和附加需求。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "只修改价格和附加需求",
       "file": "test-projects/03-restful-booker-api/tests/test_update_booking.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_update_booking.py -q",
       "done": "目标字段变化，其他字段保持",
+      "knowledge_check": "不看资料，能说明“理解 PUT 与 PATCH 差异”如何具体体现在本日的代码或文档产出中。",
       "stretch": "更新空字符串"
     },
     {
@@ -742,12 +1221,23 @@
       "phase_day": 9,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-044/",
+      "learning_output_link": "知识：学习资源生命周期和清理保证 → 产出：删除预订并确认不能查询 → 验证：删除成功且后续查询返回预期状态",
       "title": "删除与清理",
       "learn": "学习资源生命周期和清理保证",
+      "study": "先用 20 分钟掌握一个核心知识点：学习资源生命周期和清理保证。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：删除预订并确认不能查询。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "删除预订并确认不能查询",
       "file": "test-projects/03-restful-booker-api/tests/test_delete_booking.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_delete_booking.py -q",
       "done": "删除成功且后续查询返回预期状态",
+      "knowledge_check": "不看资料，能说明“学习资源生命周期和清理保证”如何具体体现在本日的代码或文档产出中。",
       "stretch": "重复删除"
     },
     {
@@ -759,12 +1249,23 @@
       "phase_day": 10,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-045/",
+      "learning_output_link": "知识：建立请求封装边界 → 产出：封装 base URL、超时、headers 和通用请求 → 验证：测试不再重复拼接 URL，失败信息可读",
       "title": "API Client",
       "learn": "建立请求封装边界",
+      "study": "先用 20 分钟掌握一个核心知识点：建立请求封装边界。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：封装 base URL、超时、headers 和通用请求。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "封装 base URL、超时、headers 和通用请求",
       "file": "test-projects/03-restful-booker-api/src/api_client.py",
       "run": "pytest test-projects/03-restful-booker-api/tests -q",
       "done": "测试不再重复拼接 URL，失败信息可读",
+      "knowledge_check": "不看资料，能说明“建立请求封装边界”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加响应日志"
     },
     {
@@ -776,12 +1277,23 @@
       "phase_day": 11,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-046/",
+      "learning_output_link": "知识：学习领域客户端 → 产出：封装 booking CRUD 方法 → 验证：测试通过领域方法表达业务动作",
       "title": "Booking Client",
       "learn": "学习领域客户端",
+      "study": "先用 20 分钟掌握一个核心知识点：学习领域客户端。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：封装 booking CRUD 方法。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "封装 booking CRUD 方法",
       "file": "test-projects/03-restful-booker-api/src/booking_client.py",
       "run": "pytest test-projects/03-restful-booker-api/tests -q",
       "done": "测试通过领域方法表达业务动作",
+      "knowledge_check": "不看资料，能说明“学习领域客户端”如何具体体现在本日的代码或文档产出中。",
       "stretch": "保留原始 response"
     },
     {
@@ -793,12 +1305,23 @@
       "phase_day": 12,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-047/",
+      "learning_output_link": "知识：掌握 yield fixture 清理 → 产出：创建 booking fixture 并自动删除 → 验证：测试失败时也执行清理",
       "title": "Fixture 生命周期",
       "learn": "掌握 yield fixture 清理",
+      "study": "先用 20 分钟掌握一个核心知识点：掌握 yield fixture 清理。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建 booking fixture 并自动删除。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建 booking fixture 并自动删除",
       "file": "test-projects/03-restful-booker-api/tests/conftest.py",
       "run": "pytest test-projects/03-restful-booker-api/tests -q",
       "done": "测试失败时也执行清理",
+      "knowledge_check": "不看资料，能说明“掌握 yield fixture 清理”如何具体体现在本日的代码或文档产出中。",
       "stretch": "使用 session 级 Token"
     },
     {
@@ -810,12 +1333,23 @@
       "phase_day": 13,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-048/",
+      "learning_output_link": "知识：建立唯一且可复用的数据 → 产出：创建 booking data factory → 验证：每次数据唯一且默认值可覆盖",
       "title": "数据工厂",
       "learn": "建立唯一且可复用的数据",
+      "study": "先用 20 分钟掌握一个核心知识点：建立唯一且可复用的数据。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建 booking data factory。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建 booking data factory",
       "file": "test-projects/03-restful-booker-api/tests/factories.py",
       "run": "pytest test-projects/03-restful-booker-api/tests -q",
       "done": "每次数据唯一且默认值可覆盖",
+      "knowledge_check": "不看资料，能说明“建立唯一且可复用的数据”如何具体体现在本日的代码或文档产出中。",
       "stretch": "使用 Faker 可选"
     },
     {
@@ -827,12 +1361,23 @@
       "phase_day": 14,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-049/",
+      "learning_output_link": "知识：覆盖价格、日期和姓名边界 → 产出：为核心字段增加参数化测试 → 验证：至少六组边界有明确预期",
       "title": "参数化边界",
       "learn": "覆盖价格、日期和姓名边界",
+      "study": "先用 20 分钟掌握一个核心知识点：覆盖价格、日期和姓名边界。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为核心字段增加参数化测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为核心字段增加参数化测试",
       "file": "test-projects/03-restful-booker-api/tests/test_boundaries.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_boundaries.py -q",
       "done": "至少六组边界有明确预期",
+      "knowledge_check": "不看资料，能说明“覆盖价格、日期和姓名边界”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入超长文本"
     },
     {
@@ -844,12 +1389,23 @@
       "phase_day": 15,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-050/",
+      "learning_output_link": "知识：学习 API 负向测试 → 产出：逐个删除必填字段并记录行为 → 验证：服务行为被断言，意外行为记为缺陷",
       "title": "缺失字段",
       "learn": "学习 API 负向测试",
+      "study": "先用 20 分钟掌握一个核心知识点：学习 API 负向测试。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：逐个删除必填字段并记录行为。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "逐个删除必填字段并记录行为",
       "file": "test-projects/03-restful-booker-api/tests/test_invalid_payloads.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_invalid_payloads.py -q",
       "done": "服务行为被断言，意外行为记为缺陷",
+      "knowledge_check": "不看资料，能说明“学习 API 负向测试”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试空 JSON"
     },
     {
@@ -861,12 +1417,23 @@
       "phase_day": 16,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-051/",
+      "learning_output_link": "知识：验证契约的输入类型边界 → 产出：覆盖字符串价格、非法布尔和嵌套错误 → 验证：错误类型结果可重复且有缺陷记录",
       "title": "类型错误",
       "learn": "验证契约的输入类型边界",
+      "study": "先用 20 分钟掌握一个核心知识点：验证契约的输入类型边界。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖字符串价格、非法布尔和嵌套错误。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖字符串价格、非法布尔和嵌套错误",
       "file": "test-projects/03-restful-booker-api/tests/test_invalid_types.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_invalid_types.py -q",
       "done": "错误类型结果可重复且有缺陷记录",
+      "knowledge_check": "不看资料，能说明“验证契约的输入类型边界”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试 null 值"
     },
     {
@@ -878,12 +1445,23 @@
       "phase_day": 17,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-052/",
+      "learning_output_link": "知识：统一负向场景断言 → 产出：提取错误响应断言辅助函数 → 验证：状态码和错误体断言一致且可读",
       "title": "状态码与错误模型",
       "learn": "统一负向场景断言",
+      "study": "先用 20 分钟掌握一个核心知识点：统一负向场景断言。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：提取错误响应断言辅助函数。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "提取错误响应断言辅助函数",
       "file": "test-projects/03-restful-booker-api/tests/assertions.py",
       "run": "pytest test-projects/03-restful-booker-api/tests -q",
       "done": "状态码和错误体断言一致且可读",
+      "knowledge_check": "不看资料，能说明“统一负向场景断言”如何具体体现在本日的代码或文档产出中。",
       "stretch": "禁止只断言非 200"
     },
     {
@@ -895,12 +1473,23 @@
       "phase_day": 18,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-053/",
+      "learning_output_link": "知识：掌握结构契约验证 → 产出：为创建和查询响应增加 Schema → 验证：缺失字段或类型变化能导致失败",
       "title": "JSON Schema",
       "learn": "掌握结构契约验证",
+      "study": "先用 20 分钟掌握一个核心知识点：掌握结构契约验证。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为创建和查询响应增加 Schema。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为创建和查询响应增加 Schema",
       "file": "test-projects/03-restful-booker-api/schemas/booking.json",
       "run": "pytest test-projects/03-restful-booker-api/tests -q",
       "done": "缺失字段或类型变化能导致失败",
+      "knowledge_check": "不看资料，能说明“掌握结构契约验证”如何具体体现在本日的代码或文档产出中。",
       "stretch": "Schema 版本化"
     },
     {
@@ -912,12 +1501,23 @@
       "phase_day": 19,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-054/",
+      "learning_output_link": "知识：区分结构正确和业务正确 → 产出：增加日期顺序、价格范围等规则 → 验证：至少三条业务规则被验证",
       "title": "业务断言",
       "learn": "区分结构正确和业务正确",
+      "study": "先用 20 分钟掌握一个核心知识点：区分结构正确和业务正确。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：增加日期顺序、价格范围等规则。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "增加日期顺序、价格范围等规则",
       "file": "test-projects/03-restful-booker-api/tests/test_business_rules.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_business_rules.py -q",
       "done": "至少三条业务规则被验证",
+      "knowledge_check": "不看资料，能说明“区分结构正确和业务正确”如何具体体现在本日的代码或文档产出中。",
       "stretch": "记录服务未校验规则"
     },
     {
@@ -929,12 +1529,23 @@
       "phase_day": 20,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-055/",
+      "learning_output_link": "知识：组织创建、查询、更新、删除流程 → 产出：实现完整生命周期测试 → 验证：链路每一步都有局部断言和清理",
       "title": "接口链路",
       "learn": "组织创建、查询、更新、删除流程",
+      "study": "先用 20 分钟掌握一个核心知识点：组织创建、查询、更新、删除流程。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：实现完整生命周期测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "实现完整生命周期测试",
       "file": "test-projects/03-restful-booker-api/tests/test_booking_lifecycle.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_booking_lifecycle.py -q",
       "done": "链路每一步都有局部断言和清理",
+      "knowledge_check": "不看资料，能说明“组织创建、查询、更新、删除流程”如何具体体现在本日的代码或文档产出中。",
       "stretch": "失败时打印当前 id"
     },
     {
@@ -946,12 +1557,23 @@
       "phase_day": 21,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-056/",
+      "learning_output_link": "知识：学习环境变量与默认值 → 产出：加入 base_url、timeout、credentials 配置 → 验证：配置可覆盖且敏感信息不进仓库",
       "title": "配置分层",
       "learn": "学习环境变量与默认值",
+      "study": "先用 20 分钟掌握一个核心知识点：学习环境变量与默认值。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：加入 base_url、timeout、credentials 配置。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "加入 base_url、timeout、credentials 配置",
       "file": "test-projects/03-restful-booker-api/src/settings.py",
       "run": "pytest test-projects/03-restful-booker-api/tests -m smoke -q",
       "done": "配置可覆盖且敏感信息不进仓库",
+      "knowledge_check": "不看资料，能说明“学习环境变量与默认值”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加配置校验"
     },
     {
@@ -963,12 +1585,23 @@
       "phase_day": 22,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-057/",
+      "learning_output_link": "知识：学习请求上下文和脱敏 → 产出：记录 method、URL、耗时和状态码 → 验证：失败日志足够定位且 Token 被脱敏",
       "title": "日志与诊断",
       "learn": "学习请求上下文和脱敏",
+      "study": "先用 20 分钟掌握一个核心知识点：学习请求上下文和脱敏。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：记录 method、URL、耗时和状态码。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "记录 method、URL、耗时和状态码",
       "file": "test-projects/03-restful-booker-api/src/logging_config.py",
       "run": "pytest test-projects/03-restful-booker-api/tests -q",
       "done": "失败日志足够定位且 Token 被脱敏",
+      "knowledge_check": "不看资料，能说明“学习请求上下文和脱敏”如何具体体现在本日的代码或文档产出中。",
       "stretch": "添加 correlation id"
     },
     {
@@ -980,12 +1613,23 @@
       "phase_day": 23,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-058/",
+      "learning_output_link": "知识：理解可重试与不可重试错误 → 产出：为幂等 GET 设计有限重试 → 验证：只对明确瞬态错误重试并有次数上限",
       "title": "重试边界",
       "learn": "理解可重试与不可重试错误",
+      "study": "先用 20 分钟掌握一个核心知识点：理解可重试与不可重试错误。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为幂等 GET 设计有限重试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为幂等 GET 设计有限重试",
       "file": "test-projects/03-restful-booker-api/src/retry.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_retry.py -q",
       "done": "只对明确瞬态错误重试并有次数上限",
+      "knowledge_check": "不看资料，能说明“理解可重试与不可重试错误”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试退避策略"
     },
     {
@@ -997,12 +1641,23 @@
       "phase_day": 24,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-059/",
+      "learning_output_link": "知识：理解并行导致的数据碰撞 → 产出：用 xdist 并行运行唯一数据测试 → 验证：并行运行无共享数据冲突",
       "title": "并行隔离",
       "learn": "理解并行导致的数据碰撞",
+      "study": "先用 20 分钟掌握一个核心知识点：理解并行导致的数据碰撞。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：用 xdist 并行运行唯一数据测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "用 xdist 并行运行唯一数据测试",
       "file": "test-projects/03-restful-booker-api/tests/conftest.py",
       "run": "pytest test-projects/03-restful-booker-api/tests -n 2 -q",
       "done": "并行运行无共享数据冲突",
+      "knowledge_check": "不看资料，能说明“理解并行导致的数据碰撞”如何具体体现在本日的代码或文档产出中。",
       "stretch": "比较执行耗时"
     },
     {
@@ -1014,12 +1669,23 @@
       "phase_day": 25,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-060/",
+      "learning_output_link": "知识：理解按风险对测试套件分层的原则 → 产出：标记并验证不同套件 → 验证：套件边界清晰且无 marker 警告",
       "title": "测试标记",
-      "learn": "建立 smoke、regression、negative 分类",
+      "learn": "理解按风险对测试套件分层的原则",
+      "study": "先用 20 分钟掌握一个核心知识点：理解按风险对测试套件分层的原则。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：标记并验证不同套件。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "标记并验证不同套件",
       "file": "test-projects/03-restful-booker-api/pytest.ini",
       "run": "pytest test-projects/03-restful-booker-api/tests -m smoke -q",
       "done": "套件边界清晰且无 marker 警告",
+      "knowledge_check": "不看资料，能说明“理解按风险对测试套件分层的原则”如何具体体现在本日的代码或文档产出中。",
       "stretch": "生成 marker 清单"
     },
     {
@@ -1031,12 +1697,23 @@
       "phase_day": 26,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-061/",
+      "learning_output_link": "知识：把接口证据组织成可阅读报告 → 产出：接入 JUnit/Allure 并附加请求摘要 → 验证：报告可定位失败接口和数据",
       "title": "报告",
       "learn": "把接口证据组织成可阅读报告",
+      "study": "先用 20 分钟掌握一个核心知识点：把接口证据组织成可阅读报告。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：接入 JUnit/Allure 并附加请求摘要。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "接入 JUnit/Allure 并附加请求摘要",
       "file": "test-projects/03-restful-booker-api/README.md",
       "run": "pytest test-projects/03-restful-booker-api/tests -q --junitxml=reports/api.xml",
       "done": "报告可定位失败接口和数据",
+      "knowledge_check": "不看资料，能说明“把接口证据组织成可阅读报告”如何具体体现在本日的代码或文档产出中。",
       "stretch": "统计错误类型"
     },
     {
@@ -1048,12 +1725,23 @@
       "phase_day": 27,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-062/",
+      "learning_output_link": "知识：训练高质量 Bug 表达 → 产出：基于异常行为写一份缺陷报告 → 验证：包含复现、预期、实际、证据和影响",
       "title": "缺陷案例",
       "learn": "训练高质量 Bug 表达",
+      "study": "先用 20 分钟掌握一个核心知识点：训练高质量 Bug 表达。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：基于异常行为写一份缺陷报告。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "基于异常行为写一份缺陷报告",
       "file": "test-projects/03-restful-booker-api/reports/defect-001.md",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_invalid_payloads.py -q",
       "done": "包含复现、预期、实际、证据和影响",
+      "knowledge_check": "不看资料，能说明“训练高质量 Bug 表达”如何具体体现在本日的代码或文档产出中。",
       "stretch": "补充最小 curl"
     },
     {
@@ -1065,12 +1753,23 @@
       "phase_day": 28,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-063/",
+      "learning_output_link": "知识：验证独立设计 API 自动化能力 → 产出：独立新增一个资源链路并完成阶段报告 → 验证：框架全套通过或失败可解释，文档可一键运行",
       "title": "阶段验收",
       "learn": "验证独立设计 API 自动化能力",
+      "study": "先用 20 分钟掌握一个核心知识点：验证独立设计 API 自动化能力。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：独立新增一个资源链路并完成阶段报告。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "独立新增一个资源链路并完成阶段报告",
       "file": "test-projects/03-restful-booker-api/reports/phase-review.md",
       "run": "pytest test-projects/03-restful-booker-api/tests -q",
       "done": "框架全套通过或失败可解释，文档可一键运行",
+      "knowledge_check": "不看资料，能说明“验证独立设计 API 自动化能力”如何具体体现在本日的代码或文档产出中。",
       "stretch": "绘制 API 测试架构图"
     },
     {
@@ -1082,12 +1781,23 @@
       "phase_day": 1,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-064/",
+      "learning_output_link": "知识：理解压测授权边界与本地环境 → 产出：用 Docker 启动 Petstore 并完成健康检查 → 验证：本地服务可访问且记录版本和端口",
       "title": "本地 Petstore",
       "learn": "理解压测授权边界与本地环境",
+      "study": "先用 20 分钟掌握一个核心知识点：理解压测授权边界与本地环境。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：用 Docker 启动 Petstore 并完成健康检查。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "用 Docker 启动 Petstore 并完成健康检查",
       "file": "test-projects/04-petstore-performance/docker-compose.yml",
       "run": "docker compose -f test-projects/04-petstore-performance/docker-compose.yml up -d",
       "done": "本地服务可访问且记录版本和端口",
+      "knowledge_check": "不看资料，能说明“理解压测授权边界与本地环境”如何具体体现在本日的代码或文档产出中。",
       "stretch": "保存容器资源基线"
     },
     {
@@ -1099,12 +1809,23 @@
       "phase_day": 2,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-065/",
+      "learning_output_link": "知识：学习从规范提取测试范围 → 产出：列出 pet、store、user 核心接口和字段 → 验证：接口清单包含方法、路径、鉴权和风险",
       "title": "OpenAPI 阅读",
       "learn": "学习从规范提取测试范围",
+      "study": "先用 20 分钟掌握一个核心知识点：学习从规范提取测试范围。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：列出 pet、store、user 核心接口和字段。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "列出 pet、store、user 核心接口和字段",
       "file": "test-projects/04-petstore-performance/docs/api-inventory.md",
       "run": "git diff --check",
       "done": "接口清单包含方法、路径、鉴权和风险",
+      "knowledge_check": "不看资料，能说明“学习从规范提取测试范围”如何具体体现在本日的代码或文档产出中。",
       "stretch": "标注性能热点"
     },
     {
@@ -1116,12 +1837,23 @@
       "phase_day": 3,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-066/",
+      "learning_output_link": "知识：建立 API 契约回归 → 产出：为 GET pet 增加 Schema 和错误场景 → 验证：成功与不存在场景都有契约断言",
       "title": "查询契约",
       "learn": "建立 API 契约回归",
+      "study": "先用 20 分钟掌握一个核心知识点：建立 API 契约回归。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为 GET pet 增加 Schema 和错误场景。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为 GET pet 增加 Schema 和错误场景",
       "file": "test-projects/04-petstore-performance/tests/test_get_pet.py",
       "run": "pytest test-projects/04-petstore-performance/tests/test_get_pet.py -q",
       "done": "成功与不存在场景都有契约断言",
+      "knowledge_check": "不看资料，能说明“建立 API 契约回归”如何具体体现在本日的代码或文档产出中。",
       "stretch": "检查 content-type"
     },
     {
@@ -1133,12 +1865,23 @@
       "phase_day": 4,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-067/",
+      "learning_output_link": "知识：准备性能测试前的功能基线 → 产出：实现 pet 创建、查询、修改、删除 → 验证：链路可重复且数据可清理",
       "title": "CRUD 链路",
       "learn": "准备性能测试前的功能基线",
+      "study": "先用 20 分钟掌握一个核心知识点：准备性能测试前的功能基线。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：实现 pet 创建、查询、修改、删除。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "实现 pet 创建、查询、修改、删除",
       "file": "test-projects/04-petstore-performance/tests/test_pet_lifecycle.py",
       "run": "pytest test-projects/04-petstore-performance/tests/test_pet_lifecycle.py -q",
       "done": "链路可重复且数据可清理",
+      "knowledge_check": "不看资料，能说明“准备性能测试前的功能基线”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入唯一 id"
     },
     {
@@ -1150,12 +1893,23 @@
       "phase_day": 5,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-068/",
+      "learning_output_link": "知识：理解 OpenAPI 与实现差异 → 产出：写脚本比较关键响应与规范 → 验证：至少覆盖两个接口并记录差异",
       "title": "契约漂移",
       "learn": "理解 OpenAPI 与实现差异",
+      "study": "先用 20 分钟掌握一个核心知识点：理解 OpenAPI 与实现差异。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：写脚本比较关键响应与规范。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "写脚本比较关键响应与规范",
       "file": "test-projects/04-petstore-performance/tests/test_contract.py",
       "run": "pytest test-projects/04-petstore-performance/tests/test_contract.py -q",
       "done": "至少覆盖两个接口并记录差异",
+      "knowledge_check": "不看资料，能说明“理解 OpenAPI 与实现差异”如何具体体现在本日的代码或文档产出中。",
       "stretch": "输出差异报告"
     },
     {
@@ -1167,12 +1921,23 @@
       "phase_day": 6,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-069/",
+      "learning_output_link": "知识：理解 VU、iteration、duration → 产出：编写单用户查询冒烟脚本 → 验证：请求成功且 check、指标可读",
       "title": "k6 首脚本",
       "learn": "理解 VU、iteration、duration",
+      "study": "先用 20 分钟掌握一个核心知识点：理解 VU、iteration、duration。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：编写单用户查询冒烟脚本。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "编写单用户查询冒烟脚本",
       "file": "test-projects/04-petstore-performance/k6/smoke.js",
       "run": "k6 run test-projects/04-petstore-performance/k6/smoke.js",
       "done": "请求成功且 check、指标可读",
+      "knowledge_check": "不看资料，能说明“理解 VU、iteration、duration”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入自定义 Trend"
     },
     {
@@ -1184,12 +1949,23 @@
       "phase_day": 7,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-070/",
+      "learning_output_link": "知识：学习 check 与 threshold 区别 → 产出：设置错误率和 p95 阈值 → 验证：阈值通过，故意收紧时能失败",
       "title": "性能断言",
       "learn": "学习 check 与 threshold 区别",
+      "study": "先用 20 分钟掌握一个核心知识点：学习 check 与 threshold 区别。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：设置错误率和 p95 阈值。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "设置错误率和 p95 阈值",
       "file": "test-projects/04-petstore-performance/k6/thresholds.js",
       "run": "k6 run test-projects/04-petstore-performance/k6/thresholds.js",
       "done": "阈值通过，故意收紧时能失败",
+      "knowledge_check": "不看资料，能说明“学习 check 与 threshold 区别”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入 p99"
     },
     {
@@ -1201,12 +1977,23 @@
       "phase_day": 8,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-071/",
+      "learning_output_link": "知识：避免压测数据竞争 → 产出：编写 setup/teardown 生成和清理 pet → 验证：数据唯一且结束后可清理",
       "title": "测试数据",
       "learn": "避免压测数据竞争",
+      "study": "先用 20 分钟掌握一个核心知识点：避免压测数据竞争。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：编写 setup/teardown 生成和清理 pet。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "编写 setup/teardown 生成和清理 pet",
       "file": "test-projects/04-petstore-performance/k6/data_setup.js",
       "run": "k6 run test-projects/04-petstore-performance/k6/data_setup.js",
       "done": "数据唯一且结束后可清理",
+      "knowledge_check": "不看资料，能说明“避免压测数据竞争”如何具体体现在本日的代码或文档产出中。",
       "stretch": "从 JSON 加载数据"
     },
     {
@@ -1218,12 +2005,23 @@
       "phase_day": 9,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-072/",
+      "learning_output_link": "知识：把真实业务比例映射到脚本 → 产出：设计读写比例和用户停顿 → 验证：文档解释 VU、持续时间和业务比例",
       "title": "场景建模",
       "learn": "把真实业务比例映射到脚本",
+      "study": "先用 20 分钟掌握一个核心知识点：把真实业务比例映射到脚本。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：设计读写比例和用户停顿。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "设计读写比例和用户停顿",
       "file": "test-projects/04-petstore-performance/docs/workload-model.md",
       "run": "git diff --check",
       "done": "文档解释 VU、持续时间和业务比例",
+      "knowledge_check": "不看资料，能说明“把真实业务比例映射到脚本”如何具体体现在本日的代码或文档产出中。",
       "stretch": "使用 scenarios executor"
     },
     {
@@ -1235,12 +2033,23 @@
       "phase_day": 10,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-073/",
+      "learning_output_link": "知识：观察响应随负载变化 → 产出：实现 5→10→20 VU 负载脚本 → 验证：记录各阶段吞吐、错误率和 p95",
       "title": "阶梯负载",
       "learn": "观察响应随负载变化",
+      "study": "先用 20 分钟掌握一个核心知识点：观察响应随负载变化。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：实现 5→10→20 VU 负载脚本。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "实现 5→10→20 VU 负载脚本",
       "file": "test-projects/04-petstore-performance/k6/load.js",
       "run": "k6 run test-projects/04-petstore-performance/k6/load.js",
       "done": "记录各阶段吞吐、错误率和 p95",
+      "knowledge_check": "不看资料，能说明“观察响应随负载变化”如何具体体现在本日的代码或文档产出中。",
       "stretch": "输出 JSON summary"
     },
     {
@@ -1252,12 +2061,23 @@
       "phase_day": 11,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-074/",
+      "learning_output_link": "知识：学习可比较的性能基线 → 产出：执行固定负载并填写基线报告 → 验证：报告包含环境、负载、指标和结论",
       "title": "基线报告",
       "learn": "学习可比较的性能基线",
+      "study": "先用 20 分钟掌握一个核心知识点：学习可比较的性能基线。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：执行固定负载并填写基线报告。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "执行固定负载并填写基线报告",
       "file": "test-projects/04-petstore-performance/reports/baseline.md",
       "run": "k6 run --summary-export=artifacts/baseline.json test-projects/04-petstore-performance/k6/load.js",
       "done": "报告包含环境、负载、指标和结论",
+      "knowledge_check": "不看资料，能说明“学习可比较的性能基线”如何具体体现在本日的代码或文档产出中。",
       "stretch": "重复三次比较波动"
     },
     {
@@ -1269,12 +2089,23 @@
       "phase_day": 12,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-075/",
+      "learning_output_link": "知识：关联应用指标与请求指标 → 产出：记录容器 CPU、内存和网络 → 验证：同一时间窗口有 k6 与资源证据",
       "title": "资源监控",
       "learn": "关联应用指标与请求指标",
+      "study": "先用 20 分钟掌握一个核心知识点：关联应用指标与请求指标。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：记录容器 CPU、内存和网络。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "记录容器 CPU、内存和网络",
       "file": "test-projects/04-petstore-performance/docs/monitoring.md",
       "run": "docker stats --no-stream",
       "done": "同一时间窗口有 k6 与资源证据",
+      "knowledge_check": "不看资料，能说明“关联应用指标与请求指标”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入数据库连接"
     },
     {
@@ -1286,12 +2117,23 @@
       "phase_day": 13,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-076/",
+      "learning_output_link": "知识：寻找性能拐点而非只压垮 → 产出：逐级增加 VU 直到阈值持续恶化 → 验证：记录首个明显拐点和停止条件",
       "title": "压力测试",
       "learn": "寻找性能拐点而非只压垮",
+      "study": "先用 20 分钟掌握一个核心知识点：寻找性能拐点而非只压垮。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：逐级增加 VU 直到阈值持续恶化。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "逐级增加 VU 直到阈值持续恶化",
       "file": "test-projects/04-petstore-performance/k6/stress.js",
       "run": "k6 run test-projects/04-petstore-performance/k6/stress.js",
       "done": "记录首个明显拐点和停止条件",
+      "knowledge_check": "不看资料，能说明“寻找性能拐点而非只压垮”如何具体体现在本日的代码或文档产出中。",
       "stretch": "比较读写瓶颈"
     },
     {
@@ -1303,12 +2145,23 @@
       "phase_day": 14,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-077/",
+      "learning_output_link": "知识：理解突发流量与恢复 → 产出：实现低负载瞬间升高再回落 → 验证：记录峰值错误和恢复时间",
       "title": "峰值测试",
       "learn": "理解突发流量与恢复",
+      "study": "先用 20 分钟掌握一个核心知识点：理解突发流量与恢复。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：实现低负载瞬间升高再回落。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "实现低负载瞬间升高再回落",
       "file": "test-projects/04-petstore-performance/k6/spike.js",
       "run": "k6 run test-projects/04-petstore-performance/k6/spike.js",
       "done": "记录峰值错误和恢复时间",
+      "knowledge_check": "不看资料，能说明“理解突发流量与恢复”如何具体体现在本日的代码或文档产出中。",
       "stretch": "修改峰值持续时间"
     },
     {
@@ -1320,12 +2173,23 @@
       "phase_day": 15,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-078/",
+      "learning_output_link": "知识：识别资源泄漏和累积问题 → 产出：实现受控的 soak 脚本 → 验证：趋势无持续恶化或有明确证据",
       "title": "稳定性测试",
       "learn": "识别资源泄漏和累积问题",
+      "study": "先用 20 分钟掌握一个核心知识点：识别资源泄漏和累积问题。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：实现受控的 soak 脚本。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "实现受控的 soak 脚本",
       "file": "test-projects/04-petstore-performance/k6/soak.js",
       "run": "k6 run test-projects/04-petstore-performance/k6/soak.js",
       "done": "趋势无持续恶化或有明确证据",
+      "knowledge_check": "不看资料，能说明“识别资源泄漏和累积问题”如何具体体现在本日的代码或文档产出中。",
       "stretch": "按机器能力缩短预演"
     },
     {
@@ -1337,12 +2201,23 @@
       "phase_day": 16,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-079/",
+      "learning_output_link": "知识：学习安全容量与极限容量区别 → 产出：根据负载曲线计算建议并发 → 验证：给出容量区间、依据和安全余量",
       "title": "容量分析",
       "learn": "学习安全容量与极限容量区别",
+      "study": "先用 20 分钟掌握一个核心知识点：学习安全容量与极限容量区别。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：根据负载曲线计算建议并发。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "根据负载曲线计算建议并发",
       "file": "test-projects/04-petstore-performance/reports/capacity.md",
       "run": "python test-projects/04-petstore-performance/tools/analyze_results.py",
       "done": "给出容量区间、依据和安全余量",
+      "knowledge_check": "不看资料，能说明“学习安全容量与极限容量区别”如何具体体现在本日的代码或文档产出中。",
       "stretch": "画 VU-p95 曲线"
     },
     {
@@ -1354,12 +2229,23 @@
       "phase_day": 17,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-080/",
+      "learning_output_link": "知识：用证据建立可验证假设 → 产出：选择最慢接口分析可能原因 → 验证：假设引用请求和资源指标",
       "title": "瓶颈假设",
       "learn": "用证据建立可验证假设",
+      "study": "先用 20 分钟掌握一个核心知识点：用证据建立可验证假设。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：选择最慢接口分析可能原因。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "选择最慢接口分析可能原因",
       "file": "test-projects/04-petstore-performance/reports/bottleneck.md",
       "run": "k6 run test-projects/04-petstore-performance/k6/focused.js",
       "done": "假设引用请求和资源指标",
+      "knowledge_check": "不看资料，能说明“用证据建立可验证假设”如何具体体现在本日的代码或文档产出中。",
       "stretch": "设计 A/B 验证"
     },
     {
@@ -1371,12 +2257,23 @@
       "phase_day": 18,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-081/",
+      "learning_output_link": "知识：让性能脚本可复用 → 产出：支持 BASE_URL、VUS、DURATION 环境变量 → 验证：配置有默认值且输出实际参数",
       "title": "参数与环境",
       "learn": "让性能脚本可复用",
+      "study": "先用 20 分钟掌握一个核心知识点：让性能脚本可复用。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：支持 BASE_URL、VUS、DURATION 环境变量。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "支持 BASE_URL、VUS、DURATION 环境变量",
       "file": "test-projects/04-petstore-performance/k6/configurable.js",
       "run": "k6 run -e VUS=5 -e DURATION=30s test-projects/04-petstore-performance/k6/configurable.js",
       "done": "配置有默认值且输出实际参数",
+      "knowledge_check": "不看资料，能说明“让性能脚本可复用”如何具体体现在本日的代码或文档产出中。",
       "stretch": "防止误指向生产域名"
     },
     {
@@ -1388,12 +2285,23 @@
       "phase_day": 19,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-082/",
+      "learning_output_link": "知识：学习性能质量门禁边界 → 产出：加入短时 k6 smoke CI 配置 → 验证：CI 场景短、稳定且阈值明确",
       "title": "CI 性能冒烟",
       "learn": "学习性能质量门禁边界",
+      "study": "先用 20 分钟掌握一个核心知识点：学习性能质量门禁边界。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：加入短时 k6 smoke CI 配置。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "加入短时 k6 smoke CI 配置",
       "file": "test-projects/04-petstore-performance/.github/workflows/performance-smoke.yml",
       "run": "k6 run test-projects/04-petstore-performance/k6/smoke.js",
       "done": "CI 场景短、稳定且阈值明确",
+      "knowledge_check": "不看资料，能说明“学习性能质量门禁边界”如何具体体现在本日的代码或文档产出中。",
       "stretch": "保存 summary artifact"
     },
     {
@@ -1405,12 +2313,23 @@
       "phase_day": 20,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-083/",
+      "learning_output_link": "知识：形成可读的非功能测试结论 → 产出：完成包含图表、瓶颈和建议的报告 → 验证：报告能回答容量、拐点、错误率和风险",
       "title": "性能报告",
       "learn": "形成可读的非功能测试结论",
+      "study": "先用 20 分钟掌握一个核心知识点：形成可读的非功能测试结论。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：完成包含图表、瓶颈和建议的报告。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "完成包含图表、瓶颈和建议的报告",
       "file": "test-projects/04-petstore-performance/reports/performance-report.md",
       "run": "git diff --check",
       "done": "报告能回答容量、拐点、错误率和风险",
+      "knowledge_check": "不看资料，能说明“形成可读的非功能测试结论”如何具体体现在本日的代码或文档产出中。",
       "stretch": "补充执行限制"
     },
     {
@@ -1422,12 +2341,23 @@
       "phase_day": 21,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-084/",
+      "learning_output_link": "知识：验证独立设计性能测试能力 → 产出：从目标到报告独立完成一次受控测试 → 验证：脚本、阈值、证据、报告齐全且未测试公共服务",
       "title": "阶段验收",
       "learn": "验证独立设计性能测试能力",
+      "study": "先用 20 分钟掌握一个核心知识点：验证独立设计性能测试能力。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：从目标到报告独立完成一次受控测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "从目标到报告独立完成一次受控测试",
       "file": "test-projects/04-petstore-performance/reports/phase-review.md",
       "run": "k6 run test-projects/04-petstore-performance/k6/smoke.js",
       "done": "脚本、阈值、证据、报告齐全且未测试公共服务",
+      "knowledge_check": "不看资料，能说明“验证独立设计性能测试能力”如何具体体现在本日的代码或文档产出中。",
       "stretch": "五分钟讲解容量结论"
     },
     {
@@ -1439,12 +2369,23 @@
       "phase_day": 1,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-085/",
+      "learning_output_link": "知识：学习环境配置分层 → 产出：实现默认值、环境变量和校验 → 验证：缺失必需配置时快速失败且敏感值不提交",
       "title": "配置模型",
       "learn": "学习环境配置分层",
+      "study": "先用 20 分钟掌握一个核心知识点：学习环境配置分层。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：实现默认值、环境变量和校验。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "实现默认值、环境变量和校验",
       "file": "test-projects/03-restful-booker-api/src/settings.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_settings.py -q",
       "done": "缺失必需配置时快速失败且敏感值不提交",
+      "knowledge_check": "不看资料，能说明“学习环境配置分层”如何具体体现在本日的代码或文档产出中。",
       "stretch": "支持多个环境"
     },
     {
@@ -1456,12 +2397,23 @@
       "phase_day": 2,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-086/",
+      "learning_output_link": "知识：理解可复现环境 → 产出：整理 pyproject 或 requirements 与锁定策略 → 验证：依赖声明可安装且无冲突",
       "title": "依赖锁定",
       "learn": "理解可复现环境",
+      "study": "先用 20 分钟掌握一个核心知识点：理解可复现环境。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：整理 pyproject 或 requirements 与锁定策略。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "整理 pyproject 或 requirements 与锁定策略",
       "file": "test-projects/03-restful-booker-api/pyproject.toml",
       "run": "python -m pip check",
       "done": "依赖声明可安装且无冲突",
+      "knowledge_check": "不看资料，能说明“理解可复现环境”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入开发依赖组"
     },
     {
@@ -1473,12 +2425,23 @@
       "phase_day": 3,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-087/",
+      "learning_output_link": "知识：学习容器化测试运行器 → 产出：创建自动化测试 Dockerfile → 验证：镜像构建成功且入口明确",
       "title": "Docker 化测试",
       "learn": "学习容器化测试运行器",
+      "study": "先用 20 分钟掌握一个核心知识点：学习容器化测试运行器。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建自动化测试 Dockerfile。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建自动化测试 Dockerfile",
       "file": "test-projects/03-restful-booker-api/Dockerfile",
       "run": "docker build -t qa-api-tests test-projects/03-restful-booker-api",
       "done": "镜像构建成功且入口明确",
+      "knowledge_check": "不看资料，能说明“学习容器化测试运行器”如何具体体现在本日的代码或文档产出中。",
       "stretch": "使用非 root 用户"
     },
     {
@@ -1490,12 +2453,23 @@
       "phase_day": 4,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-088/",
+      "learning_output_link": "知识：编排被测服务与测试 → 产出：创建测试环境 compose 文件 → 验证：配置解析成功且服务依赖清晰",
       "title": "Compose 环境",
       "learn": "编排被测服务与测试",
+      "study": "先用 20 分钟掌握一个核心知识点：编排被测服务与测试。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建测试环境 compose 文件。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建测试环境 compose 文件",
       "file": "test-projects/03-restful-booker-api/docker-compose.yml",
       "run": "docker compose -f test-projects/03-restful-booker-api/docker-compose.yml config",
       "done": "配置解析成功且服务依赖清晰",
+      "knowledge_check": "不看资料，能说明“编排被测服务与测试”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入 healthcheck"
     },
     {
@@ -1507,12 +2481,23 @@
       "phase_day": 5,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-089/",
+      "learning_output_link": "知识：避免服务未启动导致假失败 → 产出：实现轮询健康检查和超时 → 验证：可区分就绪、超时和连接错误",
       "title": "环境就绪检查",
       "learn": "避免服务未启动导致假失败",
+      "study": "先用 20 分钟掌握一个核心知识点：避免服务未启动导致假失败。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：实现轮询健康检查和超时。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "实现轮询健康检查和超时",
       "file": "test-projects/03-restful-booker-api/tools/wait_for_service.py",
       "run": "python test-projects/03-restful-booker-api/tools/wait_for_service.py",
       "done": "可区分就绪、超时和连接错误",
+      "knowledge_check": "不看资料，能说明“避免服务未启动导致假失败”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入指数退避"
     },
     {
@@ -1524,12 +2509,23 @@
       "phase_day": 6,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-090/",
+      "learning_output_link": "知识：理解 API 与数据层校验边界 → 产出：封装只读数据库连接 fixture → 验证：连接可关闭且查询参数化",
       "title": "数据库连接",
       "learn": "理解 API 与数据层校验边界",
+      "study": "先用 20 分钟掌握一个核心知识点：理解 API 与数据层校验边界。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：封装只读数据库连接 fixture。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "封装只读数据库连接 fixture",
       "file": "test-projects/03-restful-booker-api/src/db_client.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_db_connection.py -q",
       "done": "连接可关闭且查询参数化",
+      "knowledge_check": "不看资料，能说明“理解 API 与数据层校验边界”如何具体体现在本日的代码或文档产出中。",
       "stretch": "连接池"
     },
     {
@@ -1541,12 +2537,23 @@
       "phase_day": 7,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-091/",
+      "learning_output_link": "知识：学习何时需要跨层校验 → 产出：创建预订后验证关键数据库字段 → 验证：API 与 DB 关键字段一致",
       "title": "数据库断言",
       "learn": "学习何时需要跨层校验",
+      "study": "先用 20 分钟掌握一个核心知识点：学习何时需要跨层校验。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建预订后验证关键数据库字段。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建预订后验证关键数据库字段",
       "file": "test-projects/03-restful-booker-api/tests/test_booking_db.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_booking_db.py -q",
       "done": "API 与 DB 关键字段一致",
+      "knowledge_check": "不看资料，能说明“学习何时需要跨层校验”如何具体体现在本日的代码或文档产出中。",
       "stretch": "验证删除"
     },
     {
@@ -1558,12 +2565,23 @@
       "phase_day": 8,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-092/",
+      "learning_output_link": "知识：建立可靠 teardown → 产出：实现带前缀的测试数据清理工具 → 验证：默认 dry-run，只清理明确测试数据",
       "title": "数据清理",
       "learn": "建立可靠 teardown",
+      "study": "先用 20 分钟掌握一个核心知识点：建立可靠 teardown。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：实现带前缀的测试数据清理工具。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "实现带前缀的测试数据清理工具",
       "file": "test-projects/03-restful-booker-api/tools/cleanup_test_data.py",
       "run": "python test-projects/03-restful-booker-api/tools/cleanup_test_data.py --dry-run",
       "done": "默认 dry-run，只清理明确测试数据",
+      "knowledge_check": "不看资料，能说明“建立可靠 teardown”如何具体体现在本日的代码或文档产出中。",
       "stretch": "输出清理报告"
     },
     {
@@ -1575,12 +2593,23 @@
       "phase_day": 9,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-093/",
+      "learning_output_link": "知识：生成可控且可复现的数据 → 产出：支持 seed 和场景化 builder → 验证：同 seed 可复现且字段可覆盖",
       "title": "数据工厂进阶",
       "learn": "生成可控且可复现的数据",
+      "study": "先用 20 分钟掌握一个核心知识点：生成可控且可复现的数据。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：支持 seed 和场景化 builder。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "支持 seed 和场景化 builder",
       "file": "test-projects/03-restful-booker-api/tests/factories.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_factories.py -q",
       "done": "同 seed 可复现且字段可覆盖",
+      "knowledge_check": "不看资料，能说明“生成可控且可复现的数据”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加非法数据 builder"
     },
     {
@@ -1592,12 +2621,23 @@
       "phase_day": 10,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-094/",
+      "learning_output_link": "知识：提高 CI 失败诊断效率 → 产出：输出 JSON 或键值日志并脱敏 → 验证：日志含 test、method、status、duration",
       "title": "日志结构化",
       "learn": "提高 CI 失败诊断效率",
+      "study": "先用 20 分钟掌握一个核心知识点：提高 CI 失败诊断效率。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：输出 JSON 或键值日志并脱敏。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "输出 JSON 或键值日志并脱敏",
       "file": "test-projects/03-restful-booker-api/src/logging_config.py",
       "run": "pytest test-projects/03-restful-booker-api/tests -m smoke -q",
       "done": "日志含 test、method、status、duration",
+      "knowledge_check": "不看资料，能说明“提高 CI 失败诊断效率”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加 trace id"
     },
     {
@@ -1609,12 +2649,23 @@
       "phase_day": 11,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-095/",
+      "learning_output_link": "知识：提升失败信息质量 → 产出：封装字段、Schema、业务断言 → 验证：失败信息显示期望、实际和上下文",
       "title": "自定义断言",
       "learn": "提升失败信息质量",
+      "study": "先用 20 分钟掌握一个核心知识点：提升失败信息质量。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：封装字段、Schema、业务断言。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "封装字段、Schema、业务断言",
       "file": "test-projects/03-restful-booker-api/tests/assertions.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_assertions.py -q",
       "done": "失败信息显示期望、实际和上下文",
+      "knowledge_check": "不看资料，能说明“提升失败信息质量”如何具体体现在本日的代码或文档产出中。",
       "stretch": "支持软断言讨论"
     },
     {
@@ -1626,12 +2677,23 @@
       "phase_day": 12,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-096/",
+      "learning_output_link": "知识：让报告表达业务链路 → 产出：为 API client 和生命周期增加步骤 → 验证：报告步骤清楚且附件脱敏",
       "title": "Allure 步骤",
       "learn": "让报告表达业务链路",
+      "study": "先用 20 分钟掌握一个核心知识点：让报告表达业务链路。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为 API client 和生命周期增加步骤。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为 API client 和生命周期增加步骤",
       "file": "test-projects/03-restful-booker-api/tests/test_booking_lifecycle.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_booking_lifecycle.py --alluredir=allure-results",
       "done": "报告步骤清楚且附件脱敏",
+      "knowledge_check": "不看资料，能说明“让报告表达业务链路”如何具体体现在本日的代码或文档产出中。",
       "stretch": "附加响应摘要"
     },
     {
@@ -1643,12 +2705,23 @@
       "phase_day": 13,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-097/",
+      "learning_output_link": "知识：观察趋势而非单次结果 → 产出：保存测试历史和趋势说明 → 验证：报告路径稳定且历史策略明确",
       "title": "报告历史",
       "learn": "观察趋势而非单次结果",
+      "study": "先用 20 分钟掌握一个核心知识点：观察趋势而非单次结果。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：保存测试历史和趋势说明。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "保存测试历史和趋势说明",
       "file": "test-projects/03-restful-booker-api/reports/README.md",
       "run": "pytest test-projects/03-restful-booker-api/tests --junitxml=reports/latest.xml",
       "done": "报告路径稳定且历史策略明确",
+      "knowledge_check": "不看资料，能说明“观察趋势而非单次结果”如何具体体现在本日的代码或文档产出中。",
       "stretch": "制作趋势脚本"
     },
     {
@@ -1660,12 +2733,23 @@
       "phase_day": 14,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-098/",
+      "learning_output_link": "知识：建立团队可理解的分类 → 产出：定义 smoke、regression、negative、db → 验证：无未知 marker 且分类说明清楚",
       "title": "Marker 规范",
       "learn": "建立团队可理解的分类",
+      "study": "先用 20 分钟掌握一个核心知识点：建立团队可理解的分类。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：定义 smoke、regression、negative、db。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "定义 smoke、regression、negative、db",
       "file": "test-projects/03-restful-booker-api/pytest.ini",
       "run": "pytest test-projects/03-restful-booker-api/tests --markers",
       "done": "无未知 marker 且分类说明清楚",
+      "knowledge_check": "不看资料，能说明“建立团队可理解的分类”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加 owner 标记"
     },
     {
@@ -1677,12 +2761,23 @@
       "phase_day": 15,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-099/",
+      "learning_output_link": "知识：根据变更范围运行测试 → 产出：编写按标签和路径的运行脚本 → 验证：参数错误会快速失败",
       "title": "选择性执行",
       "learn": "根据变更范围运行测试",
+      "study": "先用 20 分钟掌握一个核心知识点：根据变更范围运行测试。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：编写按标签和路径的运行脚本。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "编写按标签和路径的运行脚本",
       "file": "test-projects/03-restful-booker-api/tools/run_tests.ps1",
       "run": "powershell -File test-projects/03-restful-booker-api/tools/run_tests.ps1 -Suite smoke",
       "done": "参数错误会快速失败",
+      "knowledge_check": "不看资料，能说明“根据变更范围运行测试”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加 dry-run"
     },
     {
@@ -1694,12 +2789,23 @@
       "phase_day": 16,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-100/",
+      "learning_output_link": "知识：量化并行收益和风险 → 产出：比较串行与 2 workers 执行 → 验证：记录耗时、失败和资源差异",
       "title": "并行基线",
       "learn": "量化并行收益和风险",
+      "study": "先用 20 分钟掌握一个核心知识点：量化并行收益和风险。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：比较串行与 2 workers 执行。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "比较串行与 2 workers 执行",
       "file": "test-projects/03-restful-booker-api/reports/parallel.md",
       "run": "pytest test-projects/03-restful-booker-api/tests -n 2 -q",
       "done": "记录耗时、失败和资源差异",
+      "knowledge_check": "不看资料，能说明“量化并行收益和风险”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试 4 workers"
     },
     {
@@ -1711,12 +2817,23 @@
       "phase_day": 17,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-101/",
+      "learning_output_link": "知识：学习重复执行诊断 → 产出：重复运行疑似不稳定测试并统计 → 验证：结果显示运行次数、失败次数和种子",
       "title": "flaky 识别",
       "learn": "学习重复执行诊断",
+      "study": "先用 20 分钟掌握一个核心知识点：学习重复执行诊断。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：重复运行疑似不稳定测试并统计。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "重复运行疑似不稳定测试并统计",
       "file": "test-projects/03-restful-booker-api/tools/repeat_test.py",
       "run": "python test-projects/03-restful-booker-api/tools/repeat_test.py",
       "done": "结果显示运行次数、失败次数和种子",
+      "knowledge_check": "不看资料，能说明“学习重复执行诊断”如何具体体现在本日的代码或文档产出中。",
       "stretch": "不要自动忽略失败"
     },
     {
@@ -1728,12 +2845,23 @@
       "phase_day": 18,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-102/",
+      "learning_output_link": "知识：限制重试范围并保留首次失败 → 产出：为明确瞬态场景配置一次重试 → 验证：文档说明哪些可重试、哪些禁止",
       "title": "重试策略",
       "learn": "限制重试范围并保留首次失败",
+      "study": "先用 20 分钟掌握一个核心知识点：限制重试范围并保留首次失败。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为明确瞬态场景配置一次重试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为明确瞬态场景配置一次重试",
       "file": "test-projects/03-restful-booker-api/docs/retry-policy.md",
       "run": "pytest test-projects/03-restful-booker-api/tests -m transient -q",
       "done": "文档说明哪些可重试、哪些禁止",
+      "knowledge_check": "不看资料，能说明“限制重试范围并保留首次失败”如何具体体现在本日的代码或文档产出中。",
       "stretch": "验证首次失败证据"
     },
     {
@@ -1745,12 +2873,23 @@
       "phase_day": 19,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-103/",
+      "learning_output_link": "知识：防止测试无限等待 → 产出：为 HTTP、fixture、CI 设置分层超时 → 验证：超时有明确错误且值有依据",
       "title": "超时治理",
       "learn": "防止测试无限等待",
+      "study": "先用 20 分钟掌握一个核心知识点：防止测试无限等待。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为 HTTP、fixture、CI 设置分层超时。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为 HTTP、fixture、CI 设置分层超时",
       "file": "test-projects/03-restful-booker-api/pyproject.toml",
       "run": "pytest test-projects/03-restful-booker-api/tests -m smoke -q",
       "done": "超时有明确错误且值有依据",
+      "knowledge_check": "不看资料，能说明“防止测试无限等待”如何具体体现在本日的代码或文档产出中。",
       "stretch": "记录慢测试"
     },
     {
@@ -1762,12 +2901,23 @@
       "phase_day": 20,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-104/",
+      "learning_output_link": "知识：建立自动执行 → 产出：创建 pull request smoke workflow → 验证：workflow 含安装、执行和报告上传",
       "title": "GitHub Actions 基础",
       "learn": "建立自动执行",
+      "study": "先用 20 分钟掌握一个核心知识点：建立自动执行。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建 pull request smoke workflow。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建 pull request smoke workflow",
       "file": "test-projects/03-restful-booker-api/.github/workflows/api-smoke.yml",
       "run": "pytest test-projects/03-restful-booker-api/tests -m smoke -q",
       "done": "workflow 含安装、执行和报告上传",
+      "knowledge_check": "不看资料，能说明“建立自动执行”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入依赖缓存"
     },
     {
@@ -1779,12 +2929,23 @@
       "phase_day": 21,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-105/",
+      "learning_output_link": "知识：区分快速反馈和完整回归 → 产出：创建 nightly/full regression workflow → 验证：smoke 与 regression 时机和超时不同",
       "title": "回归流水线",
       "learn": "区分快速反馈和完整回归",
+      "study": "先用 20 分钟掌握一个核心知识点：区分快速反馈和完整回归。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建 nightly/full regression workflow。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建 nightly/full regression workflow",
       "file": "test-projects/03-restful-booker-api/.github/workflows/api-regression.yml",
       "run": "pytest test-projects/03-restful-booker-api/tests -m regression -q",
       "done": "smoke 与 regression 时机和超时不同",
+      "knowledge_check": "不看资料，能说明“区分快速反馈和完整回归”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加手动触发参数"
     },
     {
@@ -1796,12 +2957,23 @@
       "phase_day": 22,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-106/",
+      "learning_output_link": "知识：把通过标准写成规则 → 产出：设置测试、覆盖率或失败率门禁 → 验证：规则可衡量且失败时阻止流水线",
       "title": "质量门禁",
       "learn": "把通过标准写成规则",
+      "study": "先用 20 分钟掌握一个核心知识点：把通过标准写成规则。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：设置测试、覆盖率或失败率门禁。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "设置测试、覆盖率或失败率门禁",
       "file": "test-projects/03-restful-booker-api/docs/quality-gates.md",
       "run": "pytest test-projects/03-restful-booker-api/tests -q",
       "done": "规则可衡量且失败时阻止流水线",
+      "knowledge_check": "不看资料，能说明“把通过标准写成规则”如何具体体现在本日的代码或文档产出中。",
       "stretch": "区分警告指标"
     },
     {
@@ -1813,12 +2985,23 @@
       "phase_day": 23,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-107/",
+      "learning_output_link": "知识：连接需求、风险和自动化 → 产出：创建需求-用例-脚本追踪表 → 验证：关键需求均有脚本或风险说明",
       "title": "测试覆盖映射",
       "learn": "连接需求、风险和自动化",
+      "study": "先用 20 分钟掌握一个核心知识点：连接需求、风险和自动化。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建需求-用例-脚本追踪表。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建需求-用例-脚本追踪表",
       "file": "test-projects/03-restful-booker-api/docs/traceability.md",
       "run": "pytest test-projects/03-restful-booker-api/tests --collect-only -q",
       "done": "关键需求均有脚本或风险说明",
+      "knowledge_check": "不看资料，能说明“连接需求、风险和自动化”如何具体体现在本日的代码或文档产出中。",
       "stretch": "自动生成收集清单"
     },
     {
@@ -1830,12 +3013,23 @@
       "phase_day": 24,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-108/",
+      "learning_output_link": "知识：统一格式、lint 和类型检查 → 产出：配置 ruff 或等效工具 → 验证：检查可执行且规则不过度噪声",
       "title": "代码质量",
       "learn": "统一格式、lint 和类型检查",
+      "study": "先用 20 分钟掌握一个核心知识点：统一格式、lint 和类型检查。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：配置 ruff 或等效工具。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "配置 ruff 或等效工具",
       "file": "test-projects/03-restful-booker-api/pyproject.toml",
       "run": "ruff check test-projects/03-restful-booker-api",
       "done": "检查可执行且规则不过度噪声",
+      "knowledge_check": "不看资料，能说明“统一格式、lint 和类型检查”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入 pre-commit"
     },
     {
@@ -1847,12 +3041,23 @@
       "phase_day": 25,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-109/",
+      "learning_output_link": "知识：避免账号和 Token 泄漏 → 产出：增加 env 示例、忽略规则和脱敏测试 → 验证：日志与仓库不包含真实凭据",
       "title": "Secret 治理",
       "learn": "避免账号和 Token 泄漏",
+      "study": "先用 20 分钟掌握一个核心知识点：避免账号和 Token 泄漏。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：增加 env 示例、忽略规则和脱敏测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "增加 env 示例、忽略规则和脱敏测试",
       "file": "test-projects/03-restful-booker-api/tests/test_secret_masking.py",
       "run": "pytest test-projects/03-restful-booker-api/tests/test_secret_masking.py -q",
       "done": "日志与仓库不包含真实凭据",
+      "knowledge_check": "不看资料，能说明“避免账号和 Token 泄漏”如何具体体现在本日的代码或文档产出中。",
       "stretch": "扫描测试产物"
     },
     {
@@ -1864,12 +3069,23 @@
       "phase_day": 26,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-110/",
+      "learning_output_link": "知识：让别人能新增测试 → 产出：编写贡献、命名、fixture 和调试规范 → 验证：新成员按文档能运行并新增测试",
       "title": "维护指南",
       "learn": "让别人能新增测试",
+      "study": "先用 20 分钟掌握一个核心知识点：让别人能新增测试。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：编写贡献、命名、fixture 和调试规范。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "编写贡献、命名、fixture 和调试规范",
       "file": "test-projects/03-restful-booker-api/CONTRIBUTING.md",
       "run": "pytest test-projects/03-restful-booker-api/tests -m smoke -q",
       "done": "新成员按文档能运行并新增测试",
+      "knowledge_check": "不看资料，能说明“让别人能新增测试”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入 PR checklist"
     },
     {
@@ -1881,12 +3097,23 @@
       "phase_day": 27,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-111/",
+      "learning_output_link": "知识：统一本地和 CI 入口 → 产出：创建 verify.ps1 执行格式、lint、smoke → 验证：一个命令给出明确阶段结果",
       "title": "一键验证",
       "learn": "统一本地和 CI 入口",
+      "study": "先用 20 分钟掌握一个核心知识点：统一本地和 CI 入口。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建 verify.ps1 执行格式、lint、smoke。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建 verify.ps1 执行格式、lint、smoke",
       "file": "test-projects/03-restful-booker-api/tools/verify.ps1",
       "run": "powershell -File test-projects/03-restful-booker-api/tools/verify.ps1",
       "done": "一个命令给出明确阶段结果",
+      "knowledge_check": "不看资料，能说明“统一本地和 CI 入口”如何具体体现在本日的代码或文档产出中。",
       "stretch": "失败即停止"
     },
     {
@@ -1898,12 +3125,23 @@
       "phase_day": 28,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-112/",
+      "learning_output_link": "知识：评估工程是否可被团队持续使用 → 产出：从干净环境按 README 执行并写工程化报告 → 验证：配置、环境、报告、CI、维护文档完整",
       "title": "阶段验收",
       "learn": "评估工程是否可被团队持续使用",
+      "study": "先用 20 分钟掌握一个核心知识点：评估工程是否可被团队持续使用。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：从干净环境按 README 执行并写工程化报告。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "从干净环境按 README 执行并写工程化报告",
       "file": "test-projects/03-restful-booker-api/reports/engineering-review.md",
       "run": "powershell -File test-projects/03-restful-booker-api/tools/verify.ps1",
       "done": "配置、环境、报告、CI、维护文档完整",
+      "knowledge_check": "不看资料，能说明“评估工程是否可被团队持续使用”如何具体体现在本日的代码或文档产出中。",
       "stretch": "列出三项技术债"
     },
     {
@@ -1915,12 +3153,23 @@
       "phase_day": 1,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-113/",
+      "learning_output_link": "知识：理解消费者与提供者契约 → 产出：为一个 API 定义消费者期望 → 验证：契约包含请求、响应和版本",
       "title": "契约测试进阶",
       "learn": "理解消费者与提供者契约",
+      "study": "先用 20 分钟掌握一个核心知识点：理解消费者与提供者契约。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为一个 API 定义消费者期望。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为一个 API 定义消费者期望",
       "file": "advanced-quality/contracts/consumer_contract.json",
       "run": "pytest advanced-quality/contracts/test_contract.py -q",
       "done": "契约包含请求、响应和版本",
+      "knowledge_check": "不看资料，能说明“理解消费者与提供者契约”如何具体体现在本日的代码或文档产出中。",
       "stretch": "比较 Schema 测试"
     },
     {
@@ -1932,12 +3181,23 @@
       "phase_day": 2,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-114/",
+      "learning_output_link": "知识：识别 breaking change → 产出：制造字段删除并验证契约失败 → 验证：破坏性变化能被测试捕获",
       "title": "契约破坏验证",
       "learn": "识别 breaking change",
+      "study": "先用 20 分钟掌握一个核心知识点：识别 breaking change。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：制造字段删除并验证契约失败。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "制造字段删除并验证契约失败",
       "file": "advanced-quality/contracts/test_breaking_change.py",
       "run": "pytest advanced-quality/contracts/test_breaking_change.py -q",
       "done": "破坏性变化能被测试捕获",
+      "knowledge_check": "不看资料，能说明“识别 breaking change”如何具体体现在本日的代码或文档产出中。",
       "stretch": "定义兼容变化"
     },
     {
@@ -1949,12 +3209,23 @@
       "phase_day": 3,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-115/",
+      "learning_output_link": "知识：隔离不稳定下游 → 产出：创建本地 Mock 响应服务 → 验证：正常、超时、5xx 可配置",
       "title": "Mock Server",
       "learn": "隔离不稳定下游",
+      "study": "先用 20 分钟掌握一个核心知识点：隔离不稳定下游。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建本地 Mock 响应服务。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建本地 Mock 响应服务",
       "file": "advanced-quality/mocks/mock_server.py",
       "run": "pytest advanced-quality/mocks/test_mock_server.py -q",
       "done": "正常、超时、5xx 可配置",
+      "knowledge_check": "不看资料，能说明“隔离不稳定下游”如何具体体现在本日的代码或文档产出中。",
       "stretch": "记录请求"
     },
     {
@@ -1966,12 +3237,23 @@
       "phase_day": 4,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-116/",
+      "learning_output_link": "知识：区分 stub、mock、fake → 产出：为三个场景选择合适替身并实现一个 → 验证：文档说明取舍且实现可运行",
       "title": "测试替身选择",
       "learn": "区分 stub、mock、fake",
+      "study": "先用 20 分钟掌握一个核心知识点：区分 stub、mock、fake。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为三个场景选择合适替身并实现一个。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为三个场景选择合适替身并实现一个",
       "file": "advanced-quality/mocks/README.md",
       "run": "pytest advanced-quality/mocks -q",
       "done": "文档说明取舍且实现可运行",
+      "knowledge_check": "不看资料，能说明“区分 stub、mock、fake”如何具体体现在本日的代码或文档产出中。",
       "stretch": "避免过度 Mock"
     },
     {
@@ -1983,12 +3265,23 @@
       "phase_day": 5,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-117/",
+      "learning_output_link": "知识：测试最终一致性 → 产出：实现带超时的状态轮询 helper → 验证：成功、超时、异常均有测试",
       "title": "异步轮询",
       "learn": "测试最终一致性",
+      "study": "先用 20 分钟掌握一个核心知识点：测试最终一致性。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：实现带超时的状态轮询 helper。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "实现带超时的状态轮询 helper",
       "file": "advanced-quality/async/wait_until.py",
       "run": "pytest advanced-quality/async/test_wait_until.py -q",
       "done": "成功、超时、异常均有测试",
+      "knowledge_check": "不看资料，能说明“测试最终一致性”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入退避"
     },
     {
@@ -2000,12 +3293,23 @@
       "phase_day": 6,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-118/",
+      "learning_output_link": "知识：验证重复请求影响 → 产出：设计重复提交场景并断言副作用 → 验证：重复操作不会产生意外重复数据或被记录为缺陷",
       "title": "幂等与重复消费",
       "learn": "验证重复请求影响",
+      "study": "先用 20 分钟掌握一个核心知识点：验证重复请求影响。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：设计重复提交场景并断言副作用。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "设计重复提交场景并断言副作用",
       "file": "advanced-quality/async/test_idempotency.py",
       "run": "pytest advanced-quality/async/test_idempotency.py -q",
       "done": "重复操作不会产生意外重复数据或被记录为缺陷",
+      "knowledge_check": "不看资料，能说明“验证重复请求影响”如何具体体现在本日的代码或文档产出中。",
       "stretch": "并发重复提交"
     },
     {
@@ -2017,12 +3321,23 @@
       "phase_day": 7,
       "phase_total_days": 28,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-119/",
+      "learning_output_link": "知识：理解生产、消费和确认 → 产出：为模拟队列编写消息流程测试 → 验证：覆盖成功、重试、死信概念",
       "title": "消息测试模型",
       "learn": "理解生产、消费和确认",
+      "study": "先用 20 分钟掌握一个核心知识点：理解生产、消费和确认。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为模拟队列编写消息流程测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为模拟队列编写消息流程测试",
       "file": "advanced-quality/async/test_message_flow.py",
       "run": "pytest advanced-quality/async/test_message_flow.py -q",
       "done": "覆盖成功、重试、死信概念",
+      "knowledge_check": "不看资料，能说明“理解生产、消费和确认”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试乱序消息"
     },
     {
@@ -2034,12 +3349,23 @@
       "phase_day": 8,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-120/",
+      "learning_output_link": "知识：理解截图比较和阈值 → 产出：创建稳定页面视觉基线 → 验证：基线可复现且环境被记录",
       "title": "视觉基线",
       "learn": "理解截图比较和阈值",
+      "study": "先用 20 分钟掌握一个核心知识点：理解截图比较和阈值。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：创建稳定页面视觉基线。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "创建稳定页面视觉基线",
       "file": "advanced-quality/visual/test_visual_baseline.py",
       "run": "pytest advanced-quality/visual/test_visual_baseline.py -q",
       "done": "基线可复现且环境被记录",
+      "knowledge_check": "不看资料，能说明“理解截图比较和阈值”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加跨视口"
     },
     {
@@ -2051,12 +3377,23 @@
       "phase_day": 9,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-121/",
+      "learning_output_link": "知识：降低视觉误报 → 产出：屏蔽时间、动画或随机内容 → 验证：动态内容变化不导致误报，真实变化会失败",
       "title": "动态区域处理",
       "learn": "降低视觉误报",
+      "study": "先用 20 分钟掌握一个核心知识点：降低视觉误报。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：屏蔽时间、动画或随机内容。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "屏蔽时间、动画或随机内容",
       "file": "advanced-quality/visual/test_masking.py",
       "run": "pytest advanced-quality/visual/test_masking.py -q",
       "done": "动态内容变化不导致误报，真实变化会失败",
+      "knowledge_check": "不看资料，能说明“降低视觉误报”如何具体体现在本日的代码或文档产出中。",
       "stretch": "比较阈值"
     },
     {
@@ -2068,12 +3405,23 @@
       "phase_day": 10,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-122/",
+      "learning_output_link": "知识：覆盖桌面、平板、手机视口 → 产出：参数化三个视口的核心页面 → 验证：无横向溢出且关键控件可见",
       "title": "响应式布局",
       "learn": "覆盖桌面、平板、手机视口",
+      "study": "先用 20 分钟掌握一个核心知识点：覆盖桌面、平板、手机视口。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：参数化三个视口的核心页面。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "参数化三个视口的核心页面",
       "file": "advanced-quality/visual/test_responsive.py",
       "run": "pytest advanced-quality/visual/test_responsive.py -q",
       "done": "无横向溢出且关键控件可见",
+      "knowledge_check": "不看资料，能说明“覆盖桌面、平板、手机视口”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试设备像素比"
     },
     {
@@ -2085,12 +3433,23 @@
       "phase_day": 11,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-123/",
+      "learning_output_link": "知识：验证非鼠标操作 → 产出：覆盖 Tab、Enter、Escape 流程 → 验证：焦点顺序和操作结果正确",
       "title": "键盘可访问性",
       "learn": "验证非鼠标操作",
+      "study": "先用 20 分钟掌握一个核心知识点：验证非鼠标操作。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖 Tab、Enter、Escape 流程。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖 Tab、Enter、Escape 流程",
       "file": "advanced-quality/accessibility/test_keyboard.py",
       "run": "pytest advanced-quality/accessibility/test_keyboard.py -q",
       "done": "焦点顺序和操作结果正确",
+      "knowledge_check": "不看资料，能说明“验证非鼠标操作”如何具体体现在本日的代码或文档产出中。",
       "stretch": "检查 focus 可见"
     },
     {
@@ -2102,12 +3461,23 @@
       "phase_day": 12,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-124/",
+      "learning_output_link": "知识：学习自动扫描的边界 → 产出：接入 axe 或等效规则检查 → 验证：严重违规被报告且有页面上下文",
       "title": "可访问性扫描",
       "learn": "学习自动扫描的边界",
+      "study": "先用 20 分钟掌握一个核心知识点：学习自动扫描的边界。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：接入 axe 或等效规则检查。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "接入 axe 或等效规则检查",
       "file": "advanced-quality/accessibility/test_axe.py",
       "run": "pytest advanced-quality/accessibility/test_axe.py -q",
       "done": "严重违规被报告且有页面上下文",
+      "knowledge_check": "不看资料，能说明“学习自动扫描的边界”如何具体体现在本日的代码或文档产出中。",
       "stretch": "人工检查一项"
     },
     {
@@ -2119,12 +3489,23 @@
       "phase_day": 13,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-125/",
+      "learning_output_link": "知识：验证表单名称和错误关联 → 产出：覆盖 label、role、aria-describedby → 验证：关键控件有可访问名称，错误可关联",
       "title": "语义与标签",
       "learn": "验证表单名称和错误关联",
+      "study": "先用 20 分钟掌握一个核心知识点：验证表单名称和错误关联。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖 label、role、aria-describedby。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖 label、role、aria-describedby",
       "file": "advanced-quality/accessibility/test_semantics.py",
       "run": "pytest advanced-quality/accessibility/test_semantics.py -q",
       "done": "关键控件有可访问名称，错误可关联",
+      "knowledge_check": "不看资料，能说明“验证表单名称和错误关联”如何具体体现在本日的代码或文档产出中。",
       "stretch": "检查标题层级"
     },
     {
@@ -2136,12 +3517,23 @@
       "phase_day": 14,
       "phase_total_days": 28,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-126/",
+      "learning_output_link": "知识：理解触摸和小屏风险 → 产出：验证移动视口下核心流程 → 验证：关键按钮可点击且布局无阻断",
       "title": "移动端交互",
       "learn": "理解触摸和小屏风险",
+      "study": "先用 20 分钟掌握一个核心知识点：理解触摸和小屏风险。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：验证移动视口下核心流程。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "验证移动视口下核心流程",
       "file": "advanced-quality/mobile/test_mobile_flow.py",
       "run": "pytest advanced-quality/mobile/test_mobile_flow.py -q",
       "done": "关键按钮可点击且布局无阻断",
+      "knowledge_check": "不看资料，能说明“理解触摸和小屏风险”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试横屏"
     },
     {
@@ -2153,12 +3545,23 @@
       "phase_day": 15,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-127/",
+      "learning_output_link": "知识：测试等待和用户反馈 → 产出：模拟高延迟加载 → 验证：加载态、超时或重试行为有断言",
       "title": "慢网络",
       "learn": "测试等待和用户反馈",
+      "study": "先用 20 分钟掌握一个核心知识点：测试等待和用户反馈。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：模拟高延迟加载。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "模拟高延迟加载",
       "file": "advanced-quality/network/test_slow_network.py",
       "run": "pytest advanced-quality/network/test_slow_network.py -q",
       "done": "加载态、超时或重试行为有断言",
+      "knowledge_check": "不看资料，能说明“测试等待和用户反馈”如何具体体现在本日的代码或文档产出中。",
       "stretch": "模拟图片加载失败"
     },
     {
@@ -2170,12 +3573,23 @@
       "phase_day": 16,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-128/",
+      "learning_output_link": "知识：验证网络切换后的恢复能力 → 产出：实现 offline 到 online 场景 → 验证：离线提示正确，恢复后可继续",
       "title": "断网恢复",
       "learn": "验证网络切换后的恢复能力",
+      "study": "先用 20 分钟掌握一个核心知识点：验证网络切换后的恢复能力。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：实现 offline 到 online 场景。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "实现 offline 到 online 场景",
       "file": "advanced-quality/network/test_offline_recovery.py",
       "run": "pytest advanced-quality/network/test_offline_recovery.py -q",
       "done": "离线提示正确，恢复后可继续",
+      "knowledge_check": "不看资料，能说明“验证网络切换后的恢复能力”如何具体体现在本日的代码或文档产出中。",
       "stretch": "重复切换"
     },
     {
@@ -2187,12 +3601,23 @@
       "phase_day": 17,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-129/",
+      "learning_output_link": "知识：验证错误处理与重试边界 → 产出：拦截 API 返回 500/503 → 验证：用户提示和重试行为符合设计",
       "title": "服务 5xx",
       "learn": "验证错误处理与重试边界",
+      "study": "先用 20 分钟掌握一个核心知识点：验证错误处理与重试边界。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：拦截 API 返回 500/503。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "拦截 API 返回 500/503",
       "file": "advanced-quality/network/test_server_errors.py",
       "run": "pytest advanced-quality/network/test_server_errors.py -q",
       "done": "用户提示和重试行为符合设计",
+      "knowledge_check": "不看资料，能说明“验证错误处理与重试边界”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加 429 限流"
     },
     {
@@ -2204,12 +3629,23 @@
       "phase_day": 18,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-130/",
+      "learning_output_link": "知识：覆盖未登录、过期和伪造凭据 → 产出：编写认证负向测试 → 验证：三类无效凭据均不能访问",
       "title": "认证边界",
       "learn": "覆盖未登录、过期和伪造凭据",
+      "study": "先用 20 分钟掌握一个核心知识点：覆盖未登录、过期和伪造凭据。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：编写认证负向测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "编写认证负向测试",
       "file": "advanced-quality/security/test_authentication.py",
       "run": "pytest advanced-quality/security/test_authentication.py -q",
       "done": "三类无效凭据均不能访问",
+      "knowledge_check": "不看资料，能说明“覆盖未登录、过期和伪造凭据”如何具体体现在本日的代码或文档产出中。",
       "stretch": "Token 日志脱敏"
     },
     {
@@ -2221,12 +3657,23 @@
       "phase_day": 19,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-131/",
+      "learning_output_link": "知识：验证水平和垂直越权 → 产出：设计用户 A 访问用户 B 数据测试 → 验证：未授权访问被拒绝且无数据泄漏",
       "title": "授权边界",
       "learn": "验证水平和垂直越权",
+      "study": "先用 20 分钟掌握一个核心知识点：验证水平和垂直越权。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：设计用户 A 访问用户 B 数据测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "设计用户 A 访问用户 B 数据测试",
       "file": "advanced-quality/security/test_authorization.py",
       "run": "pytest advanced-quality/security/test_authorization.py -q",
       "done": "未授权访问被拒绝且无数据泄漏",
+      "knowledge_check": "不看资料，能说明“验证水平和垂直越权”如何具体体现在本日的代码或文档产出中。",
       "stretch": "验证管理员边界"
     },
     {
@@ -2238,12 +3685,23 @@
       "phase_day": 20,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-132/",
+      "learning_output_link": "知识：覆盖注入式和超长输入安全行为 → 产出：建立安全输入参数集 → 验证：服务不崩溃且错误响应不泄漏内部信息",
       "title": "输入安全",
       "learn": "覆盖注入式和超长输入安全行为",
+      "study": "先用 20 分钟掌握一个核心知识点：覆盖注入式和超长输入安全行为。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：建立安全输入参数集。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "建立安全输入参数集",
       "file": "advanced-quality/security/test_input_handling.py",
       "run": "pytest advanced-quality/security/test_input_handling.py -q",
       "done": "服务不崩溃且错误响应不泄漏内部信息",
+      "knowledge_check": "不看资料，能说明“覆盖注入式和超长输入安全行为”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试文件名输入"
     },
     {
@@ -2255,12 +3713,23 @@
       "phase_day": 21,
       "phase_total_days": 28,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-133/",
+      "learning_output_link": "知识：检查响应、日志、报告泄漏 → 产出：扫描测试产物中的 Token/密码模式 → 验证：示例秘密可检测，正常数据不误报",
       "title": "敏感信息",
       "learn": "检查响应、日志、报告泄漏",
+      "study": "先用 20 分钟掌握一个核心知识点：检查响应、日志、报告泄漏。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：扫描测试产物中的 Token/密码模式。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "扫描测试产物中的 Token/密码模式",
       "file": "advanced-quality/security/test_secret_leaks.py",
       "run": "pytest advanced-quality/security/test_secret_leaks.py -q",
       "done": "示例秘密可检测，正常数据不误报",
+      "knowledge_check": "不看资料，能说明“检查响应、日志、报告泄漏”如何具体体现在本日的代码或文档产出中。",
       "stretch": "扫描截图文本"
     },
     {
@@ -2272,12 +3741,23 @@
       "phase_day": 22,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-134/",
+      "learning_output_link": "知识：验证边界日期和时区转换 → 产出：覆盖跨日、闰日、夏令时场景 → 验证：固定时钟下结果可复现",
       "title": "时间与时区",
       "learn": "验证边界日期和时区转换",
+      "study": "先用 20 分钟掌握一个核心知识点：验证边界日期和时区转换。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖跨日、闰日、夏令时场景。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖跨日、闰日、夏令时场景",
       "file": "advanced-quality/time/test_timezones.py",
       "run": "pytest advanced-quality/time/test_timezones.py -q",
       "done": "固定时钟下结果可复现",
+      "knowledge_check": "不看资料，能说明“验证边界日期和时区转换”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试过期时间"
     },
     {
@@ -2289,12 +3769,23 @@
       "phase_day": 23,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-135/",
+      "learning_output_link": "知识：测试多语言和字符集 → 产出：覆盖中文、英文、长文案和 RTL 风险 → 验证：字符不乱码，布局关键元素可用",
       "title": "本地化",
       "learn": "测试多语言和字符集",
+      "study": "先用 20 分钟掌握一个核心知识点：测试多语言和字符集。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：覆盖中文、英文、长文案和 RTL 风险。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "覆盖中文、英文、长文案和 RTL 风险",
       "file": "advanced-quality/i18n/test_localization.py",
       "run": "pytest advanced-quality/i18n/test_localization.py -q",
       "done": "字符不乱码，布局关键元素可用",
+      "knowledge_check": "不看资料，能说明“测试多语言和字符集”如何具体体现在本日的代码或文档产出中。",
       "stretch": "验证数字日期格式"
     },
     {
@@ -2306,12 +3797,23 @@
       "phase_day": 24,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-136/",
+      "learning_output_link": "知识：验证类型、大小和错误处理 → 产出：测试允许、拒绝和边界文件 → 验证：文件策略被断言且临时文件清理",
       "title": "文件上传",
       "learn": "验证类型、大小和错误处理",
+      "study": "先用 20 分钟掌握一个核心知识点：验证类型、大小和错误处理。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：测试允许、拒绝和边界文件。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "测试允许、拒绝和边界文件",
       "file": "advanced-quality/files/test_upload.py",
       "run": "pytest advanced-quality/files/test_upload.py -q",
       "done": "文件策略被断言且临时文件清理",
+      "knowledge_check": "不看资料，能说明“验证类型、大小和错误处理”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试同名文件"
     },
     {
@@ -2323,12 +3825,23 @@
       "phase_day": 25,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-137/",
+      "learning_output_link": "知识：校验文件名、类型和内容 → 产出：实现下载并检查内容 → 验证：下载文件存在、类型正确、内容可验证",
       "title": "下载验证",
       "learn": "校验文件名、类型和内容",
+      "study": "先用 20 分钟掌握一个核心知识点：校验文件名、类型和内容。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：实现下载并检查内容。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "实现下载并检查内容",
       "file": "advanced-quality/files/test_download.py",
       "run": "pytest advanced-quality/files/test_download.py -q",
       "done": "下载文件存在、类型正确、内容可验证",
+      "knowledge_check": "不看资料，能说明“校验文件名、类型和内容”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测试并发下载"
     },
     {
@@ -2340,12 +3853,23 @@
       "phase_day": 26,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-138/",
+      "learning_output_link": "知识：用状态转换发现遗漏 → 产出：为订单或 Todo 建立状态机并测试 → 验证：允许和禁止的转换均被覆盖",
       "title": "状态机测试",
       "learn": "用状态转换发现遗漏",
+      "study": "先用 20 分钟掌握一个核心知识点：用状态转换发现遗漏。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为订单或 Todo 建立状态机并测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为订单或 Todo 建立状态机并测试",
       "file": "advanced-quality/state/test_state_machine.py",
       "run": "pytest advanced-quality/state/test_state_machine.py -q",
       "done": "允许和禁止的转换均被覆盖",
+      "knowledge_check": "不看资料，能说明“用状态转换发现遗漏”如何具体体现在本日的代码或文档产出中。",
       "stretch": "尝试属性测试"
     },
     {
@@ -2357,12 +3881,23 @@
       "phase_day": 27,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-139/",
+      "learning_output_link": "知识：按风险分配自动化层级 → 产出：为四项目写风险与覆盖策略 → 验证：策略说明测什么、不测什么和原因",
       "title": "风险测试策略",
       "learn": "按风险分配自动化层级",
+      "study": "先用 20 分钟掌握一个核心知识点：按风险分配自动化层级。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为四项目写风险与覆盖策略。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为四项目写风险与覆盖策略",
       "file": "advanced-quality/TEST-STRATEGY.md",
       "run": "git diff --check",
       "done": "策略说明测什么、不测什么和原因",
+      "knowledge_check": "不看资料，能说明“按风险分配自动化层级”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加测试金字塔"
     },
     {
@@ -2374,12 +3909,23 @@
       "phase_day": 28,
       "phase_total_days": 28,
       "week": 4,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-140/",
+      "learning_output_link": "知识：整合高级质量能力 → 产出：选择三项专项形成可运行质量套件 → 验证：至少三类专项有脚本、证据和局限说明",
       "title": "阶段验收",
       "learn": "整合高级质量能力",
+      "study": "先用 20 分钟掌握一个核心知识点：整合高级质量能力。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：选择三项专项形成可运行质量套件。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "选择三项专项形成可运行质量套件",
       "file": "advanced-quality/reports/phase-review.md",
       "run": "pytest advanced-quality -q",
       "done": "至少三类专项有脚本、证据和局限说明",
+      "knowledge_check": "不看资料，能说明“整合高级质量能力”如何具体体现在本日的代码或文档产出中。",
       "stretch": "做一次风险评审演示"
     },
     {
@@ -2391,12 +3937,23 @@
       "phase_day": 1,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-141/",
+      "learning_output_link": "知识：理解 CPU、内存、连接池与错误率 → 产出：记录服务资源基线 → 验证：同一时间窗口的资源基线可复现",
       "title": "监控基线",
       "learn": "理解 CPU、内存、连接池与错误率",
+      "study": "先用 20 分钟掌握一个核心知识点：理解 CPU、内存、连接池与错误率。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：记录服务资源基线。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "记录服务资源基线",
       "file": "test-projects/04-petstore-performance/reliability/baseline.md",
       "run": "docker stats --no-stream",
       "done": "同一时间窗口的资源基线可复现",
+      "knowledge_check": "不看资料，能说明“理解 CPU、内存、连接池与错误率”如何具体体现在本日的代码或文档产出中。",
       "stretch": "记录磁盘和网络"
     },
     {
@@ -2408,12 +3965,23 @@
       "phase_day": 2,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-142/",
+      "learning_output_link": "知识：理解吞吐、延迟和错误率关联 → 产出：整理 k6 指标采集脚本 → 验证：关键指标按接口和场景区分",
       "title": "请求指标",
       "learn": "理解吞吐、延迟和错误率关联",
+      "study": "先用 20 分钟掌握一个核心知识点：理解吞吐、延迟和错误率关联。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：整理 k6 指标采集脚本。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "整理 k6 指标采集脚本",
       "file": "test-projects/04-petstore-performance/reliability/metrics.js",
       "run": "k6 run test-projects/04-petstore-performance/reliability/metrics.js",
       "done": "关键指标按接口和场景区分",
+      "knowledge_check": "不看资料，能说明“理解吞吐、延迟和错误率关联”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加自定义业务指标"
     },
     {
@@ -2425,12 +3993,23 @@
       "phase_day": 3,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-143/",
+      "learning_output_link": "知识：避免只看平均响应时间 → 产出：比较不同并发级别的尾延迟 → 验证：报告解释平均值与尾延迟差异",
       "title": "p95/p99 对比",
       "learn": "避免只看平均响应时间",
+      "study": "先用 20 分钟掌握一个核心知识点：避免只看平均响应时间。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：比较不同并发级别的尾延迟。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "比较不同并发级别的尾延迟",
       "file": "test-projects/04-petstore-performance/reliability/tail-latency.md",
       "run": "k6 run test-projects/04-petstore-performance/k6/load.js",
       "done": "报告解释平均值与尾延迟差异",
+      "knowledge_check": "不看资料，能说明“避免只看平均响应时间”如何具体体现在本日的代码或文档产出中。",
       "stretch": "按接口分组"
     },
     {
@@ -2442,12 +4021,23 @@
       "phase_day": 4,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-144/",
+      "learning_output_link": "知识：建立从指标到假设的路径 → 产出：选择最慢接口写瓶颈假设 → 验证：假设引用请求和资源证据",
       "title": "慢接口定位",
       "learn": "建立从指标到假设的路径",
+      "study": "先用 20 分钟掌握一个核心知识点：建立从指标到假设的路径。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：选择最慢接口写瓶颈假设。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "选择最慢接口写瓶颈假设",
       "file": "test-projects/04-petstore-performance/reliability/slow-endpoint.md",
       "run": "k6 run test-projects/04-petstore-performance/k6/focused.js",
       "done": "假设引用请求和资源证据",
+      "knowledge_check": "不看资料，能说明“建立从指标到假设的路径”如何具体体现在本日的代码或文档产出中。",
       "stretch": "设计 A/B 验证"
     },
     {
@@ -2459,12 +4049,23 @@
       "phase_day": 5,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-145/",
+      "learning_output_link": "知识：识别资源泄漏和累积问题 → 产出：执行受控 soak 测试 → 验证：趋势无持续恶化或有明确证据",
       "title": "30 分钟稳定性",
       "learn": "识别资源泄漏和累积问题",
+      "study": "先用 20 分钟掌握一个核心知识点：识别资源泄漏和累积问题。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：执行受控 soak 测试。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "执行受控 soak 测试",
       "file": "test-projects/04-petstore-performance/k6/soak.js",
       "run": "k6 run test-projects/04-petstore-performance/k6/soak.js",
       "done": "趋势无持续恶化或有明确证据",
+      "knowledge_check": "不看资料，能说明“识别资源泄漏和累积问题”如何具体体现在本日的代码或文档产出中。",
       "stretch": "按机器能力缩短预演"
     },
     {
@@ -2476,12 +4077,23 @@
       "phase_day": 6,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-146/",
+      "learning_output_link": "知识：理解故障检测与恢复指标 → 产出：记录一次服务重启后的恢复时间 → 验证：恢复步骤、耗时和数据影响有记录",
       "title": "恢复时间",
       "learn": "理解故障检测与恢复指标",
+      "study": "先用 20 分钟掌握一个核心知识点：理解故障检测与恢复指标。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：记录一次服务重启后的恢复时间。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "记录一次服务重启后的恢复时间",
       "file": "test-projects/04-petstore-performance/reliability/recovery.md",
       "run": "docker compose restart",
       "done": "恢复步骤、耗时和数据影响有记录",
+      "knowledge_check": "不看资料，能说明“理解故障检测与恢复指标”如何具体体现在本日的代码或文档产出中。",
       "stretch": "自动化健康检查"
     },
     {
@@ -2493,12 +4105,23 @@
       "phase_day": 7,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-147/",
+      "learning_output_link": "知识：理解下游故障对用户流的影响 → 产出：模拟依赖超时或 5xx → 验证：超时、错误提示和恢复路径有断言",
       "title": "依赖故障",
       "learn": "理解下游故障对用户流的影响",
+      "study": "先用 20 分钟掌握一个核心知识点：理解下游故障对用户流的影响。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：模拟依赖超时或 5xx。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "模拟依赖超时或 5xx",
       "file": "test-projects/04-petstore-performance/reliability/dependency-failure.md",
       "run": "pytest advanced-quality/network/test_server_errors.py -q",
       "done": "超时、错误提示和恢复路径有断言",
+      "knowledge_check": "不看资料，能说明“理解下游故障对用户流的影响”如何具体体现在本日的代码或文档产出中。",
       "stretch": "验证降级"
     },
     {
@@ -2510,12 +4133,23 @@
       "phase_day": 8,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-148/",
+      "learning_output_link": "知识：区分连接、读取和总超时 → 产出：为测试和服务列出超时策略 → 验证：每个超时有依据、上限和告警行为",
       "title": "超时策略",
       "learn": "区分连接、读取和总超时",
+      "study": "先用 20 分钟掌握一个核心知识点：区分连接、读取和总超时。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为测试和服务列出超时策略。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为测试和服务列出超时策略",
       "file": "test-projects/04-petstore-performance/reliability/timeouts.md",
       "run": "git diff --check",
       "done": "每个超时有依据、上限和告警行为",
+      "knowledge_check": "不看资料，能说明“区分连接、读取和总超时”如何具体体现在本日的代码或文档产出中。",
       "stretch": "测慢网络"
     },
     {
@@ -2527,12 +4161,23 @@
       "phase_day": 9,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-149/",
+      "learning_output_link": "知识：理解重试放大效应 → 产出：模拟重试并记录请求放大 → 验证：能说明重试次数对吞吐和延迟的影响",
       "title": "重试风暴",
       "learn": "理解重试放大效应",
+      "study": "先用 20 分钟掌握一个核心知识点：理解重试放大效应。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：模拟重试并记录请求放大。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "模拟重试并记录请求放大",
       "file": "test-projects/04-petstore-performance/reliability/retry-storm.md",
       "run": "k6 run test-projects/04-petstore-performance/k6/retry.js",
       "done": "能说明重试次数对吞吐和延迟的影响",
+      "knowledge_check": "不看资料，能说明“理解重试放大效应”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入抖动"
     },
     {
@@ -2544,12 +4189,23 @@
       "phase_day": 10,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-150/",
+      "learning_output_link": "知识：理解保护系统的限流策略 → 产出：设计并验证 429 场景 → 验证：限流阈值、用户提示和恢复有记录",
       "title": "限流",
       "learn": "理解保护系统的限流策略",
+      "study": "先用 20 分钟掌握一个核心知识点：理解保护系统的限流策略。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：设计并验证 429 场景。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "设计并验证 429 场景",
       "file": "test-projects/04-petstore-performance/reliability/rate-limit.md",
       "run": "k6 run test-projects/04-petstore-performance/k6/spike.js",
       "done": "限流阈值、用户提示和恢复有记录",
+      "knowledge_check": "不看资料，能说明“理解保护系统的限流策略”如何具体体现在本日的代码或文档产出中。",
       "stretch": "区分客户端和服务端限流"
     },
     {
@@ -2561,12 +4217,23 @@
       "phase_day": 11,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-151/",
+      "learning_output_link": "知识：观察突发流量后的恢复质量 → 产出：执行 spike 并记录恢复曲线 → 验证：报告包含峰值、错误和恢复时间",
       "title": "峰值恢复",
       "learn": "观察突发流量后的恢复质量",
+      "study": "先用 20 分钟掌握一个核心知识点：观察突发流量后的恢复质量。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：执行 spike 并记录恢复曲线。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "执行 spike 并记录恢复曲线",
       "file": "test-projects/04-petstore-performance/reports/spike-recovery.md",
       "run": "k6 run test-projects/04-petstore-performance/k6/spike.js",
       "done": "报告包含峰值、错误和恢复时间",
+      "knowledge_check": "不看资料，能说明“观察突发流量后的恢复质量”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加两种峰值"
     },
     {
@@ -2578,12 +4245,23 @@
       "phase_day": 12,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-152/",
+      "learning_output_link": "知识：计算安全并发和极限并发 → 产出：更新容量曲线与建议 → 验证：建议包含依据、安全余量和限制",
       "title": "容量拐点",
       "learn": "计算安全并发和极限并发",
+      "study": "先用 20 分钟掌握一个核心知识点：计算安全并发和极限并发。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：更新容量曲线与建议。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "更新容量曲线与建议",
       "file": "test-projects/04-petstore-performance/reports/capacity.md",
       "run": "python test-projects/04-petstore-performance/tools/analyze_results.py",
       "done": "建议包含依据、安全余量和限制",
+      "knowledge_check": "不看资料，能说明“计算安全并发和极限并发”如何具体体现在本日的代码或文档产出中。",
       "stretch": "区分读写容量"
     },
     {
@@ -2595,12 +4273,23 @@
       "phase_day": 13,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-153/",
+      "learning_output_link": "知识：把技术指标翻译成用户目标 → 产出：为核心接口写 SLI/SLO 草案 → 验证：指标、目标、窗口和排除项明确",
       "title": "SLO 草案",
       "learn": "把技术指标翻译成用户目标",
+      "study": "先用 20 分钟掌握一个核心知识点：把技术指标翻译成用户目标。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为核心接口写 SLI/SLO 草案。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为核心接口写 SLI/SLO 草案",
       "file": "test-projects/04-petstore-performance/reliability/slo.md",
       "run": "git diff --check",
       "done": "指标、目标、窗口和排除项明确",
+      "knowledge_check": "不看资料，能说明“把技术指标翻译成用户目标”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入错误预算"
     },
     {
@@ -2612,12 +4301,23 @@
       "phase_day": 14,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-154/",
+      "learning_output_link": "知识：避免只配置不验证告警 → 产出：为错误率或 p95 写告警测试说明 → 验证：能说明如何触发、观察、恢复和关闭",
       "title": "告警验证",
       "learn": "避免只配置不验证告警",
+      "study": "先用 20 分钟掌握一个核心知识点：避免只配置不验证告警。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为错误率或 p95 写告警测试说明。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为错误率或 p95 写告警测试说明",
       "file": "test-projects/04-petstore-performance/reliability/alert-test.md",
       "run": "git diff --check",
       "done": "能说明如何触发、观察、恢复和关闭",
+      "knowledge_check": "不看资料，能说明“避免只配置不验证告警”如何具体体现在本日的代码或文档产出中。",
       "stretch": "模拟告警噪声"
     },
     {
@@ -2629,12 +4329,23 @@
       "phase_day": 15,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-155/",
+      "learning_output_link": "知识：用 trace id 串起请求与错误 → 产出：为一次失败链路整理日志证据 → 验证：从测试结果能定位到对应日志上下文",
       "title": "日志关联",
       "learn": "用 trace id 串起请求与错误",
+      "study": "先用 20 分钟掌握一个核心知识点：用 trace id 串起请求与错误。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为一次失败链路整理日志证据。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为一次失败链路整理日志证据",
       "file": "test-projects/04-petstore-performance/reliability/traceability.md",
       "run": "pytest advanced-quality -q",
       "done": "从测试结果能定位到对应日志上下文",
+      "knowledge_check": "不看资料，能说明“用 trace id 串起请求与错误”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入请求 id"
     },
     {
@@ -2646,12 +4357,23 @@
       "phase_day": 16,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-156/",
+      "learning_output_link": "知识：验证故障期间的数据状态 → 产出：设计中断后数据一致性检查 → 验证：中断、重试、恢复后的数据结论明确",
       "title": "数据一致性",
       "learn": "验证故障期间的数据状态",
+      "study": "先用 20 分钟掌握一个核心知识点：验证故障期间的数据状态。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：设计中断后数据一致性检查。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "设计中断后数据一致性检查",
       "file": "test-projects/04-petstore-performance/reliability/data-consistency.py",
       "run": "pytest test-projects/03-restful-booker-api/tests -q",
       "done": "中断、重试、恢复后的数据结论明确",
+      "knowledge_check": "不看资料，能说明“验证故障期间的数据状态”如何具体体现在本日的代码或文档产出中。",
       "stretch": "重复执行"
     },
     {
@@ -2663,12 +4385,23 @@
       "phase_day": 17,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-157/",
+      "learning_output_link": "知识：考虑凭据和数据在恢复流程中的风险 → 产出：写恢复过程安全检查清单 → 验证：清单覆盖秘密、权限、数据和日志",
       "title": "安全恢复",
       "learn": "考虑凭据和数据在恢复流程中的风险",
+      "study": "先用 20 分钟掌握一个核心知识点：考虑凭据和数据在恢复流程中的风险。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：写恢复过程安全检查清单。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "写恢复过程安全检查清单",
       "file": "test-projects/04-petstore-performance/reliability/recovery-security.md",
       "run": "git diff --check",
       "done": "清单覆盖秘密、权限、数据和日志",
+      "knowledge_check": "不看资料，能说明“考虑凭据和数据在恢复流程中的风险”如何具体体现在本日的代码或文档产出中。",
       "stretch": "做一次演练"
     },
     {
@@ -2680,12 +4413,23 @@
       "phase_day": 18,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-158/",
+      "learning_output_link": "知识：把故障注入变成可控实验 → 产出：设计一次本地故障演练方案 → 验证：有假设、停止条件、观察指标和回滚步骤",
       "title": "可靠性演练",
       "learn": "把故障注入变成可控实验",
+      "study": "先用 20 分钟掌握一个核心知识点：把故障注入变成可控实验。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：设计一次本地故障演练方案。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "设计一次本地故障演练方案",
       "file": "test-projects/04-petstore-performance/reliability/experiment.md",
       "run": "git diff --check",
       "done": "有假设、停止条件、观察指标和回滚步骤",
+      "knowledge_check": "不看资料，能说明“把故障注入变成可控实验”如何具体体现在本日的代码或文档产出中。",
       "stretch": "执行小规模演练"
     },
     {
@@ -2697,12 +4441,23 @@
       "phase_day": 19,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-159/",
+      "learning_output_link": "知识：理解基线变化与质量趋势 → 产出：将本轮性能结果与历史基线比较 → 验证：报告说明指标变化、阈值判断和可能原因",
       "title": "性能回归",
       "learn": "理解基线变化与质量趋势",
+      "study": "先用 20 分钟掌握一个核心知识点：理解基线变化与质量趋势。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：将本轮性能结果与历史基线比较。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "将本轮性能结果与历史基线比较",
       "file": "test-projects/04-petstore-performance/reports/performance-regression.md",
       "run": "k6 run test-projects/04-petstore-performance/k6/smoke.js",
       "done": "报告说明指标变化、阈值判断和可能原因",
+      "knowledge_check": "不看资料，能说明“理解基线变化与质量趋势”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入自动趋势差异"
     },
     {
@@ -2714,12 +4469,23 @@
       "phase_day": 20,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-160/",
+      "learning_output_link": "知识：综合请求、资源和恢复证据 → 产出：完成一次可靠性报告 → 验证：报告有结论、证据、风险和后续动作",
       "title": "完整性能复盘",
       "learn": "综合请求、资源和恢复证据",
+      "study": "先用 20 分钟掌握一个核心知识点：综合请求、资源和恢复证据。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：完成一次可靠性报告。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "完成一次可靠性报告",
       "file": "test-projects/04-petstore-performance/reports/reliability-report.md",
       "run": "git diff --check",
       "done": "报告有结论、证据、风险和后续动作",
+      "knowledge_check": "不看资料，能说明“综合请求、资源和恢复证据”如何具体体现在本日的代码或文档产出中。",
       "stretch": "制作指标图"
     },
     {
@@ -2731,12 +4497,23 @@
       "phase_day": 21,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-161/",
+      "learning_output_link": "知识：评估从性能测试到生产质量的能力 → 产出：完成容量、稳定性和恢复三项验收 → 验证：能讲清容量、瓶颈、恢复和限制",
       "title": "阶段验收",
       "learn": "评估从性能测试到生产质量的能力",
+      "study": "先用 20 分钟掌握一个核心知识点：评估从性能测试到生产质量的能力。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：完成容量、稳定性和恢复三项验收。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "完成容量、稳定性和恢复三项验收",
       "file": "test-projects/04-petstore-performance/reports/reliability-review.md",
       "run": "k6 run test-projects/04-petstore-performance/k6/smoke.js",
       "done": "能讲清容量、瓶颈、恢复和限制",
+      "knowledge_check": "不看资料，能说明“评估从性能测试到生产质量的能力”如何具体体现在本日的代码或文档产出中。",
       "stretch": "做十分钟演示"
     },
     {
@@ -2748,12 +4525,23 @@
       "phase_day": 1,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-162/",
+      "learning_output_link": "知识：学习让陌生人快速运行项目 → 产出：补齐根目录 README 和一键运行说明 → 验证：新用户能找到环境、命令和阶段入口",
       "title": "项目 README",
       "learn": "学习让陌生人快速运行项目",
+      "study": "先用 20 分钟掌握一个核心知识点：学习让陌生人快速运行项目。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：补齐根目录 README 和一键运行说明。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "补齐根目录 README 和一键运行说明",
       "file": "README.md",
       "run": "git diff --check",
       "done": "新用户能找到环境、命令和阶段入口",
+      "knowledge_check": "不看资料，能说明“学习让陌生人快速运行项目”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加故障排查"
     },
     {
@@ -2765,12 +4553,23 @@
       "phase_day": 2,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-163/",
+      "learning_output_link": "知识：用图表达测试分层和数据流 → 产出：绘制 UI、API、性能和 CI 架构图 → 验证：图中组件、依赖和证据流清晰",
       "title": "架构图",
       "learn": "用图表达测试分层和数据流",
+      "study": "先用 20 分钟掌握一个核心知识点：用图表达测试分层和数据流。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：绘制 UI、API、性能和 CI 架构图。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "绘制 UI、API、性能和 CI 架构图",
       "file": "docs/test-architecture.md",
       "run": "git diff --check",
       "done": "图中组件、依赖和证据流清晰",
+      "knowledge_check": "不看资料，能说明“用图表达测试分层和数据流”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加入 Mermaid"
     },
     {
@@ -2782,12 +4581,23 @@
       "phase_day": 3,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-164/",
+      "learning_output_link": "知识：从需求、风险到测试层级表达 → 产出：整理四项目总体测试策略 → 验证：说明覆盖范围、优先级和不测项",
       "title": "测试策略",
       "learn": "从需求、风险到测试层级表达",
+      "study": "先用 20 分钟掌握一个核心知识点：从需求、风险到测试层级表达。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：整理四项目总体测试策略。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "整理四项目总体测试策略",
       "file": "docs/test-strategy.md",
       "run": "git diff --check",
       "done": "说明覆盖范围、优先级和不测项",
+      "knowledge_check": "不看资料，能说明“从需求、风险到测试层级表达”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加风险矩阵"
     },
     {
@@ -2799,12 +4609,23 @@
       "phase_day": 4,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-165/",
+      "learning_output_link": "知识：训练高质量功能缺陷表达 → 产出：整理一个 UI 缺陷案例 → 验证：复现、预期、实际、证据和影响完整",
       "title": "缺陷案例一",
       "learn": "训练高质量功能缺陷表达",
+      "study": "先用 20 分钟掌握一个核心知识点：训练高质量功能缺陷表达。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：整理一个 UI 缺陷案例。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "整理一个 UI 缺陷案例",
       "file": "reports/defect-ui.md",
       "run": "git diff --check",
       "done": "复现、预期、实际、证据和影响完整",
+      "knowledge_check": "不看资料，能说明“训练高质量功能缺陷表达”如何具体体现在本日的代码或文档产出中。",
       "stretch": "补充修复验证"
     },
     {
@@ -2816,12 +4637,23 @@
       "phase_day": 5,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-166/",
+      "learning_output_link": "知识：训练接口缺陷表达 → 产出：整理一个 API 缺陷案例 → 验证：请求、响应、环境和严重程度完整",
       "title": "缺陷案例二",
       "learn": "训练接口缺陷表达",
+      "study": "先用 20 分钟掌握一个核心知识点：训练接口缺陷表达。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：整理一个 API 缺陷案例。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "整理一个 API 缺陷案例",
       "file": "reports/defect-api.md",
       "run": "git diff --check",
       "done": "请求、响应、环境和严重程度完整",
+      "knowledge_check": "不看资料，能说明“训练接口缺陷表达”如何具体体现在本日的代码或文档产出中。",
       "stretch": "补充最小 curl"
     },
     {
@@ -2833,12 +4665,23 @@
       "phase_day": 6,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-167/",
+      "learning_output_link": "知识：训练性能问题叙述 → 产出：整理一次瓶颈定位案例 → 验证：基线、负载、指标、假设和结论完整",
       "title": "性能案例",
       "learn": "训练性能问题叙述",
+      "study": "先用 20 分钟掌握一个核心知识点：训练性能问题叙述。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：整理一次瓶颈定位案例。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "整理一次瓶颈定位案例",
       "file": "reports/defect-performance.md",
       "run": "git diff --check",
       "done": "基线、负载、指标、假设和结论完整",
+      "knowledge_check": "不看资料，能说明“训练性能问题叙述”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加优化前后对比"
     },
     {
@@ -2850,12 +4693,23 @@
       "phase_day": 7,
       "phase_total_days": 21,
       "week": 1,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-168/",
+      "learning_output_link": "知识：理解指标的价值和误用 → 产出：定义脚本数、通过率、flaky、p95 等指标 → 验证：每个指标有用途、计算和限制",
       "title": "测试指标",
       "learn": "理解指标的价值和误用",
+      "study": "先用 20 分钟掌握一个核心知识点：理解指标的价值和误用。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：定义脚本数、通过率、flaky、p95 等指标。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "定义脚本数、通过率、flaky、p95 等指标",
       "file": "docs/quality-metrics.md",
       "run": "git diff --check",
       "done": "每个指标有用途、计算和限制",
+      "knowledge_check": "不看资料，能说明“理解指标的价值和误用”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加趋势示例"
     },
     {
@@ -2867,12 +4721,23 @@
       "phase_day": 8,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-169/",
+      "learning_output_link": "知识：选择能证明能力的证据 → 产出：整理测试报告、Trace 和性能图截图 → 验证：每张图有上下文、日期和对应代码",
       "title": "报告截图",
       "learn": "选择能证明能力的证据",
+      "study": "先用 20 分钟掌握一个核心知识点：选择能证明能力的证据。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：整理测试报告、Trace 和性能图截图。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "整理测试报告、Trace 和性能图截图",
       "file": "docs/evidence-index.md",
       "run": "git diff --check",
       "done": "每张图有上下文、日期和对应代码",
+      "knowledge_check": "不看资料，能说明“选择能证明能力的证据”如何具体体现在本日的代码或文档产出中。",
       "stretch": "生成缩略图索引"
     },
     {
@@ -2884,12 +4749,23 @@
       "phase_day": 9,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-170/",
+      "learning_output_link": "知识：理解流水线如何展示质量 → 产出：整理 smoke、regression、performance workflow → 验证：触发条件、门禁和产物清晰",
       "title": "CI 展示",
       "learn": "理解流水线如何展示质量",
+      "study": "先用 20 分钟掌握一个核心知识点：理解流水线如何展示质量。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：整理 smoke、regression、performance workflow。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "整理 smoke、regression、performance workflow",
       "file": "docs/ci-overview.md",
       "run": "git diff --check",
       "done": "触发条件、门禁和产物清晰",
+      "knowledge_check": "不看资料，能说明“理解流水线如何展示质量”如何具体体现在本日的代码或文档产出中。",
       "stretch": "补充失败流程"
     },
     {
@@ -2901,12 +4777,23 @@
       "phase_day": 10,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-171/",
+      "learning_output_link": "知识：从学习代码提升工程质量 → 产出：选择一个重复最多的模块重构 → 验证：重构前后行为一致且重复减少",
       "title": "代码重构",
       "learn": "从学习代码提升工程质量",
+      "study": "先用 20 分钟掌握一个核心知识点：从学习代码提升工程质量。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：选择一个重复最多的模块重构。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "选择一个重复最多的模块重构",
       "file": "refactor/README.md",
       "run": "pytest -q",
       "done": "重构前后行为一致且重复减少",
+      "knowledge_check": "不看资料，能说明“从学习代码提升工程质量”如何具体体现在本日的代码或文档产出中。",
       "stretch": "记录取舍"
     },
     {
@@ -2918,12 +4805,23 @@
       "phase_day": 11,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-172/",
+      "learning_output_link": "知识：提高测试可读性 → 产出：统一测试、fixture、页面对象命名 → 验证：规范有正反例且已有代码至少改一处",
       "title": "命名规范",
       "learn": "提高测试可读性",
+      "study": "先用 20 分钟掌握一个核心知识点：提高测试可读性。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：统一测试、fixture、页面对象命名。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "统一测试、fixture、页面对象命名",
       "file": "docs/naming.md",
       "run": "git diff --check",
       "done": "规范有正反例且已有代码至少改一处",
+      "knowledge_check": "不看资料，能说明“提高测试可读性”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加 lint 规则"
     },
     {
@@ -2935,12 +4833,23 @@
       "phase_day": 12,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-173/",
+      "learning_output_link": "知识：把个人经验变成可复用知识 → 产出：整理环境、定位、数据和性能排查手册 → 验证：至少包含五类常见问题和命令",
       "title": "调试手册",
       "learn": "把个人经验变成可复用知识",
+      "study": "先用 20 分钟掌握一个核心知识点：把个人经验变成可复用知识。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：整理环境、定位、数据和性能排查手册。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "整理环境、定位、数据和性能排查手册",
       "file": "docs/debugging.md",
       "run": "git diff --check",
       "done": "至少包含五类常见问题和命令",
+      "knowledge_check": "不看资料，能说明“把个人经验变成可复用知识”如何具体体现在本日的代码或文档产出中。",
       "stretch": "让别人按手册排障"
     },
     {
@@ -2952,12 +4861,23 @@
       "phase_day": 13,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-174/",
+      "learning_output_link": "知识：识别能力变化而非只列工具 → 产出：写一份阶段能力矩阵 → 验证：能说明从基础到高级的能力证据",
       "title": "学习总结",
       "learn": "识别能力变化而非只列工具",
+      "study": "先用 20 分钟掌握一个核心知识点：识别能力变化而非只列工具。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：写一份阶段能力矩阵。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "写一份阶段能力矩阵",
       "file": "docs/skills-matrix.md",
       "run": "git diff --check",
       "done": "能说明从基础到高级的能力证据",
+      "knowledge_check": "不看资料，能说明“识别能力变化而非只列工具”如何具体体现在本日的代码或文档产出中。",
       "stretch": "给每项能力打等级"
     },
     {
@@ -2969,12 +4889,23 @@
       "phase_day": 14,
       "phase_total_days": 21,
       "week": 2,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-175/",
+      "learning_output_link": "知识：训练技术方案口头表达 → 产出：写出五分钟项目演示脚本 → 验证：包含目标、架构、脚本、结果和下一步",
       "title": "五分钟演示",
       "learn": "训练技术方案口头表达",
+      "study": "先用 20 分钟掌握一个核心知识点：训练技术方案口头表达。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：写出五分钟项目演示脚本。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "写出五分钟项目演示脚本",
       "file": "docs/demo-script.md",
       "run": "git diff --check",
       "done": "包含目标、架构、脚本、结果和下一步",
+      "knowledge_check": "不看资料，能说明“训练技术方案口头表达”如何具体体现在本日的代码或文档产出中。",
       "stretch": "实际计时演练"
     },
     {
@@ -2986,12 +4917,23 @@
       "phase_day": 15,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-176/",
+      "learning_output_link": "知识：把工程决策讲清楚 → 产出：准备项目介绍和常见追问答案 → 验证：能回答为什么选工具、如何处理 flaky 和性能",
       "title": "面试项目介绍",
       "learn": "把工程决策讲清楚",
+      "study": "先用 20 分钟掌握一个核心知识点：把工程决策讲清楚。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：准备项目介绍和常见追问答案。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "准备项目介绍和常见追问答案",
       "file": "docs/interview-project.md",
       "run": "git diff --check",
       "done": "能回答为什么选工具、如何处理 flaky 和性能",
+      "knowledge_check": "不看资料，能说明“把工程决策讲清楚”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加英文术语"
     },
     {
@@ -3003,12 +4945,23 @@
       "phase_day": 16,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-177/",
+      "learning_output_link": "知识：综合业务、风险和自动化 → 产出：为一个新功能写测试设计方案 → 验证：包含场景、优先级、自动化层级和风险",
       "title": "测试设计题",
       "learn": "综合业务、风险和自动化",
+      "study": "先用 20 分钟掌握一个核心知识点：综合业务、风险和自动化。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：为一个新功能写测试设计方案。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "为一个新功能写测试设计方案",
       "file": "docs/test-design-exercise.md",
       "run": "git diff --check",
       "done": "包含场景、优先级、自动化层级和风险",
+      "knowledge_check": "不看资料，能说明“综合业务、风险和自动化”如何具体体现在本日的代码或文档产出中。",
       "stretch": "加容量问题"
     },
     {
@@ -3020,12 +4973,23 @@
       "phase_day": 17,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-178/",
+      "learning_output_link": "知识：让仓库适合协作 → 产出：补充分支、提交、审查和报告规范 → 验证：新人可按文档完成第一次提交",
       "title": "贡献指南",
       "learn": "让仓库适合协作",
+      "study": "先用 20 分钟掌握一个核心知识点：让仓库适合协作。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：补充分支、提交、审查和报告规范。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "补充分支、提交、审查和报告规范",
       "file": "CONTRIBUTING.md",
       "run": "git diff --check",
       "done": "新人可按文档完成第一次提交",
+      "knowledge_check": "不看资料，能说明“让仓库适合协作”如何具体体现在本日的代码或文档产出中。",
       "stretch": "增加 PR 模板"
     },
     {
@@ -3037,12 +5001,23 @@
       "phase_day": 18,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-179/",
+      "learning_output_link": "知识：建立交付前质量检查 → 产出：写自动化测试项目发布 checklist → 验证：功能、性能、安全、文档和回滚都有检查",
       "title": "发布清单",
       "learn": "建立交付前质量检查",
+      "study": "先用 20 分钟掌握一个核心知识点：建立交付前质量检查。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：写自动化测试项目发布 checklist。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "写自动化测试项目发布 checklist",
       "file": "docs/release-checklist.md",
       "run": "git diff --check",
       "done": "功能、性能、安全、文档和回滚都有检查",
+      "knowledge_check": "不看资料，能说明“建立交付前质量检查”如何具体体现在本日的代码或文档产出中。",
       "stretch": "接入 CI"
     },
     {
@@ -3054,12 +5029,23 @@
       "phase_day": 19,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-180/",
+      "learning_output_link": "知识：验证整理没有破坏已有成果 → 产出：运行各项目 smoke 和核心回归 → 验证：结果、失败和环境均有记录",
       "title": "最终回归",
       "learn": "验证整理没有破坏已有成果",
+      "study": "先用 20 分钟掌握一个核心知识点：验证整理没有破坏已有成果。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：运行各项目 smoke 和核心回归。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "运行各项目 smoke 和核心回归",
       "file": "reports/final-regression.md",
       "run": "pytest -q",
       "done": "结果、失败和环境均有记录",
+      "knowledge_check": "不看资料，能说明“验证整理没有破坏已有成果”如何具体体现在本日的代码或文档产出中。",
       "stretch": "并行运行"
     },
     {
@@ -3071,12 +5057,23 @@
       "phase_day": 20,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-181/",
+      "learning_output_link": "知识：形成可展示的完整作品集 → 产出：完成项目总结、局限和下一轮路线 → 验证：报告能回答学了什么、做了什么、如何验证和下一步",
       "title": "最终总结",
       "learn": "形成可展示的完整作品集",
+      "study": "先用 20 分钟掌握一个核心知识点：形成可展示的完整作品集。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：完成项目总结、局限和下一轮路线。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "完成项目总结、局限和下一轮路线",
       "file": "FINAL-REPORT.md",
       "run": "git diff --check",
       "done": "报告能回答学了什么、做了什么、如何验证和下一步",
+      "knowledge_check": "不看资料，能说明“形成可展示的完整作品集”如何具体体现在本日的代码或文档产出中。",
       "stretch": "制作 PDF/演示版本"
     },
     {
@@ -3088,12 +5085,23 @@
       "phase_day": 21,
       "phase_total_days": 21,
       "week": 3,
+      "timebox": {
+        "study_minutes": 20,
+        "practice_minutes": 50,
+        "verification_minutes": 15,
+        "reflection_minutes": 5
+      },
+      "evidence": "artifacts/day-182/",
+      "learning_output_link": "知识：完成长期学习主线闭环 → 产出：提交最终作品集并规划下一个 28 天专项 → 验证：所有核心阶段有证据，下一轮有明确约束和目标",
       "title": "阶段验收",
       "learn": "完成长期学习主线闭环",
+      "study": "先用 20 分钟掌握一个核心知识点：完成长期学习主线闭环。重点理解它解决什么问题，以及一个常见错误。",
+      "practice": "把上面的知识应用到本日小练习：提交最终作品集并规划下一个 28 天专项。只完成当前目标范围，不提前扩展到后续框架。",
       "deliverable": "提交最终作品集并规划下一个 28 天专项",
       "file": "ROADMAP-NEXT.md",
       "run": "git diff --check",
       "done": "所有核心阶段有证据，下一轮有明确约束和目标",
+      "knowledge_check": "不看资料，能说明“完成长期学习主线闭环”如何具体体现在本日的代码或文档产出中。",
       "stretch": "选择框架架构或性能专项"
     }
   ]
