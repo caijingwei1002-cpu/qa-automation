@@ -1,0 +1,7 @@
+interface:
+  display_name: "QA Learning Daily"
+  short_description: "Plan one verifiable QA learning output"
+  default_prompt: "Use $qa-learning-daily to plan and record today's automation testing output."
+
+policy:
+  allow_implicit_invocation: true

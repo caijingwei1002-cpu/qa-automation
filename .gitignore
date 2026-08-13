@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+
+# JavaScript / Playwright / frontend dependencies
+node_modules/
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+
+# Test reports and generated evidence
+allure-results/
+allure-report/
+artifacts/*
+!artifacts/.gitkeep
+
+# Java / Gradle
+target/
+.gradle/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.secret
+*.secrets
+*.pem
+*.key
+
+# Editors and operating-system files
+.idea/
+.vscode/*
+!.vscode/settings.json
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local cloned systems under test; keep them outside this repository when possible.
+targets/

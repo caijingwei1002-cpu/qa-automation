@@ -1,0 +1,25 @@
+{
+  "name": "qa-learning-coach",
+  "version": "0.1.0",
+  "description": "A local coach for long-term QA automation learning with daily scripts, evidence, reviews, and optional MCP progress tools.",
+  "author": {
+    "name": "Local QA Learning Lab"
+  },
+  "license": "MIT",
+  "keywords": ["qa", "test-automation", "playwright", "pytest", "k6", "learning"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "QA Learning Coach",
+    "shortDescription": "Daily QA automation learning planner",
+    "longDescription": "Plan one concrete testing script or engineering improvement per study day, record evidence, review failures, and progress from UI automation through API, performance, CI/CD, reliability, and security testing.",
+    "developerName": "Local QA Learning Lab",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Plan my next QA automation learning day.",
+      "Review today's test script and learning evidence.",
+      "Suggest the next performance testing milestone."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}
