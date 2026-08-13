@@ -1,4 +1,4 @@
-﻿{
+{
   "target_root_env": "TARGET_ROOT",
   "targets": {
     "todomvc": {
@@ -36,4 +36,3 @@
     }
   }
 }
-
