@@ -1,0 +1,39 @@
+﻿{
+  "target_root_env": "TARGET_ROOT",
+  "targets": {
+    "todomvc": {
+      "kind": "git",
+      "repository": "https://github.com/tastejs/todomvc.git",
+      "local_directory": "todomvc",
+      "url_env": "TODO_MVC_URL",
+      "default_url": "http://127.0.0.1:8080",
+      "test_asset_directory": "test-projects/01-todomvc-ui"
+    },
+    "saucedemo": {
+      "kind": "online-demo",
+      "url": "https://www.saucedemo.com/",
+      "url_env": "SAUCEDEMO_URL",
+      "test_asset_directory": "test-projects/02-saucedemo-ui",
+      "load_testing": "forbidden"
+    },
+    "restful-booker": {
+      "kind": "git",
+      "repository": "https://github.com/mwinteringham/restful-booker.git",
+      "local_directory": "restful-booker",
+      "url_env": "RESTFUL_BOOKER_URL",
+      "default_url": "http://127.0.0.1:3001",
+      "test_asset_directory": "test-projects/03-restful-booker-api",
+      "startup_reference": "Read the cloned project's current README; npm or Docker may be used."
+    },
+    "swagger-petstore": {
+      "kind": "git",
+      "repository": "https://github.com/swagger-api/swagger-petstore.git",
+      "local_directory": "swagger-petstore",
+      "url_env": "PETSTORE_URL",
+      "default_url": "http://127.0.0.1:8080",
+      "test_asset_directory": "test-projects/04-petstore-performance",
+      "startup_reference": "Read the cloned project's current README before starting the local service."
+    }
+  }
+}
+

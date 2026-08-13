@@ -2,11 +2,11 @@
 
 ## 已加入的本地插件
 
-项目内 `.agents/plugins/qa-learning-coach` 提供一个本地插件清单和一个可复用 Skill：`qa-learning-daily`。
+项目内 `.agents/plugins/marketplace.json` 提供本地插件清单，实际插件位于 `plugins/qa-learning-coach`，其中包含可复用 Skill：`qa-learning-daily`。
 
 这个 Skill 的职责不是替你完成学习，而是让每天的任务保持在合适难度：
 
-- 读取当前阶段、项目和已完成记录；
+- 读取当前阶段、测试资产目录和已完成记录；
 - 生成当天唯一的最小任务；
 - 要求一个可运行脚本和测试证据；
 - 在失败时优先定位根因，不用重试掩盖问题；
@@ -22,7 +22,7 @@
 - `create_daily_log`：生成当天的记录文件和证据目录；
 - `complete_learning_day`：保存结果、复盘和下一步。
 
-MCP 只访问当前本地学习仓库，不连接外部账号，也不会替你对公共网站发起压力测试。需要云端同步时，再按需接入 GitHub、Notion 或 Linear。
+MCP 只访问当前本地学习仓库，不连接外部账号，也不会替你对公共网站发起压力测试。被测项目位于仓库外的 `D:\qa-automation-targets`，由测试代码通过 URL 访问。需要云端同步时，再按需接入 GitHub、Notion 或 Linear。
 
 ## 推荐的可选外部插件
 
@@ -62,6 +62,7 @@ MCP 只访问当前本地学习仓库，不连接外部账号，也不会替你�
 如果不使用 MCP，也可以直接运行：
 
 ```powershell
+python tools/validate_repo.py
 python tools/plan_day.py today
 python tools/plan_day.py complete 1 --result "完成新增 Todo 脚本并通过" --next-step "增加完成状态场景"
 ```

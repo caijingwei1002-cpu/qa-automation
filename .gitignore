@@ -24,6 +24,10 @@ allure-results/
 allure-report/
 artifacts/*
 !artifacts/.gitkeep
+!artifacts/**/
+!artifacts/**/*.md
+!artifacts/**/*.png
+!artifacts/**/*.jpg
 
 # Java / Gradle
 target/
@@ -46,5 +50,6 @@ target/
 .DS_Store
 Thumbs.db
 
-# Local cloned systems under test; keep them outside this repository when possible.
+# Local cloned systems under test; the canonical location is outside this repository.
 targets/
+qa-automation-targets/

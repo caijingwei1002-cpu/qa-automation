@@ -14,10 +14,10 @@ Do not give a large list of unrelated tutorials. Give one primary task, one opti
 ## Workflow
 
 1. Locate the repository. Prefer the path supplied by the user; otherwise use `qa-automation-learning` in the current workspace.
-2. Read `progress.json`, `daily-plan.json`, the latest `daily-log/day-*.md`, and the relevant project directory before proposing work. Use `curriculum.json` for stage-level context.
+2. Read `progress.json`, `daily-plan.json`, the latest `daily-log/day-*.md`, and the relevant test asset directory under `test-projects/` before proposing work. Use `curriculum.json` and `config/targets.json` for stage and target context.
 3. Use `python tools/plan_day.py today` or `python tools/plan_day.py plan N` to obtain the canonical task. The detailed plan is also readable in `DAILY-PLAN.md`. Do not invent a different stage unless the current task is blocked.
 4. State the stage, project, objective, learning focus, today's single output, target file, expected command, evidence location, completion criteria, and optional stretch task.
-5. Keep the task within the current project boundary. Advance from UI basics to UI framework design, API automation, performance, engineering, reliability, and security only when the earlier stage has evidence.
+5. Keep the task within the current test asset boundary. The external system under test is configured separately and must not be modified as part of a normal learning task. Advance from UI basics to UI framework design, API automation, performance, engineering, reliability, and security only when the earlier stage has evidence.
 6. After the user reports results, classify the outcome as passed, failed-but-understood, or blocked. A failed test with a documented root cause is valid learning output; a blind retry is not.
 7. Record the result with `python tools/plan_day.py complete N --result "..." --next-step "..."` only after confirming what actually happened.
 8. Every seventh learning day, include a short review of script count, failure patterns, concepts understood, and one skill to revisit. Every 28-day cycle, propose a harder constraint such as more data, parallelism, failure injection, observability, or CI quality gates.

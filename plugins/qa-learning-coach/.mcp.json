@@ -2,10 +2,7 @@
   "mcpServers": {
     "qa-learning-local": {
       "command": "python",
-      "args": ["./scripts/qa_learning_mcp.py"],
-      "env": {
-        "QA_LEARNING_ROOT": "D:\\qa-automation-learning"
-      }
+      "args": ["./scripts/qa_learning_mcp.py"]
     }
   }
 }

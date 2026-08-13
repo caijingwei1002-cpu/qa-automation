@@ -9,112 +9,112 @@
 ### Day 1：环境与首个 UI 测试
 - 学习重点：理解 Playwright、pytest、浏览器和断言的职责
 - 今日产出：初始化项目并完成新增 Todo 测试
-- 目标文件：`01-todomvc-ui/tests/test_todos.py`
-- 运行命令：`pytest 01-todomvc-ui/tests/test_todos.py::test_add_todo -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_todos.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests/test_todos.py::test_add_todo -q`
 - 完成标准：输入 Todo 后，列表文本和未完成计数断言通过
 - 可选挑战：保存首个失败截图
 
 ### Day 2：完成状态
 - 学习重点：掌握 checkbox 交互与状态断言
 - 今日产出：完成一个 Todo 并验证 completed 状态
-- 目标文件：`01-todomvc-ui/tests/test_todos.py`
-- 运行命令：`pytest 01-todomvc-ui/tests/test_todos.py::test_complete_todo -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_todos.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests/test_todos.py::test_complete_todo -q`
 - 完成标准：复选框、样式状态和计数变化均被断言
 - 可选挑战：增加取消完成场景
 
 ### Day 3：删除行为
 - 学习重点：理解操作后的 DOM 与业务状态校验
 - 今日产出：新增删除 Todo 测试
-- 目标文件：`01-todomvc-ui/tests/test_todos.py`
-- 运行命令：`pytest 01-todomvc-ui/tests/test_todos.py::test_delete_todo -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_todos.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests/test_todos.py::test_delete_todo -q`
 - 完成标准：目标项消失且剩余项目不受影响
 - 可选挑战：验证最后一项删除后页脚消失
 
 ### Day 4：筛选功能
 - 学习重点：掌握可见性和集合断言
 - 今日产出：覆盖 All、Active、Completed 三种筛选
-- 目标文件：`01-todomvc-ui/tests/test_filters.py`
-- 运行命令：`pytest 01-todomvc-ui/tests/test_filters.py -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_filters.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests/test_filters.py -q`
 - 完成标准：每种筛选只展示正确状态的数据
 - 可选挑战：验证刷新后的筛选状态
 
 ### Day 5：边界输入
 - 学习重点：学习等价类和边界值
 - 今日产出：覆盖空白、前后空格、重复文本和长文本
-- 目标文件：`01-todomvc-ui/tests/test_input_validation.py`
-- 运行命令：`pytest 01-todomvc-ui/tests/test_input_validation.py -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_input_validation.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests/test_input_validation.py -q`
 - 完成标准：至少四组边界数据有明确预期与断言
 - 可选挑战：增加 Unicode 和 emoji 输入
 
 ### Day 6：参数化
 - 学习重点：掌握 pytest.mark.parametrize
 - 今日产出：把多组 Todo 输入改为参数化测试
-- 目标文件：`01-todomvc-ui/tests/test_todo_data.py`
-- 运行命令：`pytest 01-todomvc-ui/tests/test_todo_data.py -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_todo_data.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests/test_todo_data.py -q`
 - 完成标准：一份测试函数稳定运行多组数据
 - 可选挑战：为失败数据增加可读 id
 
 ### Day 7：Fixture
 - 学习重点：理解测试前置、后置和隔离
 - 今日产出：用 fixture 统一打开页面和准备数据
-- 目标文件：`01-todomvc-ui/tests/conftest.py`
-- 运行命令：`pytest 01-todomvc-ui/tests -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/conftest.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests -q`
 - 完成标准：测试之间互不污染且公共准备代码减少
 - 可选挑战：增加 browser context fixture
 
 ### Day 8：稳定定位
 - 学习重点：比较 role、label、text、CSS 定位
 - 今日产出：重构脆弱定位器并写定位规则
-- 目标文件：`01-todomvc-ui/tests/test_locators.py`
-- 运行命令：`pytest 01-todomvc-ui/tests -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_locators.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests -q`
 - 完成标准：关键定位优先使用语义定位且全套通过
 - 可选挑战：故意改 DOM 验证定位韧性
 
 ### Day 9：自动等待
 - 学习重点：理解自动等待与显式等待边界
 - 今日产出：移除固定 sleep 并增加状态等待测试
-- 目标文件：`01-todomvc-ui/tests/test_waiting.py`
-- 运行命令：`pytest 01-todomvc-ui/tests/test_waiting.py -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_waiting.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests/test_waiting.py -q`
 - 完成标准：代码无固定 sleep，异步状态有可解释等待
 - 可选挑战：模拟较慢交互
 
 ### Day 10：失败证据
 - 学习重点：掌握 screenshot、trace、日志用途
 - 今日产出：配置失败截图和 Trace 保留
-- 目标文件：`01-todomvc-ui/conftest.py`
-- 运行命令：`pytest 01-todomvc-ui/tests -q`
+- 目标文件：`test-projects/01-todomvc-ui/conftest.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests -q`
 - 完成标准：制造一次失败后可找到截图或 Trace
 - 可选挑战：记录如何打开 Trace
 
 ### Day 11：标记与套件
 - 学习重点：学习 smoke、regression 标记策略
 - 今日产出：标记并拆分冒烟与回归测试
-- 目标文件：`01-todomvc-ui/pytest.ini`
-- 运行命令：`pytest 01-todomvc-ui/tests -m smoke -q`
+- 目标文件：`test-projects/01-todomvc-ui/pytest.ini`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests -m smoke -q`
 - 完成标准：smoke 只包含关键路径且可单独执行
 - 可选挑战：添加 slow 标记
 
 ### Day 12：数据与辅助函数
 - 学习重点：区分测试数据、动作和断言
 - 今日产出：提取 Todo 数据工厂或辅助函数
-- 目标文件：`01-todomvc-ui/tests/helpers.py`
-- 运行命令：`pytest 01-todomvc-ui/tests -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/helpers.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests -q`
 - 完成标准：测试主体更短且断言仍保留在测试中
 - 可选挑战：随机生成唯一文本
 
 ### Day 13：小型回归
 - 学习重点：学习按风险选择回归范围
 - 今日产出：执行完整回归并整理失败清单
-- 目标文件：`01-todomvc-ui/tests/test_regression.py`
-- 运行命令：`pytest 01-todomvc-ui/tests -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_regression.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests -q`
 - 完成标准：全套结果可复现，失败有原因和证据
 - 可选挑战：生成 JUnit XML
 
 ### Day 14：阶段验收
 - 学习重点：总结 UI 自动化基础与局限
 - 今日产出：独立新增 Clear completed 端到端测试并写阶段总结
-- 目标文件：`01-todomvc-ui/tests/test_clear_completed.py`
-- 运行命令：`pytest 01-todomvc-ui/tests -q`
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_clear_completed.py`
+- 运行命令：`pytest test-projects/01-todomvc-ui/tests -q`
 - 完成标准：不看示例完成新场景，全套通过并写阶段复盘
 - 可选挑战：说明三个最常见 flaky 来源
 
@@ -123,168 +123,168 @@
 ### Day 15：项目初始化
 - 学习重点：理解电商业务流和测试边界
 - 今日产出：初始化 SauceDemo 项目并完成标准用户登录
-- 目标文件：`02-saucedemo-ui/tests/test_login.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_login.py::test_standard_user_login -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_login.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_login.py::test_standard_user_login -q`
 - 完成标准：登录后 URL 和商品页标题断言通过
 - 可选挑战：保存登录页元素清单
 
 ### Day 16：登录异常
 - 学习重点：学习负向场景与错误信息断言
 - 今日产出：覆盖错误密码和空用户名
-- 目标文件：`02-saucedemo-ui/tests/test_login.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_login.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_login.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_login.py -q`
 - 完成标准：错误类型对应正确提示且不会进入商品页
 - 可选挑战：增加空密码
 
 ### Day 17：特殊用户
 - 学习重点：理解测试账号代表的风险场景
 - 今日产出：覆盖 locked_out_user 与 problem_user
-- 目标文件：`02-saucedemo-ui/tests/test_users.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_users.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_users.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_users.py -q`
 - 完成标准：锁定用户行为正确，问题用户异常被记录
 - 可选挑战：研究 performance_glitch_user
 
 ### Day 18：商品列表
 - 学习重点：学习列表完整性与集合断言
 - 今日产出：验证商品名称、价格、图片和数量
-- 目标文件：`02-saucedemo-ui/tests/test_inventory.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_inventory.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_inventory.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_inventory.py -q`
 - 完成标准：列表数量与每项关键字段都有断言
 - 可选挑战：校验价格格式
 
 ### Day 19：商品详情
 - 学习重点：掌握列表到详情的导航验证
 - 今日产出：验证进入详情和返回列表
-- 目标文件：`02-saucedemo-ui/tests/test_product_detail.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_product_detail.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_product_detail.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_product_detail.py -q`
 - 完成标准：详情名称价格与列表一致
 - 可选挑战：参数化多个商品
 
 ### Day 20：商品排序
 - 学习重点：学习从页面提取数据并验证排序
 - 今日产出：覆盖名称和价格四种排序
-- 目标文件：`02-saucedemo-ui/tests/test_sorting.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_sorting.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_sorting.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_sorting.py -q`
 - 完成标准：提取值与排序期望完全一致
 - 可选挑战：处理浮点价格
 
 ### Day 21：加入购物车
 - 学习重点：理解跨页面状态断言
 - 今日产出：加入单个商品并验证徽标和购物车内容
-- 目标文件：`02-saucedemo-ui/tests/test_cart.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_cart.py::test_add_one_item -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_cart.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_cart.py::test_add_one_item -q`
 - 完成标准：徽标、名称和价格一致
 - 可选挑战：从详情页添加
 
 ### Day 22：多商品购物车
 - 学习重点：学习集合与合计准备
 - 今日产出：加入多个商品并验证集合
-- 目标文件：`02-saucedemo-ui/tests/test_cart.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_cart.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_cart.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_cart.py -q`
 - 完成标准：购物车集合与选择集合一致
 - 可选挑战：验证展示顺序
 
 ### Day 23：移除商品
 - 学习重点：掌握状态回退和幂等思路
 - 今日产出：从列表和购物车分别移除商品
-- 目标文件：`02-saucedemo-ui/tests/test_cart_remove.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_cart_remove.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_cart_remove.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_cart_remove.py -q`
 - 完成标准：徽标和购物车内容同步变化
 - 可选挑战：移除全部商品
 
 ### Day 24：结算校验
 - 学习重点：学习表单验证与字段组合
 - 今日产出：覆盖姓名、姓氏、邮编必填错误
-- 目标文件：`02-saucedemo-ui/tests/test_checkout_validation.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_checkout_validation.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_checkout_validation.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_checkout_validation.py -q`
 - 完成标准：每个缺失字段对应正确提示
 - 可选挑战：增加特殊字符
 
 ### Day 25：结算概览
 - 学习重点：学习金额与业务计算断言
 - 今日产出：验证商品小计、税费和总价
-- 目标文件：`02-saucedemo-ui/tests/test_checkout_summary.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_checkout_summary.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_checkout_summary.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_checkout_summary.py -q`
 - 完成标准：总价等于商品小计加税费
 - 可选挑战：使用 Decimal 计算
 
 ### Day 26：完整下单
 - 学习重点：建立关键端到端业务流
 - 今日产出：完成登录到订单成功的 E2E 测试
-- 目标文件：`02-saucedemo-ui/tests/test_checkout_e2e.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_checkout_e2e.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py -q`
 - 完成标准：订单完成标题和购物车状态正确
 - 可选挑战：测试取消结算
 
 ### Day 27：登出和会话
 - 学习重点：理解认证状态和直接访问
 - 今日产出：验证登出后不能直接进入商品页
-- 目标文件：`02-saucedemo-ui/tests/test_session.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_session.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_session.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_session.py -q`
 - 完成标准：登出清理会话且受保护页面不可访问
 - 可选挑战：刷新页面验证会话
 
 ### Day 28：Page Object 登录页
 - 学习重点：理解页面对象职责边界
 - 今日产出：创建 LoginPage 并重构登录测试
-- 目标文件：`02-saucedemo-ui/pages/login_page.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_login.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/pages/login_page.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_login.py -q`
 - 完成标准：定位和动作进入页面类，业务断言仍清晰
 - 可选挑战：增加组件对象
 
 ### Day 29：Page Object 商品页
 - 学习重点：减少重复选择器和操作
 - 今日产出：创建 InventoryPage 与 CartPage
-- 目标文件：`02-saucedemo-ui/pages/inventory_page.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_inventory.py 02-saucedemo-ui/tests/test_cart.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/pages/inventory_page.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_inventory.py test-projects/02-saucedemo-ui/tests/test_cart.py -q`
 - 完成标准：相关测试无重复关键定位器
 - 可选挑战：增加按商品名操作
 
 ### Day 30：结算页面对象
 - 学习重点：组织多页面业务流程
 - 今日产出：创建 Checkout 页面对象并重构 E2E
-- 目标文件：`02-saucedemo-ui/pages/checkout_page.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests/test_checkout_e2e.py -q`
+- 目标文件：`test-projects/02-saucedemo-ui/pages/checkout_page.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py -q`
 - 完成标准：E2E 测试读起来像业务步骤
 - 可选挑战：避免万能 BasePage
 
 ### Day 31：测试数据模型
 - 学习重点：学习账号和商品数据管理
 - 今日产出：集中管理用户、地址和商品数据
-- 目标文件：`02-saucedemo-ui/test_data.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests -q`
+- 目标文件：`test-projects/02-saucedemo-ui/test_data.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests -q`
 - 完成标准：变化数据不散落在测试中
 - 可选挑战：使用 dataclass
 
 ### Day 32：环境配置
 - 学习重点：掌握 base_url 和环境切换
 - 今日产出：加入 test 配置与命令行选项
-- 目标文件：`02-saucedemo-ui/config.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests -m smoke -q`
+- 目标文件：`test-projects/02-saucedemo-ui/config.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests -m smoke -q`
 - 完成标准：base_url 不硬编码且错误配置明确失败
 - 可选挑战：增加 .env.example
 
 ### Day 33：多浏览器
 - 学习重点：理解兼容性矩阵和执行成本
 - 今日产出：在 Chromium、Firefox 运行 smoke
-- 目标文件：`02-saucedemo-ui/pytest.ini`
-- 运行命令：`pytest 02-saucedemo-ui/tests -m smoke -q`
+- 目标文件：`test-projects/02-saucedemo-ui/pytest.ini`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests -m smoke -q`
 - 完成标准：两种浏览器结果被记录
 - 可选挑战：增加移动视口
 
 ### Day 34：报告与 flaky 分析
 - 学习重点：区分产品缺陷、脚本缺陷和环境问题
 - 今日产出：接入 HTML/Allure 报告并分析一次失败
-- 目标文件：`02-saucedemo-ui/README.md`
-- 运行命令：`pytest 02-saucedemo-ui/tests -q`
+- 目标文件：`test-projects/02-saucedemo-ui/README.md`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests -q`
 - 完成标准：报告包含步骤、失败证据和分类结论
 - 可选挑战：统计最慢测试
 
 ### Day 35：阶段验收
 - 学习重点：验证框架可维护性和独立开发能力
 - 今日产出：独立新增跨页面回归场景并写架构说明
-- 目标文件：`02-saucedemo-ui/tests/test_portfolio_scenario.py`
-- 运行命令：`pytest 02-saucedemo-ui/tests -q`
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_portfolio_scenario.py`
+- 运行命令：`pytest test-projects/02-saucedemo-ui/tests -q`
 - 完成标准：全套可运行、README 清楚、能解释 Page Object 取舍
 - 可选挑战：写五分钟演示脚本
 
@@ -293,224 +293,224 @@
 ### Day 36：HTTP 与健康检查
 - 学习重点：理解请求、响应、状态码和超时
 - 今日产出：初始化 API 项目并验证健康检查
-- 目标文件：`03-restful-booker-api/tests/test_health.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_health.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_health.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_health.py -q`
 - 完成标准：状态码、响应体和超时都有断言
 - 可选挑战：记录响应头
 
 ### Day 37：查询列表
 - 学习重点：掌握 GET 与集合响应
 - 今日产出：查询 booking IDs 并校验结构
-- 目标文件：`03-restful-booker-api/tests/test_get_bookings.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_get_bookings.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_get_bookings.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_get_bookings.py -q`
 - 完成标准：列表类型和 bookingid 字段被校验
 - 可选挑战：按姓名过滤
 
 ### Day 38：创建预订
 - 学习重点：掌握 POST 与 JSON 请求体
 - 今日产出：创建预订并断言完整返回
-- 目标文件：`03-restful-booker-api/tests/test_create_booking.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_create_booking.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_create_booking.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_create_booking.py -q`
 - 完成标准：id 存在且所有业务字段一致
 - 可选挑战：保存响应样例
 
 ### Day 39：查询单条
 - 学习重点：学习动态 ID 的接口关联
 - 今日产出：创建后按 id 查询并比较数据
-- 目标文件：`03-restful-booker-api/tests/test_booking_flow.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_booking_flow.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_booking_flow.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_booking_flow.py -q`
 - 完成标准：创建与查询结果一致
 - 可选挑战：验证不存在 id
 
 ### Day 40：过滤查询
 - 学习重点：学习 query 参数和组合
 - 今日产出：覆盖姓名和日期过滤
-- 目标文件：`03-restful-booker-api/tests/test_filters.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_filters.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_filters.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_filters.py -q`
 - 完成标准：每种过滤返回符合条件的数据
 - 可选挑战：组合多个参数
 
 ### Day 41：Token 鉴权
 - 学习重点：理解认证接口和凭据管理
 - 今日产出：获取 Token 并验证无效凭据
-- 目标文件：`03-restful-booker-api/tests/test_auth.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_auth.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_auth.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_auth.py -q`
 - 完成标准：成功 Token 与失败原因都有断言
 - 可选挑战：Token 不打印到日志
 
 ### Day 42：完整更新 PUT
 - 学习重点：理解资源替换和认证头
 - 今日产出：创建后完整更新预订
-- 目标文件：`03-restful-booker-api/tests/test_update_booking.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_update_booking.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_update_booking.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_update_booking.py -q`
 - 完成标准：更新响应和二次查询一致
 - 可选挑战：验证无 Token
 
 ### Day 43：部分更新 PATCH
 - 学习重点：理解 PUT 与 PATCH 差异
 - 今日产出：只修改价格和附加需求
-- 目标文件：`03-restful-booker-api/tests/test_update_booking.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_update_booking.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_update_booking.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_update_booking.py -q`
 - 完成标准：目标字段变化，其他字段保持
 - 可选挑战：更新空字符串
 
 ### Day 44：删除与清理
 - 学习重点：学习资源生命周期和清理保证
 - 今日产出：删除预订并确认不能查询
-- 目标文件：`03-restful-booker-api/tests/test_delete_booking.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_delete_booking.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_delete_booking.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_delete_booking.py -q`
 - 完成标准：删除成功且后续查询返回预期状态
 - 可选挑战：重复删除
 
 ### Day 45：API Client
 - 学习重点：建立请求封装边界
 - 今日产出：封装 base URL、超时、headers 和通用请求
-- 目标文件：`03-restful-booker-api/src/api_client.py`
-- 运行命令：`pytest 03-restful-booker-api/tests -q`
+- 目标文件：`test-projects/03-restful-booker-api/src/api_client.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -q`
 - 完成标准：测试不再重复拼接 URL，失败信息可读
 - 可选挑战：增加响应日志
 
 ### Day 46：Booking Client
 - 学习重点：学习领域客户端
 - 今日产出：封装 booking CRUD 方法
-- 目标文件：`03-restful-booker-api/src/booking_client.py`
-- 运行命令：`pytest 03-restful-booker-api/tests -q`
+- 目标文件：`test-projects/03-restful-booker-api/src/booking_client.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -q`
 - 完成标准：测试通过领域方法表达业务动作
 - 可选挑战：保留原始 response
 
 ### Day 47：Fixture 生命周期
 - 学习重点：掌握 yield fixture 清理
 - 今日产出：创建 booking fixture 并自动删除
-- 目标文件：`03-restful-booker-api/tests/conftest.py`
-- 运行命令：`pytest 03-restful-booker-api/tests -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -q`
 - 完成标准：测试失败时也执行清理
 - 可选挑战：使用 session 级 Token
 
 ### Day 48：数据工厂
 - 学习重点：建立唯一且可复用的数据
 - 今日产出：创建 booking data factory
-- 目标文件：`03-restful-booker-api/tests/factories.py`
-- 运行命令：`pytest 03-restful-booker-api/tests -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/factories.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -q`
 - 完成标准：每次数据唯一且默认值可覆盖
 - 可选挑战：使用 Faker 可选
 
 ### Day 49：参数化边界
 - 学习重点：覆盖价格、日期和姓名边界
 - 今日产出：为核心字段增加参数化测试
-- 目标文件：`03-restful-booker-api/tests/test_boundaries.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_boundaries.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_boundaries.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_boundaries.py -q`
 - 完成标准：至少六组边界有明确预期
 - 可选挑战：加入超长文本
 
 ### Day 50：缺失字段
 - 学习重点：学习 API 负向测试
 - 今日产出：逐个删除必填字段并记录行为
-- 目标文件：`03-restful-booker-api/tests/test_invalid_payloads.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_invalid_payloads.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_invalid_payloads.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_invalid_payloads.py -q`
 - 完成标准：服务行为被断言，意外行为记为缺陷
 - 可选挑战：测试空 JSON
 
 ### Day 51：类型错误
 - 学习重点：验证契约的输入类型边界
 - 今日产出：覆盖字符串价格、非法布尔和嵌套错误
-- 目标文件：`03-restful-booker-api/tests/test_invalid_types.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_invalid_types.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_invalid_types.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_invalid_types.py -q`
 - 完成标准：错误类型结果可重复且有缺陷记录
 - 可选挑战：测试 null 值
 
 ### Day 52：状态码与错误模型
 - 学习重点：统一负向场景断言
 - 今日产出：提取错误响应断言辅助函数
-- 目标文件：`03-restful-booker-api/tests/assertions.py`
-- 运行命令：`pytest 03-restful-booker-api/tests -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/assertions.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -q`
 - 完成标准：状态码和错误体断言一致且可读
 - 可选挑战：禁止只断言非 200
 
 ### Day 53：JSON Schema
 - 学习重点：掌握结构契约验证
 - 今日产出：为创建和查询响应增加 Schema
-- 目标文件：`03-restful-booker-api/schemas/booking.json`
-- 运行命令：`pytest 03-restful-booker-api/tests -q`
+- 目标文件：`test-projects/03-restful-booker-api/schemas/booking.json`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -q`
 - 完成标准：缺失字段或类型变化能导致失败
 - 可选挑战：Schema 版本化
 
 ### Day 54：业务断言
 - 学习重点：区分结构正确和业务正确
 - 今日产出：增加日期顺序、价格范围等规则
-- 目标文件：`03-restful-booker-api/tests/test_business_rules.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_business_rules.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_business_rules.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_business_rules.py -q`
 - 完成标准：至少三条业务规则被验证
 - 可选挑战：记录服务未校验规则
 
 ### Day 55：接口链路
 - 学习重点：组织创建、查询、更新、删除流程
 - 今日产出：实现完整生命周期测试
-- 目标文件：`03-restful-booker-api/tests/test_booking_lifecycle.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_booking_lifecycle.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_booking_lifecycle.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_booking_lifecycle.py -q`
 - 完成标准：链路每一步都有局部断言和清理
 - 可选挑战：失败时打印当前 id
 
 ### Day 56：配置分层
 - 学习重点：学习环境变量与默认值
 - 今日产出：加入 base_url、timeout、credentials 配置
-- 目标文件：`03-restful-booker-api/src/settings.py`
-- 运行命令：`pytest 03-restful-booker-api/tests -m smoke -q`
+- 目标文件：`test-projects/03-restful-booker-api/src/settings.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -m smoke -q`
 - 完成标准：配置可覆盖且敏感信息不进仓库
 - 可选挑战：增加配置校验
 
 ### Day 57：日志与诊断
 - 学习重点：学习请求上下文和脱敏
 - 今日产出：记录 method、URL、耗时和状态码
-- 目标文件：`03-restful-booker-api/src/logging_config.py`
-- 运行命令：`pytest 03-restful-booker-api/tests -q`
+- 目标文件：`test-projects/03-restful-booker-api/src/logging_config.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -q`
 - 完成标准：失败日志足够定位且 Token 被脱敏
 - 可选挑战：添加 correlation id
 
 ### Day 58：重试边界
 - 学习重点：理解可重试与不可重试错误
 - 今日产出：为幂等 GET 设计有限重试
-- 目标文件：`03-restful-booker-api/src/retry.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_retry.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/src/retry.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_retry.py -q`
 - 完成标准：只对明确瞬态错误重试并有次数上限
 - 可选挑战：测试退避策略
 
 ### Day 59：并行隔离
 - 学习重点：理解并行导致的数据碰撞
 - 今日产出：用 xdist 并行运行唯一数据测试
-- 目标文件：`03-restful-booker-api/tests/conftest.py`
-- 运行命令：`pytest 03-restful-booker-api/tests -n 2 -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -n 2 -q`
 - 完成标准：并行运行无共享数据冲突
 - 可选挑战：比较执行耗时
 
 ### Day 60：测试标记
 - 学习重点：建立 smoke、regression、negative 分类
 - 今日产出：标记并验证不同套件
-- 目标文件：`03-restful-booker-api/pytest.ini`
-- 运行命令：`pytest 03-restful-booker-api/tests -m smoke -q`
+- 目标文件：`test-projects/03-restful-booker-api/pytest.ini`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -m smoke -q`
 - 完成标准：套件边界清晰且无 marker 警告
 - 可选挑战：生成 marker 清单
 
 ### Day 61：报告
 - 学习重点：把接口证据组织成可阅读报告
 - 今日产出：接入 JUnit/Allure 并附加请求摘要
-- 目标文件：`03-restful-booker-api/README.md`
-- 运行命令：`pytest 03-restful-booker-api/tests -q --junitxml=reports/api.xml`
+- 目标文件：`test-projects/03-restful-booker-api/README.md`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -q --junitxml=reports/api.xml`
 - 完成标准：报告可定位失败接口和数据
 - 可选挑战：统计错误类型
 
 ### Day 62：缺陷案例
 - 学习重点：训练高质量 Bug 表达
 - 今日产出：基于异常行为写一份缺陷报告
-- 目标文件：`03-restful-booker-api/reports/defect-001.md`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_invalid_payloads.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/reports/defect-001.md`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_invalid_payloads.py -q`
 - 完成标准：包含复现、预期、实际、证据和影响
 - 可选挑战：补充最小 curl
 
 ### Day 63：阶段验收
 - 学习重点：验证独立设计 API 自动化能力
 - 今日产出：独立新增一个资源链路并完成阶段报告
-- 目标文件：`03-restful-booker-api/reports/phase-review.md`
-- 运行命令：`pytest 03-restful-booker-api/tests -q`
+- 目标文件：`test-projects/03-restful-booker-api/reports/phase-review.md`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -q`
 - 完成标准：框架全套通过或失败可解释，文档可一键运行
 - 可选挑战：绘制 API 测试架构图
 
@@ -519,15 +519,15 @@
 ### Day 64：本地 Petstore
 - 学习重点：理解压测授权边界与本地环境
 - 今日产出：用 Docker 启动 Petstore 并完成健康检查
-- 目标文件：`04-petstore-performance/docker-compose.yml`
-- 运行命令：`docker compose -f 04-petstore-performance/docker-compose.yml up -d`
+- 目标文件：`test-projects/04-petstore-performance/docker-compose.yml`
+- 运行命令：`docker compose -f test-projects/04-petstore-performance/docker-compose.yml up -d`
 - 完成标准：本地服务可访问且记录版本和端口
 - 可选挑战：保存容器资源基线
 
 ### Day 65：OpenAPI 阅读
 - 学习重点：学习从规范提取测试范围
 - 今日产出：列出 pet、store、user 核心接口和字段
-- 目标文件：`04-petstore-performance/docs/api-inventory.md`
+- 目标文件：`test-projects/04-petstore-performance/docs/api-inventory.md`
 - 运行命令：`git diff --check`
 - 完成标准：接口清单包含方法、路径、鉴权和风险
 - 可选挑战：标注性能热点
@@ -535,55 +535,55 @@
 ### Day 66：查询契约
 - 学习重点：建立 API 契约回归
 - 今日产出：为 GET pet 增加 Schema 和错误场景
-- 目标文件：`04-petstore-performance/tests/test_get_pet.py`
-- 运行命令：`pytest 04-petstore-performance/tests/test_get_pet.py -q`
+- 目标文件：`test-projects/04-petstore-performance/tests/test_get_pet.py`
+- 运行命令：`pytest test-projects/04-petstore-performance/tests/test_get_pet.py -q`
 - 完成标准：成功与不存在场景都有契约断言
 - 可选挑战：检查 content-type
 
 ### Day 67：CRUD 链路
 - 学习重点：准备性能测试前的功能基线
 - 今日产出：实现 pet 创建、查询、修改、删除
-- 目标文件：`04-petstore-performance/tests/test_pet_lifecycle.py`
-- 运行命令：`pytest 04-petstore-performance/tests/test_pet_lifecycle.py -q`
+- 目标文件：`test-projects/04-petstore-performance/tests/test_pet_lifecycle.py`
+- 运行命令：`pytest test-projects/04-petstore-performance/tests/test_pet_lifecycle.py -q`
 - 完成标准：链路可重复且数据可清理
 - 可选挑战：加入唯一 id
 
 ### Day 68：契约漂移
 - 学习重点：理解 OpenAPI 与实现差异
 - 今日产出：写脚本比较关键响应与规范
-- 目标文件：`04-petstore-performance/tests/test_contract.py`
-- 运行命令：`pytest 04-petstore-performance/tests/test_contract.py -q`
+- 目标文件：`test-projects/04-petstore-performance/tests/test_contract.py`
+- 运行命令：`pytest test-projects/04-petstore-performance/tests/test_contract.py -q`
 - 完成标准：至少覆盖两个接口并记录差异
 - 可选挑战：输出差异报告
 
 ### Day 69：k6 首脚本
 - 学习重点：理解 VU、iteration、duration
 - 今日产出：编写单用户查询冒烟脚本
-- 目标文件：`04-petstore-performance/k6/smoke.js`
-- 运行命令：`k6 run 04-petstore-performance/k6/smoke.js`
+- 目标文件：`test-projects/04-petstore-performance/k6/smoke.js`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/smoke.js`
 - 完成标准：请求成功且 check、指标可读
 - 可选挑战：加入自定义 Trend
 
 ### Day 70：性能断言
 - 学习重点：学习 check 与 threshold 区别
 - 今日产出：设置错误率和 p95 阈值
-- 目标文件：`04-petstore-performance/k6/thresholds.js`
-- 运行命令：`k6 run 04-petstore-performance/k6/thresholds.js`
+- 目标文件：`test-projects/04-petstore-performance/k6/thresholds.js`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/thresholds.js`
 - 完成标准：阈值通过，故意收紧时能失败
 - 可选挑战：加入 p99
 
 ### Day 71：测试数据
 - 学习重点：避免压测数据竞争
 - 今日产出：编写 setup/teardown 生成和清理 pet
-- 目标文件：`04-petstore-performance/k6/data_setup.js`
-- 运行命令：`k6 run 04-petstore-performance/k6/data_setup.js`
+- 目标文件：`test-projects/04-petstore-performance/k6/data_setup.js`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/data_setup.js`
 - 完成标准：数据唯一且结束后可清理
 - 可选挑战：从 JSON 加载数据
 
 ### Day 72：场景建模
 - 学习重点：把真实业务比例映射到脚本
 - 今日产出：设计读写比例和用户停顿
-- 目标文件：`04-petstore-performance/docs/workload-model.md`
+- 目标文件：`test-projects/04-petstore-performance/docs/workload-model.md`
 - 运行命令：`git diff --check`
 - 完成标准：文档解释 VU、持续时间和业务比例
 - 可选挑战：使用 scenarios executor
@@ -591,23 +591,23 @@
 ### Day 73：阶梯负载
 - 学习重点：观察响应随负载变化
 - 今日产出：实现 5→10→20 VU 负载脚本
-- 目标文件：`04-petstore-performance/k6/load.js`
-- 运行命令：`k6 run 04-petstore-performance/k6/load.js`
+- 目标文件：`test-projects/04-petstore-performance/k6/load.js`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/load.js`
 - 完成标准：记录各阶段吞吐、错误率和 p95
 - 可选挑战：输出 JSON summary
 
 ### Day 74：基线报告
 - 学习重点：学习可比较的性能基线
 - 今日产出：执行固定负载并填写基线报告
-- 目标文件：`04-petstore-performance/reports/baseline.md`
-- 运行命令：`k6 run --summary-export=artifacts/baseline.json 04-petstore-performance/k6/load.js`
+- 目标文件：`test-projects/04-petstore-performance/reports/baseline.md`
+- 运行命令：`k6 run --summary-export=artifacts/baseline.json test-projects/04-petstore-performance/k6/load.js`
 - 完成标准：报告包含环境、负载、指标和结论
 - 可选挑战：重复三次比较波动
 
 ### Day 75：资源监控
 - 学习重点：关联应用指标与请求指标
 - 今日产出：记录容器 CPU、内存和网络
-- 目标文件：`04-petstore-performance/docs/monitoring.md`
+- 目标文件：`test-projects/04-petstore-performance/docs/monitoring.md`
 - 运行命令：`docker stats --no-stream`
 - 完成标准：同一时间窗口有 k6 与资源证据
 - 可选挑战：加入数据库连接
@@ -615,63 +615,63 @@
 ### Day 76：压力测试
 - 学习重点：寻找性能拐点而非只压垮
 - 今日产出：逐级增加 VU 直到阈值持续恶化
-- 目标文件：`04-petstore-performance/k6/stress.js`
-- 运行命令：`k6 run 04-petstore-performance/k6/stress.js`
+- 目标文件：`test-projects/04-petstore-performance/k6/stress.js`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/stress.js`
 - 完成标准：记录首个明显拐点和停止条件
 - 可选挑战：比较读写瓶颈
 
 ### Day 77：峰值测试
 - 学习重点：理解突发流量与恢复
 - 今日产出：实现低负载瞬间升高再回落
-- 目标文件：`04-petstore-performance/k6/spike.js`
-- 运行命令：`k6 run 04-petstore-performance/k6/spike.js`
+- 目标文件：`test-projects/04-petstore-performance/k6/spike.js`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/spike.js`
 - 完成标准：记录峰值错误和恢复时间
 - 可选挑战：修改峰值持续时间
 
 ### Day 78：稳定性测试
 - 学习重点：识别资源泄漏和累积问题
 - 今日产出：实现受控的 soak 脚本
-- 目标文件：`04-petstore-performance/k6/soak.js`
-- 运行命令：`k6 run 04-petstore-performance/k6/soak.js`
+- 目标文件：`test-projects/04-petstore-performance/k6/soak.js`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/soak.js`
 - 完成标准：趋势无持续恶化或有明确证据
 - 可选挑战：按机器能力缩短预演
 
 ### Day 79：容量分析
 - 学习重点：学习安全容量与极限容量区别
 - 今日产出：根据负载曲线计算建议并发
-- 目标文件：`04-petstore-performance/reports/capacity.md`
-- 运行命令：`python 04-petstore-performance/tools/analyze_results.py`
+- 目标文件：`test-projects/04-petstore-performance/reports/capacity.md`
+- 运行命令：`python test-projects/04-petstore-performance/tools/analyze_results.py`
 - 完成标准：给出容量区间、依据和安全余量
 - 可选挑战：画 VU-p95 曲线
 
 ### Day 80：瓶颈假设
 - 学习重点：用证据建立可验证假设
 - 今日产出：选择最慢接口分析可能原因
-- 目标文件：`04-petstore-performance/reports/bottleneck.md`
-- 运行命令：`k6 run 04-petstore-performance/k6/focused.js`
+- 目标文件：`test-projects/04-petstore-performance/reports/bottleneck.md`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/focused.js`
 - 完成标准：假设引用请求和资源指标
 - 可选挑战：设计 A/B 验证
 
 ### Day 81：参数与环境
 - 学习重点：让性能脚本可复用
 - 今日产出：支持 BASE_URL、VUS、DURATION 环境变量
-- 目标文件：`04-petstore-performance/k6/configurable.js`
-- 运行命令：`k6 run -e VUS=5 -e DURATION=30s 04-petstore-performance/k6/configurable.js`
+- 目标文件：`test-projects/04-petstore-performance/k6/configurable.js`
+- 运行命令：`k6 run -e VUS=5 -e DURATION=30s test-projects/04-petstore-performance/k6/configurable.js`
 - 完成标准：配置有默认值且输出实际参数
 - 可选挑战：防止误指向生产域名
 
 ### Day 82：CI 性能冒烟
 - 学习重点：学习性能质量门禁边界
 - 今日产出：加入短时 k6 smoke CI 配置
-- 目标文件：`04-petstore-performance/.github/workflows/performance-smoke.yml`
-- 运行命令：`k6 run 04-petstore-performance/k6/smoke.js`
+- 目标文件：`test-projects/04-petstore-performance/.github/workflows/performance-smoke.yml`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/smoke.js`
 - 完成标准：CI 场景短、稳定且阈值明确
 - 可选挑战：保存 summary artifact
 
 ### Day 83：性能报告
 - 学习重点：形成可读的非功能测试结论
 - 今日产出：完成包含图表、瓶颈和建议的报告
-- 目标文件：`04-petstore-performance/reports/performance-report.md`
+- 目标文件：`test-projects/04-petstore-performance/reports/performance-report.md`
 - 运行命令：`git diff --check`
 - 完成标准：报告能回答容量、拐点、错误率和风险
 - 可选挑战：补充执行限制
@@ -679,8 +679,8 @@
 ### Day 84：阶段验收
 - 学习重点：验证独立设计性能测试能力
 - 今日产出：从目标到报告独立完成一次受控测试
-- 目标文件：`04-petstore-performance/reports/phase-review.md`
-- 运行命令：`k6 run 04-petstore-performance/k6/smoke.js`
+- 目标文件：`test-projects/04-petstore-performance/reports/phase-review.md`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/smoke.js`
 - 完成标准：脚本、阈值、证据、报告齐全且未测试公共服务
 - 可选挑战：五分钟讲解容量结论
 
@@ -689,15 +689,15 @@
 ### Day 85：配置模型
 - 学习重点：学习环境配置分层
 - 今日产出：实现默认值、环境变量和校验
-- 目标文件：`03-restful-booker-api/src/settings.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_settings.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/src/settings.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_settings.py -q`
 - 完成标准：缺失必需配置时快速失败且敏感值不提交
 - 可选挑战：支持多个环境
 
 ### Day 86：依赖锁定
 - 学习重点：理解可复现环境
 - 今日产出：整理 pyproject 或 requirements 与锁定策略
-- 目标文件：`03-restful-booker-api/pyproject.toml`
+- 目标文件：`test-projects/03-restful-booker-api/pyproject.toml`
 - 运行命令：`python -m pip check`
 - 完成标准：依赖声明可安装且无冲突
 - 可选挑战：加入开发依赖组
@@ -705,208 +705,208 @@
 ### Day 87：Docker 化测试
 - 学习重点：学习容器化测试运行器
 - 今日产出：创建自动化测试 Dockerfile
-- 目标文件：`03-restful-booker-api/Dockerfile`
-- 运行命令：`docker build -t qa-api-tests 03-restful-booker-api`
+- 目标文件：`test-projects/03-restful-booker-api/Dockerfile`
+- 运行命令：`docker build -t qa-api-tests test-projects/03-restful-booker-api`
 - 完成标准：镜像构建成功且入口明确
 - 可选挑战：使用非 root 用户
 
 ### Day 88：Compose 环境
 - 学习重点：编排被测服务与测试
 - 今日产出：创建测试环境 compose 文件
-- 目标文件：`03-restful-booker-api/docker-compose.yml`
-- 运行命令：`docker compose -f 03-restful-booker-api/docker-compose.yml config`
+- 目标文件：`test-projects/03-restful-booker-api/docker-compose.yml`
+- 运行命令：`docker compose -f test-projects/03-restful-booker-api/docker-compose.yml config`
 - 完成标准：配置解析成功且服务依赖清晰
 - 可选挑战：加入 healthcheck
 
 ### Day 89：环境就绪检查
 - 学习重点：避免服务未启动导致假失败
 - 今日产出：实现轮询健康检查和超时
-- 目标文件：`03-restful-booker-api/tools/wait_for_service.py`
-- 运行命令：`python 03-restful-booker-api/tools/wait_for_service.py`
+- 目标文件：`test-projects/03-restful-booker-api/tools/wait_for_service.py`
+- 运行命令：`python test-projects/03-restful-booker-api/tools/wait_for_service.py`
 - 完成标准：可区分就绪、超时和连接错误
 - 可选挑战：加入指数退避
 
 ### Day 90：数据库连接
 - 学习重点：理解 API 与数据层校验边界
 - 今日产出：封装只读数据库连接 fixture
-- 目标文件：`03-restful-booker-api/src/db_client.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_db_connection.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/src/db_client.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_db_connection.py -q`
 - 完成标准：连接可关闭且查询参数化
 - 可选挑战：连接池
 
 ### Day 91：数据库断言
 - 学习重点：学习何时需要跨层校验
 - 今日产出：创建预订后验证关键数据库字段
-- 目标文件：`03-restful-booker-api/tests/test_booking_db.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_booking_db.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_booking_db.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_booking_db.py -q`
 - 完成标准：API 与 DB 关键字段一致
 - 可选挑战：验证删除
 
 ### Day 92：数据清理
 - 学习重点：建立可靠 teardown
 - 今日产出：实现带前缀的测试数据清理工具
-- 目标文件：`03-restful-booker-api/tools/cleanup_test_data.py`
-- 运行命令：`python 03-restful-booker-api/tools/cleanup_test_data.py --dry-run`
+- 目标文件：`test-projects/03-restful-booker-api/tools/cleanup_test_data.py`
+- 运行命令：`python test-projects/03-restful-booker-api/tools/cleanup_test_data.py --dry-run`
 - 完成标准：默认 dry-run，只清理明确测试数据
 - 可选挑战：输出清理报告
 
 ### Day 93：数据工厂进阶
 - 学习重点：生成可控且可复现的数据
 - 今日产出：支持 seed 和场景化 builder
-- 目标文件：`03-restful-booker-api/tests/factories.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_factories.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/factories.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_factories.py -q`
 - 完成标准：同 seed 可复现且字段可覆盖
 - 可选挑战：增加非法数据 builder
 
 ### Day 94：日志结构化
 - 学习重点：提高 CI 失败诊断效率
 - 今日产出：输出 JSON 或键值日志并脱敏
-- 目标文件：`03-restful-booker-api/src/logging_config.py`
-- 运行命令：`pytest 03-restful-booker-api/tests -m smoke -q`
+- 目标文件：`test-projects/03-restful-booker-api/src/logging_config.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -m smoke -q`
 - 完成标准：日志含 test、method、status、duration
 - 可选挑战：增加 trace id
 
 ### Day 95：自定义断言
 - 学习重点：提升失败信息质量
 - 今日产出：封装字段、Schema、业务断言
-- 目标文件：`03-restful-booker-api/tests/assertions.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_assertions.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/assertions.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_assertions.py -q`
 - 完成标准：失败信息显示期望、实际和上下文
 - 可选挑战：支持软断言讨论
 
 ### Day 96：Allure 步骤
 - 学习重点：让报告表达业务链路
 - 今日产出：为 API client 和生命周期增加步骤
-- 目标文件：`03-restful-booker-api/tests/test_booking_lifecycle.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_booking_lifecycle.py --alluredir=allure-results`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_booking_lifecycle.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_booking_lifecycle.py --alluredir=allure-results`
 - 完成标准：报告步骤清楚且附件脱敏
 - 可选挑战：附加响应摘要
 
 ### Day 97：报告历史
 - 学习重点：观察趋势而非单次结果
 - 今日产出：保存测试历史和趋势说明
-- 目标文件：`03-restful-booker-api/reports/README.md`
-- 运行命令：`pytest 03-restful-booker-api/tests --junitxml=reports/latest.xml`
+- 目标文件：`test-projects/03-restful-booker-api/reports/README.md`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests --junitxml=reports/latest.xml`
 - 完成标准：报告路径稳定且历史策略明确
 - 可选挑战：制作趋势脚本
 
 ### Day 98：Marker 规范
 - 学习重点：建立团队可理解的分类
 - 今日产出：定义 smoke、regression、negative、db
-- 目标文件：`03-restful-booker-api/pytest.ini`
-- 运行命令：`pytest 03-restful-booker-api/tests --markers`
+- 目标文件：`test-projects/03-restful-booker-api/pytest.ini`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests --markers`
 - 完成标准：无未知 marker 且分类说明清楚
 - 可选挑战：增加 owner 标记
 
 ### Day 99：选择性执行
 - 学习重点：根据变更范围运行测试
 - 今日产出：编写按标签和路径的运行脚本
-- 目标文件：`03-restful-booker-api/tools/run_tests.ps1`
-- 运行命令：`powershell -File 03-restful-booker-api/tools/run_tests.ps1 -Suite smoke`
+- 目标文件：`test-projects/03-restful-booker-api/tools/run_tests.ps1`
+- 运行命令：`powershell -File test-projects/03-restful-booker-api/tools/run_tests.ps1 -Suite smoke`
 - 完成标准：参数错误会快速失败
 - 可选挑战：增加 dry-run
 
 ### Day 100：并行基线
 - 学习重点：量化并行收益和风险
 - 今日产出：比较串行与 2 workers 执行
-- 目标文件：`03-restful-booker-api/reports/parallel.md`
-- 运行命令：`pytest 03-restful-booker-api/tests -n 2 -q`
+- 目标文件：`test-projects/03-restful-booker-api/reports/parallel.md`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -n 2 -q`
 - 完成标准：记录耗时、失败和资源差异
 - 可选挑战：测试 4 workers
 
 ### Day 101：flaky 识别
 - 学习重点：学习重复执行诊断
 - 今日产出：重复运行疑似不稳定测试并统计
-- 目标文件：`03-restful-booker-api/tools/repeat_test.py`
-- 运行命令：`python 03-restful-booker-api/tools/repeat_test.py`
+- 目标文件：`test-projects/03-restful-booker-api/tools/repeat_test.py`
+- 运行命令：`python test-projects/03-restful-booker-api/tools/repeat_test.py`
 - 完成标准：结果显示运行次数、失败次数和种子
 - 可选挑战：不要自动忽略失败
 
 ### Day 102：重试策略
 - 学习重点：限制重试范围并保留首次失败
 - 今日产出：为明确瞬态场景配置一次重试
-- 目标文件：`03-restful-booker-api/docs/retry-policy.md`
-- 运行命令：`pytest 03-restful-booker-api/tests -m transient -q`
+- 目标文件：`test-projects/03-restful-booker-api/docs/retry-policy.md`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -m transient -q`
 - 完成标准：文档说明哪些可重试、哪些禁止
 - 可选挑战：验证首次失败证据
 
 ### Day 103：超时治理
 - 学习重点：防止测试无限等待
 - 今日产出：为 HTTP、fixture、CI 设置分层超时
-- 目标文件：`03-restful-booker-api/pyproject.toml`
-- 运行命令：`pytest 03-restful-booker-api/tests -m smoke -q`
+- 目标文件：`test-projects/03-restful-booker-api/pyproject.toml`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -m smoke -q`
 - 完成标准：超时有明确错误且值有依据
 - 可选挑战：记录慢测试
 
 ### Day 104：GitHub Actions 基础
 - 学习重点：建立自动执行
 - 今日产出：创建 pull request smoke workflow
-- 目标文件：`03-restful-booker-api/.github/workflows/api-smoke.yml`
-- 运行命令：`pytest 03-restful-booker-api/tests -m smoke -q`
+- 目标文件：`test-projects/03-restful-booker-api/.github/workflows/api-smoke.yml`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -m smoke -q`
 - 完成标准：workflow 含安装、执行和报告上传
 - 可选挑战：加入依赖缓存
 
 ### Day 105：回归流水线
 - 学习重点：区分快速反馈和完整回归
 - 今日产出：创建 nightly/full regression workflow
-- 目标文件：`03-restful-booker-api/.github/workflows/api-regression.yml`
-- 运行命令：`pytest 03-restful-booker-api/tests -m regression -q`
+- 目标文件：`test-projects/03-restful-booker-api/.github/workflows/api-regression.yml`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -m regression -q`
 - 完成标准：smoke 与 regression 时机和超时不同
 - 可选挑战：增加手动触发参数
 
 ### Day 106：质量门禁
 - 学习重点：把通过标准写成规则
 - 今日产出：设置测试、覆盖率或失败率门禁
-- 目标文件：`03-restful-booker-api/docs/quality-gates.md`
-- 运行命令：`pytest 03-restful-booker-api/tests -q`
+- 目标文件：`test-projects/03-restful-booker-api/docs/quality-gates.md`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -q`
 - 完成标准：规则可衡量且失败时阻止流水线
 - 可选挑战：区分警告指标
 
 ### Day 107：测试覆盖映射
 - 学习重点：连接需求、风险和自动化
 - 今日产出：创建需求-用例-脚本追踪表
-- 目标文件：`03-restful-booker-api/docs/traceability.md`
-- 运行命令：`pytest 03-restful-booker-api/tests --collect-only -q`
+- 目标文件：`test-projects/03-restful-booker-api/docs/traceability.md`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests --collect-only -q`
 - 完成标准：关键需求均有脚本或风险说明
 - 可选挑战：自动生成收集清单
 
 ### Day 108：代码质量
 - 学习重点：统一格式、lint 和类型检查
 - 今日产出：配置 ruff 或等效工具
-- 目标文件：`03-restful-booker-api/pyproject.toml`
-- 运行命令：`ruff check 03-restful-booker-api`
+- 目标文件：`test-projects/03-restful-booker-api/pyproject.toml`
+- 运行命令：`ruff check test-projects/03-restful-booker-api`
 - 完成标准：检查可执行且规则不过度噪声
 - 可选挑战：加入 pre-commit
 
 ### Day 109：Secret 治理
 - 学习重点：避免账号和 Token 泄漏
 - 今日产出：增加 env 示例、忽略规则和脱敏测试
-- 目标文件：`03-restful-booker-api/tests/test_secret_masking.py`
-- 运行命令：`pytest 03-restful-booker-api/tests/test_secret_masking.py -q`
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_secret_masking.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests/test_secret_masking.py -q`
 - 完成标准：日志与仓库不包含真实凭据
 - 可选挑战：扫描测试产物
 
 ### Day 110：维护指南
 - 学习重点：让别人能新增测试
 - 今日产出：编写贡献、命名、fixture 和调试规范
-- 目标文件：`03-restful-booker-api/CONTRIBUTING.md`
-- 运行命令：`pytest 03-restful-booker-api/tests -m smoke -q`
+- 目标文件：`test-projects/03-restful-booker-api/CONTRIBUTING.md`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -m smoke -q`
 - 完成标准：新成员按文档能运行并新增测试
 - 可选挑战：加入 PR checklist
 
 ### Day 111：一键验证
 - 学习重点：统一本地和 CI 入口
 - 今日产出：创建 verify.ps1 执行格式、lint、smoke
-- 目标文件：`03-restful-booker-api/tools/verify.ps1`
-- 运行命令：`powershell -File 03-restful-booker-api/tools/verify.ps1`
+- 目标文件：`test-projects/03-restful-booker-api/tools/verify.ps1`
+- 运行命令：`powershell -File test-projects/03-restful-booker-api/tools/verify.ps1`
 - 完成标准：一个命令给出明确阶段结果
 - 可选挑战：失败即停止
 
 ### Day 112：阶段验收
 - 学习重点：评估工程是否可被团队持续使用
 - 今日产出：从干净环境按 README 执行并写工程化报告
-- 目标文件：`03-restful-booker-api/reports/engineering-review.md`
-- 运行命令：`powershell -File 03-restful-booker-api/tools/verify.ps1`
+- 目标文件：`test-projects/03-restful-booker-api/reports/engineering-review.md`
+- 运行命令：`powershell -File test-projects/03-restful-booker-api/tools/verify.ps1`
 - 完成标准：配置、环境、报告、CI、维护文档完整
 - 可选挑战：列出三项技术债
 
@@ -1141,7 +1141,7 @@
 ### Day 141：监控基线
 - 学习重点：理解 CPU、内存、连接池与错误率
 - 今日产出：记录服务资源基线
-- 目标文件：`04-petstore-performance/reliability/baseline.md`
+- 目标文件：`test-projects/04-petstore-performance/reliability/baseline.md`
 - 运行命令：`docker stats --no-stream`
 - 完成标准：同一时间窗口的资源基线可复现
 - 可选挑战：记录磁盘和网络
@@ -1149,39 +1149,39 @@
 ### Day 142：请求指标
 - 学习重点：理解吞吐、延迟和错误率关联
 - 今日产出：整理 k6 指标采集脚本
-- 目标文件：`04-petstore-performance/reliability/metrics.js`
-- 运行命令：`k6 run 04-petstore-performance/reliability/metrics.js`
+- 目标文件：`test-projects/04-petstore-performance/reliability/metrics.js`
+- 运行命令：`k6 run test-projects/04-petstore-performance/reliability/metrics.js`
 - 完成标准：关键指标按接口和场景区分
 - 可选挑战：增加自定义业务指标
 
 ### Day 143：p95/p99 对比
 - 学习重点：避免只看平均响应时间
 - 今日产出：比较不同并发级别的尾延迟
-- 目标文件：`04-petstore-performance/reliability/tail-latency.md`
-- 运行命令：`k6 run 04-petstore-performance/k6/load.js`
+- 目标文件：`test-projects/04-petstore-performance/reliability/tail-latency.md`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/load.js`
 - 完成标准：报告解释平均值与尾延迟差异
 - 可选挑战：按接口分组
 
 ### Day 144：慢接口定位
 - 学习重点：建立从指标到假设的路径
 - 今日产出：选择最慢接口写瓶颈假设
-- 目标文件：`04-petstore-performance/reliability/slow-endpoint.md`
-- 运行命令：`k6 run 04-petstore-performance/k6/focused.js`
+- 目标文件：`test-projects/04-petstore-performance/reliability/slow-endpoint.md`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/focused.js`
 - 完成标准：假设引用请求和资源证据
 - 可选挑战：设计 A/B 验证
 
 ### Day 145：30 分钟稳定性
 - 学习重点：识别资源泄漏和累积问题
 - 今日产出：执行受控 soak 测试
-- 目标文件：`04-petstore-performance/k6/soak.js`
-- 运行命令：`k6 run 04-petstore-performance/k6/soak.js`
+- 目标文件：`test-projects/04-petstore-performance/k6/soak.js`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/soak.js`
 - 完成标准：趋势无持续恶化或有明确证据
 - 可选挑战：按机器能力缩短预演
 
 ### Day 146：恢复时间
 - 学习重点：理解故障检测与恢复指标
 - 今日产出：记录一次服务重启后的恢复时间
-- 目标文件：`04-petstore-performance/reliability/recovery.md`
+- 目标文件：`test-projects/04-petstore-performance/reliability/recovery.md`
 - 运行命令：`docker compose restart`
 - 完成标准：恢复步骤、耗时和数据影响有记录
 - 可选挑战：自动化健康检查
@@ -1189,7 +1189,7 @@
 ### Day 147：依赖故障
 - 学习重点：理解下游故障对用户流的影响
 - 今日产出：模拟依赖超时或 5xx
-- 目标文件：`04-petstore-performance/reliability/dependency-failure.md`
+- 目标文件：`test-projects/04-petstore-performance/reliability/dependency-failure.md`
 - 运行命令：`pytest advanced-quality/network/test_server_errors.py -q`
 - 完成标准：超时、错误提示和恢复路径有断言
 - 可选挑战：验证降级
@@ -1197,7 +1197,7 @@
 ### Day 148：超时策略
 - 学习重点：区分连接、读取和总超时
 - 今日产出：为测试和服务列出超时策略
-- 目标文件：`04-petstore-performance/reliability/timeouts.md`
+- 目标文件：`test-projects/04-petstore-performance/reliability/timeouts.md`
 - 运行命令：`git diff --check`
 - 完成标准：每个超时有依据、上限和告警行为
 - 可选挑战：测慢网络
@@ -1205,39 +1205,39 @@
 ### Day 149：重试风暴
 - 学习重点：理解重试放大效应
 - 今日产出：模拟重试并记录请求放大
-- 目标文件：`04-petstore-performance/reliability/retry-storm.md`
-- 运行命令：`k6 run 04-petstore-performance/k6/retry.js`
+- 目标文件：`test-projects/04-petstore-performance/reliability/retry-storm.md`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/retry.js`
 - 完成标准：能说明重试次数对吞吐和延迟的影响
 - 可选挑战：加入抖动
 
 ### Day 150：限流
 - 学习重点：理解保护系统的限流策略
 - 今日产出：设计并验证 429 场景
-- 目标文件：`04-petstore-performance/reliability/rate-limit.md`
-- 运行命令：`k6 run 04-petstore-performance/k6/spike.js`
+- 目标文件：`test-projects/04-petstore-performance/reliability/rate-limit.md`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/spike.js`
 - 完成标准：限流阈值、用户提示和恢复有记录
 - 可选挑战：区分客户端和服务端限流
 
 ### Day 151：峰值恢复
 - 学习重点：观察突发流量后的恢复质量
 - 今日产出：执行 spike 并记录恢复曲线
-- 目标文件：`04-petstore-performance/reports/spike-recovery.md`
-- 运行命令：`k6 run 04-petstore-performance/k6/spike.js`
+- 目标文件：`test-projects/04-petstore-performance/reports/spike-recovery.md`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/spike.js`
 - 完成标准：报告包含峰值、错误和恢复时间
 - 可选挑战：增加两种峰值
 
 ### Day 152：容量拐点
 - 学习重点：计算安全并发和极限并发
 - 今日产出：更新容量曲线与建议
-- 目标文件：`04-petstore-performance/reports/capacity.md`
-- 运行命令：`python 04-petstore-performance/tools/analyze_results.py`
+- 目标文件：`test-projects/04-petstore-performance/reports/capacity.md`
+- 运行命令：`python test-projects/04-petstore-performance/tools/analyze_results.py`
 - 完成标准：建议包含依据、安全余量和限制
 - 可选挑战：区分读写容量
 
 ### Day 153：SLO 草案
 - 学习重点：把技术指标翻译成用户目标
 - 今日产出：为核心接口写 SLI/SLO 草案
-- 目标文件：`04-petstore-performance/reliability/slo.md`
+- 目标文件：`test-projects/04-petstore-performance/reliability/slo.md`
 - 运行命令：`git diff --check`
 - 完成标准：指标、目标、窗口和排除项明确
 - 可选挑战：加入错误预算
@@ -1245,7 +1245,7 @@
 ### Day 154：告警验证
 - 学习重点：避免只配置不验证告警
 - 今日产出：为错误率或 p95 写告警测试说明
-- 目标文件：`04-petstore-performance/reliability/alert-test.md`
+- 目标文件：`test-projects/04-petstore-performance/reliability/alert-test.md`
 - 运行命令：`git diff --check`
 - 完成标准：能说明如何触发、观察、恢复和关闭
 - 可选挑战：模拟告警噪声
@@ -1253,7 +1253,7 @@
 ### Day 155：日志关联
 - 学习重点：用 trace id 串起请求与错误
 - 今日产出：为一次失败链路整理日志证据
-- 目标文件：`04-petstore-performance/reliability/traceability.md`
+- 目标文件：`test-projects/04-petstore-performance/reliability/traceability.md`
 - 运行命令：`pytest advanced-quality -q`
 - 完成标准：从测试结果能定位到对应日志上下文
 - 可选挑战：加入请求 id
@@ -1261,15 +1261,15 @@
 ### Day 156：数据一致性
 - 学习重点：验证故障期间的数据状态
 - 今日产出：设计中断后数据一致性检查
-- 目标文件：`04-petstore-performance/reliability/data-consistency.py`
-- 运行命令：`pytest 03-restful-booker-api/tests -q`
+- 目标文件：`test-projects/04-petstore-performance/reliability/data-consistency.py`
+- 运行命令：`pytest test-projects/03-restful-booker-api/tests -q`
 - 完成标准：中断、重试、恢复后的数据结论明确
 - 可选挑战：重复执行
 
 ### Day 157：安全恢复
 - 学习重点：考虑凭据和数据在恢复流程中的风险
 - 今日产出：写恢复过程安全检查清单
-- 目标文件：`04-petstore-performance/reliability/recovery-security.md`
+- 目标文件：`test-projects/04-petstore-performance/reliability/recovery-security.md`
 - 运行命令：`git diff --check`
 - 完成标准：清单覆盖秘密、权限、数据和日志
 - 可选挑战：做一次演练
@@ -1277,7 +1277,7 @@
 ### Day 158：可靠性演练
 - 学习重点：把故障注入变成可控实验
 - 今日产出：设计一次本地故障演练方案
-- 目标文件：`04-petstore-performance/reliability/experiment.md`
+- 目标文件：`test-projects/04-petstore-performance/reliability/experiment.md`
 - 运行命令：`git diff --check`
 - 完成标准：有假设、停止条件、观察指标和回滚步骤
 - 可选挑战：执行小规模演练
@@ -1285,15 +1285,15 @@
 ### Day 159：性能回归
 - 学习重点：理解基线变化与质量趋势
 - 今日产出：将本轮性能结果与历史基线比较
-- 目标文件：`04-petstore-performance/reports/performance-regression.md`
-- 运行命令：`k6 run 04-petstore-performance/k6/smoke.js`
+- 目标文件：`test-projects/04-petstore-performance/reports/performance-regression.md`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/smoke.js`
 - 完成标准：报告说明指标变化、阈值判断和可能原因
 - 可选挑战：加入自动趋势差异
 
 ### Day 160：完整性能复盘
 - 学习重点：综合请求、资源和恢复证据
 - 今日产出：完成一次可靠性报告
-- 目标文件：`04-petstore-performance/reports/reliability-report.md`
+- 目标文件：`test-projects/04-petstore-performance/reports/reliability-report.md`
 - 运行命令：`git diff --check`
 - 完成标准：报告有结论、证据、风险和后续动作
 - 可选挑战：制作指标图
@@ -1301,8 +1301,8 @@
 ### Day 161：阶段验收
 - 学习重点：评估从性能测试到生产质量的能力
 - 今日产出：完成容量、稳定性和恢复三项验收
-- 目标文件：`04-petstore-performance/reports/reliability-review.md`
-- 运行命令：`k6 run 04-petstore-performance/k6/smoke.js`
+- 目标文件：`test-projects/04-petstore-performance/reports/reliability-review.md`
+- 运行命令：`k6 run test-projects/04-petstore-performance/k6/smoke.js`
 - 完成标准：能讲清容量、瓶颈、恢复和限制
 - 可选挑战：做十分钟演示
 

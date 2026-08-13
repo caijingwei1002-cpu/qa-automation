@@ -8,7 +8,7 @@
     {
       "id": "phase-1",
       "name": "TodoMVC UI 基础",
-      "project": "01-todomvc-ui",
+      "project": "test-projects/01-todomvc-ui",
       "days": 14,
       "objective": "建立 UI 自动化基本功",
       "week_themes": ["定位、交互与断言", "数据驱动、失败证据与可维护性"],
@@ -25,7 +25,7 @@
     {
       "id": "phase-2",
       "name": "SauceDemo UI 框架",
-      "project": "02-saucedemo-ui",
+      "project": "test-projects/02-saucedemo-ui",
       "days": 21,
       "objective": "把脚本提升为可维护的业务自动化框架",
       "week_themes": ["业务流程与异常用户", "Page Object、数据和报告", "浏览器矩阵、稳定性与回归"],
@@ -42,7 +42,7 @@
     {
       "id": "phase-3",
       "name": "Restful Booker API",
-      "project": "03-restful-booker-api",
+      "project": "test-projects/03-restful-booker-api",
       "days": 28,
       "objective": "建立可回归、可关联、可清理的接口测试框架",
       "week_themes": ["HTTP 基础和 CRUD", "鉴权与接口关联", "参数化、错误和 Schema", "数据隔离、并行和框架整理"],
@@ -59,7 +59,7 @@
     {
       "id": "phase-4",
       "name": "Swagger Petstore API 与性能入口",
-      "project": "04-petstore-performance",
+      "project": "test-projects/04-petstore-performance",
       "days": 21,
       "objective": "从 OpenAPI 契约进入性能和容量测试",
       "week_themes": ["OpenAPI、Schema 与契约", "k6 冒烟、负载与阈值", "压力、峰值、稳定性与报告"],
@@ -76,7 +76,7 @@
     {
       "id": "phase-5",
       "name": "测试工程化",
-      "project": "03-restful-booker-api",
+      "project": "test-projects/03-restful-booker-api",
       "days": 28,
       "objective": "让测试框架能被团队持续使用",
       "week_themes": ["Docker、配置和数据库", "日志、报告和测试数据", "并行、重试和 flaky 治理", "CI、质量门禁和维护"],
@@ -110,7 +110,7 @@
     {
       "id": "phase-7",
       "name": "生产质量与可靠性",
-      "project": "04-petstore-performance",
+      "project": "test-projects/04-petstore-performance",
       "days": 21,
       "objective": "从测试结果推导系统容量、风险和恢复能力",
       "week_themes": ["资源监控与瓶颈定位", "稳定性、韧性和恢复", "容量模型、告警和复盘"],
