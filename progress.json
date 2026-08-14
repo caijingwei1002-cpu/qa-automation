@@ -1,8 +1,9 @@
 {
-  "current_day": 3,
+  "current_day": 4,
   "completed_days": [
     1,
-    2
+    2,
+    3
   ],
   "history": [
     {
@@ -16,6 +17,12 @@
       "date": "2026-08-14",
       "result": "完成 Day 2：新增完成 Todo 测试，验证 checkbox、completed 状态和未完成计数，并记录本地服务未启动的根因。",
       "next_step": "Day 3：先创建两个 Todo，再验证删除目标项后目标消失且剩余项不受影响。"
+    },
+    {
+      "day": 3,
+      "date": "2026-08-14",
+      "result": "完成 Day 3：新增删除 Todo 测试，验证目标项消失、正确项目保留且未完成计数同步更新。",
+      "next_step": "Day 4：创建状态明确的 Todo 数据，覆盖 All、Active、Completed 三种筛选。"
     }
   ]
 }
