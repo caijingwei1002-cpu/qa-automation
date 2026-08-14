@@ -1,5 +1,14 @@
 {
-  "current_day": 1,
-  "completed_days": [],
-  "history": []
+  "current_day": 2,
+  "completed_days": [
+    1
+  ],
+  "history": [
+    {
+      "day": 1,
+      "date": "2026-08-14",
+      "result": "完成 Day 1：初始化 TodoMVC UI 测试并通过新增 Todo 验证。",
+      "next_step": "Day 2：学习 checkbox 交互和完成状态断言。"
+    }
+  ]
 }

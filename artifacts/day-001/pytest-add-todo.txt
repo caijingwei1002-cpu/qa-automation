@@ -1,0 +1,17 @@
+Day 1 verification evidence
+
+Command:
+.\.venv\Scripts\python.exe -m pytest test-projects/01-todomvc-ui/tests/test_todos.py::test_add_todo -q
+
+Result:
+.
+1 passed in 1.97s
+
+Target page:
+http://127.0.0.1:8080/
+
+Verified behavior:
+- A new Todo is added to the list.
+- The Todo text is "Buy milk".
+- The remaining item count contains "1 item".
+- The final Day 1 test file contains only the add-Todo scenario.
