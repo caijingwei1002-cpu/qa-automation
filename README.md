@@ -76,7 +76,22 @@ python tools/plan_day.py complete 1 `
 2. 一个与该知识重点直接对应的可运行测试脚本或工程改动；
 3. 一次真实执行结果，失败时记录根因或阻塞条件；
 4. 一份学习记录、知识验收和证据路径；
-5. 一次有意义的 Git 提交。
+5. 一份可脱离代码文件复习的 LEARNING-NOTES.md 知识章节；
+6. 一次有意义的本地 Git 提交。
+
+## 每日完结后的知识落盘流程
+
+学习者明确确认当天完成后，按以下顺序收尾：
+
+1. 从当天讲解、实践和复盘中提取知识点；
+2. 在 LEARNING-NOTES.md 中补充理论、心智模型、代码骨架、适用边界、误区和记忆要点；
+3. 检查知识章节是否可以独立阅读，不依赖关联测试文件才能理解；
+4. 同步目录、主题索引和 daily-log 中的知识落盘记录；
+5. 运行 git diff --check 和 python tools/validate_repo.py；
+6. 更新 progress.json，创建本地提交；
+7. 不执行 git push，除非用户明确要求。
+
+知识文档的固定文本格式见 LEARNING-NOTES.md 的“落盘文本格式规范”。
 
 ## 目录说明
 
@@ -91,6 +106,7 @@ qa-automation-learning/
 │   └── 04-petstore-performance/
 ├── daily-log/
 ├── artifacts/
+├── LEARNING-NOTES.md
 ├── templates/
 ├── tools/
 ├── plugins/
