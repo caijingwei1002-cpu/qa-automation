@@ -14,6 +14,7 @@
 - [Day 5：边界输入](#day-5边界输入)
 - [Day 6：参数化](#day-6参数化)
 - [Day 7：Fixture](#day-7fixture)
+- [Day 8：稳定定位](#day-8稳定定位)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -774,6 +775,95 @@ def todo_page_with_todos(todo_page: Page):
 - 证据文件：`artifacts/day-007/pytest-fixtures.txt`
 ---
 
+## Day 8：稳定定位
+
+### 核心知识点
+
+稳定定位（stable locator）是根据用户可感知的语义、业务对象和明确的结构范围查找页面元素，而不是把测试绑定到容易变化的 CSS class 或 DOM 细节。Playwright 中常见的定位信息包括 role、label、text、placeholder 和 CSS 结构选择器。
+
+### 它解决的问题
+
+脆弱定位器会让测试随着无业务影响的前端重构一起失败。例如 `.toggle` 依赖 CSS class 名；class 改成 `.todo-checkbox` 后，用户仍然看到并操作同一个 checkbox，但测试已经无法找到元素。稳定定位降低了测试与实现细节的耦合，也让失败信息更接近真实业务意图。
+
+### 理论基础
+
+#### 定位策略
+
+| 定位方式 | 适合场景 | 主要风险 |
+| --- | --- | --- |
+| `get_by_role()` | 链接、按钮、checkbox 等用户可操作控件 | role 可能在页面中重复，需要名称或容器作用域 |
+| `get_by_label()` | 有明确可访问 label 的表单控件 | 页面没有正确关联 label 时不能强行使用 |
+| `get_by_text()` | 唯一的用户可见文本，或已缩小到明确业务对象内 | 重复文本、包含匹配和文本变化会造成歧义 |
+| `get_by_placeholder()` | 页面没有 label 但 placeholder 是稳定契约的输入框 | placeholder 变化会影响测试，不能替代真正的 label |
+| CSS | 稳定的结构容器，或缺少语义钩子的元素 | 直接依赖 class、层级和样式实现，容易随重构失效 |
+
+优先使用 role、label、明确的 placeholder 或经过作用域限制的 text。CSS 可以用于锁定结构区域；进入结构区域后，再用语义定位业务对象和交互控件。
+
+#### 心智模型
+
+定位可以看成两层：
+
+```text
+页面结构范围：.todo-list
+        ↓
+业务对象：get_by_role("listitem")
+        ↓
+对象内控件：get_by_role("checkbox") / get_by_role("button")
+```
+
+语义定位不是“全页面搜索 role”。同一种 role 可能出现在多个区域，必须用业务容器、名称或唯一文本继续缩小范围。
+
+#### 最小代码骨架
+
+```python
+todo_items = page.locator(".todo-list").get_by_role("listitem")
+target_todo = todo_items.filter(has_text="Buy milk")
+
+expect(target_todo).to_have_count(1)
+target_todo.get_by_role("checkbox").check()
+```
+
+`to_have_count(1)` 证明当前 Todo 列表中唯一匹配一个目标；它不能证明整张页面只有一个相同文本。`get_by_role("checkbox")` 表达的是用户要操作的控件类型；如果页面有多个 checkbox，仍需要先限定业务对象。
+
+#### 适用场景与边界
+
+- role 适合用户能识别和操作的控件，优先使用可访问名称进一步提高唯一性。
+- label 适合真正关联到表单控件的标签；没有关联关系时不要为了形式强行使用。
+- text 适合唯一文本，重复文本必须先限定到具体业务对象。
+- CSS 适合稳定的结构容器，或页面没有可访问语义的元素；不要把普通样式 class 当成首选定位器。
+- 状态 class（例如 `.completed`）可以作为状态断言，但不应拿它作为查找目标元素的主要依据。
+
+#### 常见错误、反例与假通过
+
+1. 把 `.toggle`、`.destroy` 或 `.todo-list li` 当作默认定位器，测试会绑定到 CSS 和 DOM 实现。
+2. 直接使用全页 `get_by_role("listitem")`，会把筛选导航中的 `li` 也计算进去。本日第一次授权运行得到 `10 failed, 2 passed`，根因就是作用域过宽。
+3. 对重复文本使用 `get_by_text("Buy milk").first`，虽然可能通过，却没有表达真正的业务选择条件。
+4. 使用无名称的 `get_by_role("button")` 时不限定父级对象，未来增加按钮后可能出现歧义。本日将它限制在目标 Todo 内。
+
+#### 记忆要点
+
+先用结构范围确定“在哪个业务区域找”，再用 role、label 或唯一文本确定“要找什么”，最后在业务对象内部操作控件。CSS 可以锁定容器，但不应成为用户控件的默认语义。
+
+### 代码落地
+
+本日新增 `test_locators.py`，并将 Todo、新增、完成、删除、筛选、参数化和边界输入测试中的脆弱元素定位重构为“`.todo-list` 容器 + 语义 locator”。新增和完成测试使用 `listitem`、`checkbox`；筛选链接继续使用带名称的 `link`；删除按钮使用目标 Todo 作用域内的 `button`。`.completed` 和 `.todo-count` 仍用于状态验证，而不是作为业务对象定位器。
+
+### 知识验收
+
+1. 为什么语义 role 仍然需要容器作用域？
+2. 什么情况下 CSS 结构定位是合理例外，什么情况下它会变成脆弱实现定位？
+3. 为什么重复 Todo 文本不能直接使用全页 `get_by_text()`？
+4. 本日第一次测试失败暴露了什么定位问题，最终如何修复？
+
+### 关联产出
+
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_locators.py`
+- 重构文件：`test-projects/01-todomvc-ui/tests/test_todos.py`、`test-projects/01-todomvc-ui/tests/test_filters.py`、`test-projects/01-todomvc-ui/tests/test_todo_data.py`、`test-projects/01-todomvc-ui/tests/test_input_validation.py`
+- 验证命令：`.\.venv\Scripts\python.exe -m pytest test-projects/01-todomvc-ui/tests -q`
+- 验证结果：授权环境中 `12 passed in 9.88s`
+- 证据文件：`artifacts/day-008/pytest-locators.txt`
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -786,6 +876,7 @@ def todo_page_with_todos(todo_page: Page):
 | 等价类与边界值 | Day 5 | 空白、空格、重复、长文本 |
 | 断言语义 | Day 5 | textContent 与空白规范化 |
 | 参数化 | Day 6 | 多组输入复用同一测试逻辑 |
+| 稳定定位 | Day 8 | role、label、text、placeholder 与 CSS 结构作用域 |
 
 ## 每日完结后的知识落盘流程
 

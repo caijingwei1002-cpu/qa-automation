@@ -1,5 +1,5 @@
 {
-  "current_day": 8,
+  "current_day": 9,
   "completed_days": [
     1,
     2,
@@ -7,7 +7,8 @@
     4,
     5,
     6,
-    7
+    7,
+    8
   ],
   "history": [
     {
@@ -51,6 +52,12 @@
       "date": "2026-08-17",
       "result": "完成 Day 7：新增函数级 todo_page_with_todos fixture，统一准备 Todo 数据，删除和筛选测试复用准备逻辑；授权环境中 11 个测试通过并保存证据。",
       "next_step": "Day 8：检查 role、label、text、CSS 定位的稳定性，重构脆弱定位器并写定位规则。"
+    },
+    {
+      "day": 8,
+      "date": "2026-08-17",
+      "result": "完成 Day 8：重构 Todo 相关测试的脆弱定位，使用 .todo-list 作用域与语义 locator；授权环境中 12 个测试通过并保存证据。",
+      "next_step": "Day 9：检查固定 sleep，使用自动等待和可解释的状态等待。"
     }
   ]
 }

@@ -1,0 +1,32 @@
+Day 8: 稳定定位验证证据
+日期：2026-08-17
+
+计划命令：
+pytest test-projects/01-todomvc-ui/tests -q
+
+第一次执行：失败。
+根因：当前 PowerShell PATH 中没有 pytest 可执行命令，报错为 pytest 不是可识别的命令。
+
+项目虚拟环境执行：
+.\.venv\Scripts\python.exe -m pytest test-projects/01-todomvc-ui/tests -q
+
+第一次虚拟环境执行：失败。
+结果：12 个测试在 Playwright fixture 启动阶段报错。
+根因：沙箱禁止创建 Windows named pipe，报错为 PermissionError: [WinError 5]。
+
+授权环境重跑：
+.\.venv\Scripts\python.exe -m pytest test-projects/01-todomvc-ui/tests -q
+
+最终结果：12 passed in 9.88s
+
+验证中发现并修复的问题：
+1. 全页 get_by_role("listitem") 同时匹配 Todo 行和筛选导航 li，导致数量断言过宽。
+2. 修复为先用 .todo-list 锁定业务容器，再在容器内使用 get_by_role("listitem")。
+3. 关键控件使用 get_by_role("checkbox") 和作用域内 get_by_role("button")。
+
+静态检查：
+- 目标脆弱定位模式（.todo-list li、.toggle、.destroy、label CSS 定位）已清除。
+- git diff --check 通过。
+
+失败截图：
+测试失败钩子生成了 test-projects/01-todomvc-ui/screenshots/ 下的 10 张截图，作为初次失败的辅助证据保留。
