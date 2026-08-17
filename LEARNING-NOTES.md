@@ -13,6 +13,7 @@
 - [Day 4：筛选功能](#day-4筛选功能)
 - [Day 5：边界输入](#day-5边界输入)
 - [Day 6：参数化](#day-6参数化)
+- [Day 7：Fixture](#day-7fixture)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -671,12 +672,114 @@ test_todo_data.py 使用 todo_text 接收三组 Todo 文本，每次执行相同
 
 ---
 
+## Day 7：Fixture
+
+### 核心知识点
+
+理解测试前置、后置和隔离，掌握 fixture（测试夹具）如何通过依赖注入复用 Setup（准备）和 Teardown（清理），并用作用域控制资源生命周期。
+
+### 它解决的问题
+
+如果每个测试都手动打开页面、创建浏览器资源和准备相同数据，代码会重复；如果测试共享可变页面或数据，前一个测试的删除、完成状态或登录信息可能污染后一个测试。fixture 把公共准备集中起来，同时让每个测试获得明确的隔离边界。
+
+### 理论基础
+
+#### 定义与关键概念
+
+fixture 是 pytest 提供的可复用测试依赖。测试函数在参数中声明 fixture 名称后，pytest 会解析依赖、执行准备代码，并把结果注入测试函数。
+
+- Setup：测试开始前创建页面、打开 URL 或准备测试数据；
+- 注入：fixture 通过 `yield` 或 `return` 把对象交给测试；
+- Teardown：测试结束后关闭 page、context 或 browser 等资源；
+- 作用域（scope）：决定 fixture 多久创建一次，常见有 `function`、`class`、`module` 和 `session`；
+- 隔离：每个测试使用独立的可变状态，避免测试顺序改变结果。
+
+#### 心智模型或执行链
+
+~~~text
+pytest 收集测试
+    ↓
+解析测试参数中的 fixture
+    ↓
+按依赖顺序执行 Setup 并注入对象
+    ↓
+执行测试操作和业务断言
+    ↓
+按依赖的逆序执行 Teardown
+~~~
+
+本日项目的依赖链是：`browser（session） → context（function） → page（function） → todo_page → todo_page_with_todos → 测试函数`。
+
+#### 作用域与隔离的取舍
+
+| Fixture | 作用域 | 适合承担的职责 | 主要风险 |
+| --- | --- | --- | --- |
+| `browser` | `session` | 复用启动成本较高的浏览器进程 | 把可变业务状态放在这里会跨测试污染 |
+| `context` | `function` | 隔离 Cookie、Local Storage、登录状态和页面环境 | 每个测试重新创建有少量开销 |
+| `page` | `function` | 为每个测试提供独立页面并在结束后关闭 | 忘记关闭会造成资源泄漏 |
+| `todo_page_with_todos` | `function` | 准备当前测试需要的 Todo 数据 | 固定数据过多会隐藏场景意图 |
+
+一般原则是：昂贵且无状态的资源可以扩大作用域；会被测试修改的页面、context 和业务数据应保持函数级隔离。
+
+#### `yield` 与最小代码骨架
+
+~~~python
+@pytest.fixture
+def todo_page_with_todos(todo_page: Page):
+    todo_input = todo_page.get_by_placeholder("What needs to be done?")
+    for todo_text in ["Buy milk", "Learn pytest"]:
+        todo_input.fill(todo_text)
+        todo_input.press("Enter")
+    yield todo_page
+~~~
+
+`yield` 前的代码是 Setup，`yield` 产出的对象传给测试；测试结束后，pytest 回到 `yield` 后执行清理。当前 fixture 没有重复关闭 page，因为它依赖的 `page`、`context` fixture 会负责资源回收。
+
+#### 适用场景与边界
+
+适合提取为 fixture：多个测试重复出现的稳定前置条件、资源创建与清理、每次都应重新生成的测试数据和基础页面状态。不适合提取：只被一个测试使用的业务操作、删除或筛选等核心行为、业务断言，以及依赖测试顺序的共享可变状态。
+
+如果多个测试只是输入不同、步骤和断言结构相同，优先考虑参数化；如果多个测试需要相同的前置状态，才考虑 fixture。两者可以组合，但解决的问题不同。
+
+#### 常见错误、反例与假通过
+
+- 把 context 或业务数据设为 `session` 作用域，导致前一个测试的修改残留；
+- 把断言放入 fixture，混合准备逻辑和业务验证职责；
+- fixture 内部偷偷执行大量业务操作，测试函数看不出真正场景；
+- 只减少重复代码，却没有验证每个测试是否仍从独立状态开始。
+
+#### 记忆要点
+
+先找重复的 Arrange/Setup，再抽取 fixture；让 fixture 准备环境和数据，让测试执行行为和断言；用函数级作用域隔离可变状态，用 `yield` 管理资源生命周期。
+
+### 代码落地
+
+本日新增 `todo_page_with_todos`，依赖已打开页面的 `todo_page`，每个测试创建独立的 `Buy milk` 和 `Learn pytest`。`test_delete_todo` 和 `test_filter_todos` 不再重复填写输入框和提交 Todo，只声明需要的 fixture；删除、完成、筛选和结果断言仍保留在测试中。
+
+这体现了两点：数据准备被复用，但业务行为没有被隐藏；函数级 fixture 让删除测试对页面的修改不会影响筛选测试。
+
+### 知识验收
+
+1. 为什么 `browser` 可以使用 `session` 作用域，而 `context` 和测试数据通常使用 `function` 作用域？
+2. `yield` 前后分别承担什么职责？
+3. 为什么 `todo_page_with_todos` 不应该包含删除或筛选断言？
+4. 如何判断重复代码应该提取为 fixture，还是应该使用参数化？
+
+### 关联产出
+
+- 目标文件：`test-projects/01-todomvc-ui/tests/conftest.py`
+- 关联测试：`test-projects/01-todomvc-ui/tests/test_todos.py`、`test-projects/01-todomvc-ui/tests/test_filters.py`
+- 验证命令：`.\.venv\Scripts\python.exe -m pytest test-projects/01-todomvc-ui/tests -q`
+- 验证结果：授权环境中 `11 passed in 9.71s`
+- 证据文件：`artifacts/day-007/pytest-fixtures.txt`
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
 | --- | ---: | --- |
 | pytest、Playwright、expect 执行链 | Day 1 | 测试组织、浏览器操作、最终状态断言 |
-| fixture | Day 1 | 页面环境准备；Day 7 将继续深入 |
+| fixture | Day 1、Day 7 | 页面环境准备、数据准备、作用域与隔离 |
 | 状态断言 | Day 2 | checkbox、completed 类、未完成计数 |
 | DOM 与业务状态 | Day 3 | 删除后的目标消失、剩余数据和计数 |
 | 可见性与集合断言 | Day 4 | 筛选器状态、数量和完整结果集 |
