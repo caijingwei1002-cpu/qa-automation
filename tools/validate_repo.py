@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -64,6 +65,8 @@ def main() -> int:
         "daily-plan.json",
         "DAILY-PLAN.md",
         "curriculum.json",
+        "progress.json",
+        "LEARNING-NOTES.md",
         "templates/daily-log.md",
         ".github/workflows/repository-validation.yml",
     ]:
@@ -172,6 +175,53 @@ def main() -> int:
             fail(errors, f"daily log {log_path.name} does not reference {expected_evidence}")
         if "## 今日学习与产出" not in log_text:
             fail(errors, f"daily log {log_path.name} does not use the learning/output template")
+
+    progress = load_json("progress.json")
+    completed_days = progress.get("completed_days", [])
+    if not isinstance(completed_days, list):
+        fail(errors, "progress.json completed_days must be a list")
+        completed_days = []
+
+    notes_path = ROOT / "LEARNING-NOTES.md"
+    notes_text = notes_path.read_text(encoding="utf-8") if notes_path.is_file() else ""
+    index_marker = "## 知识主题索引"
+    index_text = notes_text.split(index_marker, 1)[1] if index_marker in notes_text else ""
+    for completed_day in completed_days:
+        if not isinstance(completed_day, int) or not 1 <= completed_day <= len(days):
+            fail(errors, f"completed day is outside the daily plan: {completed_day}")
+            continue
+
+        item = days[completed_day - 1]
+        title = str(item.get("title") or item.get("theme") or "").strip()
+        expected_heading = f"## Day {completed_day}：{title}"
+        if expected_heading not in notes_text:
+            fail(errors, f"completed Day {completed_day} is missing from LEARNING-NOTES.md: {expected_heading}")
+        else:
+            section_start = notes_text.index(expected_heading)
+            next_section = notes_text.find("\n## ", section_start + len(expected_heading))
+            section = notes_text[section_start:] if next_section == -1 else notes_text[section_start:next_section]
+            for required_heading in ("### 核心知识点", "### 它解决的问题", "### 理论基础", "### 代码落地", "### 知识验收", "### 关联产出"):
+                if required_heading not in section:
+                    fail(errors, f"LEARNING-NOTES.md Day {completed_day} is missing section: {required_heading}")
+
+        expected_nav = f"- [Day {completed_day}：{title}]"
+        if expected_nav not in notes_text:
+            fail(errors, f"LEARNING-NOTES.md is missing navigation entry for Day {completed_day}")
+        if not re.search(rf"(?<!\d)Day {completed_day}(?!\d)", index_text):
+            fail(errors, f"LEARNING-NOTES.md knowledge topic index does not reference Day {completed_day}")
+
+        log_path = log_dir / f"day-{completed_day:03d}.md"
+        if not log_path.is_file():
+            fail(errors, f"completed Day {completed_day} is missing daily log: {log_path.name}")
+            continue
+        completed_log = log_path.read_text(encoding="utf-8")
+        knowledge_lines = [line.strip() for line in completed_log.splitlines() if line.strip().startswith("知识点：")]
+        if not knowledge_lines or not knowledge_lines[0].removeprefix("知识点：").strip():
+            fail(errors, f"daily log {log_path.name} is missing an explicit knowledge point")
+        if "## 知识落盘记录" not in completed_log:
+            fail(errors, f"daily log {log_path.name} is missing the knowledge writeback section")
+        if "LEARNING-NOTES.md" not in completed_log or f"章节：Day {completed_day}" not in completed_log:
+            fail(errors, f"daily log {log_path.name} does not link its knowledge writeback to LEARNING-NOTES.md")
 
     nested_git = [
         path for path in ROOT.rglob(".git") if path != ROOT / ".git"

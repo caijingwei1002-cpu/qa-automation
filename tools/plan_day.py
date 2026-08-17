@@ -155,6 +155,7 @@ def render_log(plan: dict[str, Any], result: str = "", next_step: str = "") -> s
         "{{phase}}": plan["phase"],
         "{{project}}": plan["project"],
         "{{theme}}": plan["theme"],
+        "{{learn}}": plan["learn"],
         "{{task}}": plan["task"],
         "{{evidence}}": plan["evidence"],
     }

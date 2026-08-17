@@ -81,15 +81,16 @@ python tools/plan_day.py complete 1 `
 
 ## 每日完结后的知识落盘流程
 
-学习者明确确认当天完成后，按以下顺序收尾：
+学习者明确确认当天完成后，按以下顺序收尾。知识落盘是提交前置条件，未完成知识落盘时不得更新进度或创建提交：
 
-1. 从当天讲解、实践和复盘中提取知识点；
-2. 在 LEARNING-NOTES.md 中补充理论、心智模型、代码骨架、适用边界、误区和记忆要点；
-3. 检查知识章节是否可以独立阅读，不依赖关联测试文件才能理解；
-4. 同步目录、主题索引和 daily-log 中的知识落盘记录；
-5. 运行 git diff --check 和 python tools/validate_repo.py；
-6. 更新 progress.json，创建本地提交；
-7. 不执行 git push，除非用户明确要求。
+1. 从当天讲解、实践和复盘中提取明确的知识点；
+2. 在 `LEARNING-NOTES.md` 新增对应的 Day 章节，写入定义、解决的问题、心智模型、最小代码骨架、适用边界、常见误区、记忆要点和知识验收；
+3. 同步 `LEARNING-NOTES.md` 的目录和知识主题索引，并确认章节可以脱离测试文件独立阅读；
+4. 在 `daily-log/day-XXX.md` 填写明确的“知识点：”和“知识落盘记录”；
+5. 更新 `progress.json`，使当天进入 `completed_days`；
+6. 运行 `git diff --check` 和 `python tools/validate_repo.py`。验证失败时先修复知识落盘，不得提交；
+7. 只暂存当天相关文件，复核暂存范围后创建本地提交；
+8. 不执行 `git push`，除非用户明确要求。
 
 知识文档的固定文本格式见 LEARNING-NOTES.md 的“落盘文本格式规范”。
 
