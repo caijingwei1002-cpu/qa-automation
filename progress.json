@@ -1,10 +1,11 @@
 {
-  "current_day": 5,
+  "current_day": 6,
   "completed_days": [
     1,
     2,
     3,
-    4
+    4,
+    5
   ],
   "history": [
     {
@@ -30,6 +31,12 @@
       "date": "2026-08-14",
       "result": "完成 Day 4：新增筛选测试，使用集合断言覆盖 All、Active、Completed 三种筛选并保存通过证据。",
       "next_step": "Day 5：先明确空白、前后空格、重复文本和长文本四类输入的预期，再创建边界输入测试。"
+    },
+    {
+      "day": 5,
+      "date": "2026-08-14",
+      "result": "完成 Day 5：新增边界输入测试，覆盖空白、前后空格、重复文本和 256 字符长文本，四个测试通过并保存证据。",
+      "next_step": "Day 6：学习 pytest.mark.parametrize，从多组 Todo 输入中提取参数化测试数据。"
     }
   ]
 }
