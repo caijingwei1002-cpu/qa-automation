@@ -15,6 +15,7 @@
 - [Day 6：参数化](#day-6参数化)
 - [Day 7：Fixture](#day-7fixture)
 - [Day 8：稳定定位](#day-8稳定定位)
+- [Day 9：自动等待](#day-9自动等待)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -864,6 +865,95 @@ target_todo.get_by_role("checkbox").check()
 - 证据文件：`artifacts/day-008/pytest-locators.txt`
 ---
 
+## Day 9：自动等待
+
+### 核心知识点
+
+自动等待（auto-waiting）负责在 Playwright 执行操作前等待元素达到可操作状态；显式条件等待（condition-based waiting）使用 `expect` 在超时范围内反复检查业务状态。两者共同替代没有业务含义的固定 `sleep`。
+
+### 它解决的问题
+
+固定时间等待只表达“再等一段时间”，不表达页面何时真正准备好。页面响应较快时它浪费时间，响应较慢时它仍可能过早读取结果，导致 CI 中的偶发失败。等待明确的 UI 状态可以让测试更稳定、更快，也让失败信息直接说明哪个业务条件没有成立。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- `Locator` 是惰性页面元素引用，通常在实际操作或断言时才解析页面。
+- `click()`、`check()`、`fill()`、`press()` 等操作会自动等待元素可见、稳定、启用并能接收事件等可操作条件。
+- `expect(locator).to_have_count()`、`to_have_text()`、`to_be_checked()`、`to_have_class()` 等断言会在默认超时内重试，直到状态满足或超时失败。
+- `time.sleep()` 和 `page.wait_for_timeout()` 是固定时间等待，不应作为业务同步机制。
+
+#### 心智模型或执行链
+
+```text
+准备 Locator
+    ↓
+执行 click / check / press
+    ↓
+Playwright 自动等待元素可操作
+    ↓
+页面发生业务变化
+    ↓
+expect(...) 等待并验证目标状态
+```
+
+可以记成：自动等待保证“操作能做”，`expect` 保证“结果做对”。
+
+#### 最小代码骨架
+
+```python
+todo_input.press("Enter")
+todo_items = page.locator(".todo-list").get_by_role("listitem")
+
+expect(todo_items).to_have_count(1)
+expect(todo_items).to_have_text(["Wait for state"])
+```
+
+这段代码没有猜测等待 1 秒，而是等待 Todo 数量和文本真正达到预期。
+
+#### 断言、数据或状态的含义
+
+`expect(todo_items).to_have_count(1)` 证明列表中当前有一条匹配的 Todo，但不能证明文本正确；`to_have_text(["Wait for state"])` 证明这条 Todo 的文本符合预期，但不能单独证明未完成计数正确。因此需要根据业务结果组合数量、文本和计数断言。
+
+#### 适用场景与边界
+
+- 页面操作前优先依赖 Locator 的自动等待，不要用 `sleep` 预留时间。
+- 操作后等待用户可观察的业务状态，例如列表数量、文本、选中状态、完成状态或计数。
+- `wait_for_load_state("networkidle")` 可以表达导航后的网络状态，但不能替代“业务状态已完成”的断言。
+- 只有在确实需要等待非 UI 条件、且没有可观察状态时，才考虑更底层的等待机制，并应说明原因和超时边界。
+
+#### 常见错误、反例与假通过
+
+1. `sleep(1); expect(todo_items).to_have_text(...)` 仍然把稳定性押在固定时间上，页面慢时可能失败。
+2. 只验证 `click()` 没抛异常，最多证明点击操作完成，不能证明筛选、创建或删除结果正确。
+3. 只等待 `networkidle`，可能因为网络空闲但前端状态仍未更新而产生假通过或误判。
+4. 使用过长的全局超时掩盖错误，应该等待具体业务状态并保持失败信息可解释。
+
+#### 记忆要点
+
+操作前问：“元素现在能不能安全操作？”交给 Locator 自动等待；操作后问：“页面是否已经达到业务预期？”交给 `expect` 条件等待；不要用固定秒数代替状态。
+
+### 代码落地
+
+本日新增 `test_waiting.py`，创建 Todo 后使用 `.todo-list` 作用域取得 Todo 项，并用 `expect(todo_items).to_have_count(1)`、`to_have_text(["Wait for state"])` 和未完成计数断言等待并验证页面状态。测试目录静态扫描未发现 `sleep(` 或 `wait_for_timeout`，目标测试通过 `1 passed in 1.90s`。
+
+### 知识验收
+
+1. 为什么固定 `sleep(1)` 不能表达页面真正准备好？
+2. `locator.click()` 的自动等待与 `expect(...)` 的条件等待分别验证什么？
+3. `to_have_count(1)` 能证明什么，不能证明什么？
+4. 为什么 `networkidle` 不能替代业务状态断言？
+
+### 关联产出
+
+- 目标文件：`test-projects/01-todomvc-ui/tests/test_waiting.py`
+- 验证命令：`pytest test-projects/01-todomvc-ui/tests/test_waiting.py -q`
+- 验证结果：`1 passed in 1.90s`
+- 静态检查：`tests/` 未发现 `sleep(` 或 `wait_for_timeout`
+- 证据文件：`artifacts/day-009/pytest-waiting.txt`
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -877,6 +967,7 @@ target_todo.get_by_role("checkbox").check()
 | 断言语义 | Day 5 | textContent 与空白规范化 |
 | 参数化 | Day 6 | 多组输入复用同一测试逻辑 |
 | 稳定定位 | Day 8 | role、label、text、placeholder 与 CSS 结构作用域 |
+| 自动等待与条件等待 | Day 9 | Locator 操作自动等待、`expect` 业务状态等待与固定等待边界 |
 
 ## 每日完结后的知识落盘流程
 

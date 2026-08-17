@@ -1,0 +1,14 @@
+Day 9 验证证据
+日期：2026-08-17
+命令：pytest test-projects/01-todomvc-ui/tests/test_waiting.py -q
+结果：1 passed in 1.90s
+
+验证结论：
+- 测试通过
+- 使用 expect 条件等待 Todo 列表和未完成计数
+- 代码未使用固定 sleep 或 page.wait_for_timeout
+- 本次无失败或阻塞
+
+实际输出：
+. [100%]
+1 passed in 1.90s

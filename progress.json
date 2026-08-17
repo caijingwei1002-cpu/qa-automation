@@ -1,5 +1,5 @@
 {
-  "current_day": 9,
+  "current_day": 10,
   "completed_days": [
     1,
     2,
@@ -8,7 +8,8 @@
     5,
     6,
     7,
-    8
+    8,
+    9
   ],
   "history": [
     {
@@ -58,6 +59,12 @@
       "date": "2026-08-17",
       "result": "完成 Day 8：重构 Todo 相关测试的脆弱定位，使用 .todo-list 作用域与语义 locator；授权环境中 12 个测试通过并保存证据。",
       "next_step": "Day 9：检查固定 sleep，使用自动等待和可解释的状态等待。"
+    },
+    {
+      "day": 9,
+      "date": "2026-08-17",
+      "result": "完成 Day 9：新增状态等待测试，使用 expect 条件等待验证 Todo 创建结果；测试通过并保存证据。",
+      "next_step": "Day 10：配置失败截图和 Trace 保留，制造一次失败并检查调试证据。"
     }
   ]
 }
