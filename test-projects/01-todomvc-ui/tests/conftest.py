@@ -51,3 +51,14 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     rep = outcome.get_result()
     setattr(item, f"rep_{rep.when}", rep)
+
+
+@pytest.fixture
+def todo_page_with_todos(todo_page: Page):
+    todo_input = todo_page.get_by_placeholder("What needs to be done?")
+
+    for todo_text in ["Buy milk", "Learn pytest"]:
+        todo_input.fill(todo_text)
+        todo_input.press("Enter")
+
+    yield todo_page

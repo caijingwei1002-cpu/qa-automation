@@ -1,0 +1,21 @@
+Day 7 验证：Fixture
+日期：2026-08-17
+
+计划命令：
+pytest test-projects/01-todomvc-ui/tests -q
+
+第一次执行结果：失败
+原因：当前 PowerShell PATH 中没有 pytest 命令，提示“pytest 不是可识别的命令”。
+
+修复后的执行命令：
+.\.venv\Scripts\python.exe -m pytest test-projects/01-todomvc-ui/tests -q
+
+第二次执行结果：失败
+原因：沙箱阻止 Playwright 启动驱动时创建 Windows named pipe，所有测试在 browser fixture 初始化阶段报 PermissionError: [WinError 5] Access is denied。
+这不是测试断言或 fixture 重构错误。
+
+授权环境重跑结果：通过
+输出：.......... [100%]
+       11 passed in 9.71s
+
+结论：完整测试集通过；todo_page_with_todos fixture 能准备独立测试数据，删除和筛选测试复用准备逻辑且业务断言保持通过。

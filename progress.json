@@ -1,12 +1,13 @@
 {
-  "current_day": 7,
+  "current_day": 8,
   "completed_days": [
     1,
     2,
     3,
     4,
     5,
-    6
+    6,
+    7
   ],
   "history": [
     {
@@ -44,6 +45,12 @@
       "date": "2026-08-17",
       "result": "完成 Day 6：使用 pytest.mark.parametrize 将三组 Todo 输入集中到同一个测试函数，3 个参数化用例通过并保存证据。",
       "next_step": "Day 7：识别重复的页面与数据前置准备，使用 fixture 统一打开页面和准备数据。"
+    },
+    {
+      "day": 7,
+      "date": "2026-08-17",
+      "result": "完成 Day 7：新增函数级 todo_page_with_todos fixture，统一准备 Todo 数据，删除和筛选测试复用准备逻辑；授权环境中 11 个测试通过并保存证据。",
+      "next_step": "Day 8：检查 role、label、text、CSS 定位的稳定性，重构脆弱定位器并写定位规则。"
     }
   ]
 }
