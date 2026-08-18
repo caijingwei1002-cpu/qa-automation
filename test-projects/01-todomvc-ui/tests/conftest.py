@@ -2,6 +2,8 @@ import os
 
 import pytest
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
+import re
+from pathlib import Path
 
 
 TODO_MVC_URL = os.getenv("TODO_MVC_URL", "http://127.0.0.1:8080")
@@ -18,6 +20,11 @@ def browser():
 @pytest.fixture
 def context(browser: Browser):
     context = browser.new_context()
+    context.tracing.start(
+        screenshots=True,
+        snapshots=True,
+        sources=True,
+    )
     yield context
     context.close()
 
@@ -38,12 +45,35 @@ def todo_page(page: Page):
 
 @pytest.fixture(autouse=True)
 def _screenshot_on_failure(request, page: Page):
+    # 先让测试执行
     yield
-    if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
-        screenshot_dir = os.path.join(os.path.dirname(__file__), "..", "screenshots")
-        os.makedirs(screenshot_dir, exist_ok=True)
-        screenshot_path = os.path.join(screenshot_dir, f"{request.node.name}.png")
-        page.screenshot(path=screenshot_path)
+
+    # pytest_runtest_makereport 会在测试结束后写入 rep_call
+    report = getattr(request.node, "rep_call", None)
+    failed = report is not None and report.failed
+
+    # 成功时停止并丢弃 Trace
+    if not failed:
+        page.context.tracing.stop()
+        return
+
+    # 失败时保存截图和 Trace
+    artifact_dir = (
+        Path(__file__).resolve().parents[3] / "artifacts" / "day-010"
+    )
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+
+    # 测试名可能包含空格、方括号等字符，先转换为安全文件名
+    safe_name = re.sub(r"[^A-Za-z0-9_.-]+", "_", request.node.name)
+
+    page.screenshot(
+        path=str(artifact_dir / f"{safe_name}.png"),
+        full_page=True,
+    )
+
+    page.context.tracing.stop(
+        path=str(artifact_dir / f"{safe_name}.zip")
+    )
 
 
 @pytest.hookimpl(hookwrapper=True)

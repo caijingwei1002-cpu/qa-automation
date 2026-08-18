@@ -1,5 +1,5 @@
 {
-  "current_day": 10,
+  "current_day": 11,
   "completed_days": [
     1,
     2,
@@ -9,7 +9,8 @@
     6,
     7,
     8,
-    9
+    9,
+    10
   ],
   "history": [
     {
@@ -65,6 +66,12 @@
       "date": "2026-08-17",
       "result": "完成 Day 9：新增状态等待测试，使用 expect 条件等待验证 Todo 创建结果；测试通过并保存证据。",
       "next_step": "Day 10：配置失败截图和 Trace 保留，制造一次失败并检查调试证据。"
+    },
+    {
+      "day": 10,
+      "date": "2026-08-18",
+      "result": "完成 Day 10：配置失败截图和 Trace 保留，制造可控断言失败并确认 PNG 与 Trace ZIP 证据；全套 13 个测试通过。",
+      "next_step": "Day 11：学习 smoke、regression 标记策略，先检查实际 pytest 配置和测试分布。"
     }
   ]
 }

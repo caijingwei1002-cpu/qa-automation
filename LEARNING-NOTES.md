@@ -16,6 +16,7 @@
 - [Day 7：Fixture](#day-7fixture)
 - [Day 8：稳定定位](#day-8稳定定位)
 - [Day 9：自动等待](#day-9自动等待)
+- [Day 10：失败证据](#day-10失败证据)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -954,6 +955,111 @@ expect(todo_items).to_have_text(["Wait for state"])
 - 证据文件：`artifacts/day-009/pytest-waiting.txt`
 ---
 
+## Day 10：失败证据
+
+### 核心知识点
+
+失败证据是测试失败后自动保留的、能够帮助还原现场的调试信息。截图记录某个时间点的页面外观，Trace 记录测试操作和页面变化的时间线，日志记录断言、异常、超时和堆栈。三者组合起来，才能同时回答“当时看到了什么”“之前发生了什么”和“程序为什么失败”。
+
+### 它解决的问题
+
+只有断言错误时，失败信息可能无法说明页面当时是否加载、输入是否成功、元素是否可见，或者失败前哪一个操作改变了状态。失败截图提供现场，Trace 提供过程，日志提供原因，从而减少只能在本地重新猜测和复现的排查成本。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **截图（screenshot）**：页面在单个时间点的 PNG 快照，适合确认可见文本、控件、布局和业务状态。
+- **Trace**：Playwright 的过程记录，通常包含操作时间线、页面快照、网络活动和资源，保存后可在 Trace Viewer 中回放。
+- **日志（log）**：pytest 和 Playwright 输出的测试名、断言差异、超时、异常类型与堆栈，适合快速定位失败位置和技术原因。
+- **失败保留策略**：通过测试停止并丢弃 Trace，失败测试保存截图和 Trace，避免成功用例持续产生大量调试文件。
+
+#### 心智模型或执行链
+
+```text
+创建 BrowserContext
+        ↓
+启动 context.tracing.start(...)
+        ↓
+执行操作和业务断言
+        ↓
+pytest 生成 rep_call
+        ├── 通过：tracing.stop()，丢弃 Trace
+        └── 失败：保存 screenshot，再 tracing.stop(path=...) 保存 ZIP
+```
+
+可以记成：**截图看现场，Trace 看过程，日志看原因；绿测清理，红测留证。**
+
+#### 最小代码骨架
+
+```python
+context.tracing.start(
+    screenshots=True,
+    snapshots=True,
+    sources=True,
+)
+
+yield
+
+report = getattr(request.node, "rep_call", None)
+if report is None or not report.failed:
+    page.context.tracing.stop()
+else:
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(artifact_dir / "test.png"))
+    page.context.tracing.stop(path=str(artifact_dir / "test.zip"))
+```
+
+启动和停止必须属于同一个 BrowserContext 生命周期。成功分支调用不带路径的 `stop()`，表示结束并丢弃本次 Trace；失败分支给 `stop()` 传入 ZIP 路径，才能把 Trace 保存为可回放证据。
+
+#### 截图、Trace、日志各自证明什么
+
+| 证据 | 最适合回答的问题 | 不能单独证明什么 |
+| --- | --- | --- |
+| 截图 | 失败那一刻页面长什么样？ | 失败前的操作顺序和完整网络过程 |
+| Trace | 测试如何一步步走到失败？ | 业务断言是否合理，仍需要测试代码和日志解释 |
+| 日志 | 哪一步、因为什么异常或断言失败？ | 页面视觉状态和完整交互过程 |
+
+#### 适用场景与边界
+
+- 失败截图适合 UI 状态、布局、文本和元素可见性问题；不要把截图当作唯一的业务断言。
+- Trace 适合异步交互、定位器、页面状态和网络过程排查；它可能较大，应优先按失败保留而不是每次运行都保存。
+- 日志适合 CI 中快速筛选失败和审计；关键步骤仍应通过可解释的断言表达，而不是只打印大量文本。
+- 当前 fixture 在测试执行阶段失败时保留证据；如果页面 fixture 在进入测试前就创建失败，后续可以再设计更早的全局失败处理。
+- 文件名应清理空格和特殊字符，避免参数化测试名在 Windows 路径中造成歧义。
+
+#### 常见错误、反例与假通过
+
+1. 只调用 `tracing.start()`，没有在所有分支停止 Trace，可能导致资源未关闭或文件不完整。
+2. 失败时调用 `tracing.stop()` 却不传路径，Trace 会被丢弃，最终只剩截图和日志。
+3. 每个成功用例都保存截图和 Trace，短期看信息更多，长期会污染工作区并增加存储成本。
+4. 只验证证据文件存在，不检查 Trace ZIP 内容，可能把空文件或损坏文件误当成有效证据。
+5. 只看截图而不看断言和日志，可能看到正确的页面现场，却仍不清楚失败是期望值错误还是应用状态错误。
+
+#### 记忆要点
+
+失败排查的三问是：“页面当时是什么样？”看截图；“之前发生了什么？”看 Trace；“程序为什么失败？”看日志。成功运行清理调试数据，失败运行保留可回放证据。
+
+### 代码落地
+
+本日将 Trace 在 `test-projects/01-todomvc-ui/tests/conftest.py` 的 `context` fixture 中启动，并在自动 fixture teardown 阶段根据 `rep_call.failed` 选择保存或丢弃。可控地把 Todo 数量期望从 1 改为 99 后，生成了 `artifacts/day-010/test_add_todo.png` 和 `artifacts/day-010/test_add_todo.zip`；恢复断言后目标测试通过，全套测试为 `13 passed`。
+
+### 知识验收
+
+1. 截图、Trace、日志分别最适合回答什么问题？
+2. 为什么成功测试应丢弃 Trace，而失败测试应保留 Trace？
+3. 可控失败如何证明失败证据链本身可靠？
+4. 为什么 Trace 必须在同一个 BrowserContext 中启动和停止？
+5. 当前失败 fixture 对测试 setup 阶段失败有什么边界？
+
+### 关联产出
+
+- 目标文件：`test-projects/01-todomvc-ui/tests/conftest.py`
+- 验证命令：`pytest test-projects/01-todomvc-ui/tests -q`
+- 验证结果：`13 passed in 11.85s`
+- 失败证据：`artifacts/day-010/test_add_todo.png`、`artifacts/day-010/test_add_todo.zip`
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -968,6 +1074,7 @@ expect(todo_items).to_have_text(["Wait for state"])
 | 参数化 | Day 6 | 多组输入复用同一测试逻辑 |
 | 稳定定位 | Day 8 | role、label、text、placeholder 与 CSS 结构作用域 |
 | 自动等待与条件等待 | Day 9 | Locator 操作自动等待、`expect` 业务状态等待与固定等待边界 |
+| 失败证据 | Day 10 | screenshot、Trace、日志与失败保留策略 |
 
 ## 每日完结后的知识落盘流程
 
