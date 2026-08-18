@@ -21,6 +21,7 @@
 - [Day 12：数据与辅助函数](#day-12数据与辅助函数)
 - [Day 13：小型回归](#day-13小型回归)
 - [Day 14：阶段验收](#day-14阶段验收)
+- [Day 15：项目初始化](#day-15项目初始化)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -1432,6 +1433,132 @@ UI 测试失败只是异常信号，不是产品 Bug 的最终结论。应先定
 
 ---
 
+## Day 15：项目初始化
+
+### 核心知识点
+
+理解电商业务流和测试边界（business flow and test scope）是先确定业务目标，再决定一个测试负责哪一段可观察流程。今天的标准登录测试只覆盖“标准用户输入正确凭据并进入商品页”，不把商品、购物车和结账流程混入登录测试。
+
+### 它解决的问题
+
+没有边界的端到端测试会把多个业务模块串在一起，导致执行失败后难以判断问题属于认证、商品页、购物车还是结账；测试也会变慢、重复和难以维护。明确边界让每条测试围绕一个业务行为，并让 URL、页面标题等断言有清晰含义。
+
+### 理论基础
+
+#### 1. 电商业务流与测试切片
+
+```text
+登录
+  ↓
+商品浏览
+  ↓
+加入购物车
+  ↓
+填写结账信息
+  ↓
+提交订单
+```
+
+今天只验证第一段：
+
+```text
+标准用户 + 正确凭据
+  ↓
+登录成功
+  ↓
+进入 inventory.html
+  ↓
+Products 页面标题出现
+```
+
+登录测试的直接业务结果是“用户进入登录后的商品页”；购物车、结账、登出和异常用户应拆成独立测试。
+
+#### 2. URL 与页面内容的双重断言
+
+| 断言 | 主要证明 | 不能单独证明 |
+| --- | --- | --- |
+| URL 匹配 `/inventory.html` | 浏览器完成预期路由跳转 | 页面内容一定正确渲染 |
+| 页面标题为 `Products` | 商品页关键 UI 已经出现 | 所有商品数据、购物车和权限都正确 |
+
+组合断言形成“导航正确 + 目标页面可观察”的最小登录验收，而不是只证明点击动作没有抛异常。
+
+#### 3. 最小初始化结构
+
+```text
+test-projects/02-saucedemo-ui/
+├── pytest.ini
+└── tests/
+    ├── conftest.py
+    └── test_login.py
+```
+
+`pytest.ini` 负责测试发现和 marker 注册；`conftest.py` 负责浏览器、context、page、登录页和账号 fixture；`test_login.py` 负责表达登录业务步骤和断言。Page Object 暂不提前引入，留给后续框架化学习日。
+
+#### 4. Fixture 与注释的维护边界
+
+fixture 集中管理重复的环境准备、资源生命周期和测试隔离；测试函数保留业务行为和验收标准。注释不应重复“这一行调用了 fill”，而应解释“为什么使用环境变量”“为什么每条测试使用独立 context”“为什么登录测试停在商品页”。
+
+#### 5. 失败分层与证据
+
+测试失败必须先定位层级：
+
+```text
+操作系统/权限
+    ↓
+Playwright/浏览器驱动
+    ↓
+页面加载/网络
+    ↓
+测试定位器和数据
+    ↓
+业务断言/产品行为
+```
+
+本日的 `WinError 5` 发生在浏览器驱动创建 named pipe 时，测试还没有执行登录；`ERR_CONNECTION_REFUSED` 发生在 TodoMVC `page.goto` 时，原因是本地服务未监听 8080。两者都不能直接判定为产品 Bug。
+
+#### 6. 适用场景与边界
+
+适合拆成独立测试：标准登录、错误密码、锁定用户、商品列表、加入购物车、结账校验和登出。今天不适合覆盖：商品选择、购物车、订单提交、错误用户和会话刷新；这些属于后续业务目标。
+
+#### 7. 常见错误、反例与假通过
+
+1. 一个登录测试继续加入购物车和结账，失败后无法快速定位责任模块。
+2. 只断言 URL，可能漏掉 URL 正确但页面空白或前端渲染失败。
+3. 只断言按钮点击不报错，不能证明登录后的业务状态正确。
+4. 把账号密码硬编码在每个测试中，导致配置变化时需要批量修改。
+5. 看到 `WinError 5` 或 `ERR_CONNECTION_REFUSED` 就改业务 locator，反而掩盖了环境根因。
+
+### 记忆要点
+
+**一个测试围绕一个明确业务目标；URL 证明导航，页面内容证明状态；fixture 管环境，注释记录设计意图，失败先定位层级。**
+
+### 代码落地
+
+本日新增 `test-projects/02-saucedemo-ui/tests/test_login.py` 的 `test_standard_user_login`。测试从 `saucedemo_page` fixture 开始，使用 `standard_user_credentials` 读取账号，通过 Username、Password 和 Login 完成登录，最后断言 `/inventory.html` 路由和 `Products` 标题。测试标记为 `smoke` 和 `regression`，分别表示关键路径和完整回归归属。
+
+同时为 Day 1–14 的 TodoMVC Python 代码补充了学习型注释，说明 fixture、helper、定位器、边界数据、等待、状态转换和失败证据的设计原因；注释后的旧测试全套得到 `15 passed in 13.01s`。
+
+SauceDemo 目标测试在授权环境中得到 `1 passed in 4.16s`。首次受限运行遇到 `WinError 5`，旧 TodoMVC 首次回归遇到服务未启动的 `ERR_CONNECTION_REFUSED`；分别通过授权重跑和启动 React dist 静态服务器处理。
+
+### 知识验收
+
+1. 为什么登录测试只到商品页，不继续测购物车？
+2. URL 断言和 `Products` 标题断言分别证明什么？
+3. `WinError 5` 与 `ERR_CONNECTION_REFUSED` 分别属于什么失败层级？
+4. fixture 和注释分别如何帮助测试维护？
+5. 为什么注释应解释设计意图，而不是逐行翻译语法？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_login.py`
+- 初始化文件：`test-projects/02-saucedemo-ui/pytest.ini`、`test-projects/02-saucedemo-ui/tests/conftest.py`
+- 历史注释范围：`test-projects/01-todomvc-ui/tests/`
+- 验证命令：`python -m pytest test-projects/02-saucedemo-ui/tests/test_login.py::test_standard_user_login -q`
+- 验证证据：`artifacts/day-015/verification.md`
+- 当天记录：`daily-log/day-015.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -1451,6 +1578,7 @@ UI 测试失败只是异常信号，不是产品 Bug 的最终结论。应先定
 | 测试数据、动作与断言 | Day 12 | helper、fixture 与测试主体的职责边界 |
 | 按风险选择回归范围 | Day 13 | smoke/regression 边界、状态联动、失败分层与证据 |
 | UI 自动化基础与局限 | Day 14 | 端到端链路、测试层边界、断言语义、flaky 与失败分层 |
+| 电商业务流与测试边界 | Day 15 | 登录测试切片、URL/页面断言、fixture、注释与失败分层 |
 
 ## 每日完结后的知识落盘流程
 

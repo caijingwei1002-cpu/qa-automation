@@ -1,5 +1,5 @@
 {
-  "current_day": 15,
+  "current_day": 16,
   "completed_days": [
     1,
     2,
@@ -14,7 +14,8 @@
     11,
     12,
     13,
-    14
+    14,
+    15
   ],
   "history": [
     {
@@ -100,6 +101,12 @@
       "date": "2026-08-18",
       "result": "完成 Day 14：独立新增 Clear completed 端到端测试，目标测试通过，完整回归 15 条测试通过；总结 UI 自动化的价值与边界，并记录 Playwright 权限阻塞根因。",
       "next_step": "Day 15：初始化 SauceDemo 项目并完成标准用户登录。"
+    },
+    {
+      "day": 15,
+      "date": "2026-08-18",
+      "result": "完成 Day 15：初始化 SauceDemo 最小测试结构并完成标准用户登录；目标测试通过，补充历史 TodoMVC 代码注释后 15 条旧测试仍通过，记录 Playwright 权限和本地服务阻塞。",
+      "next_step": "Day 16：学习负向场景与错误信息断言，覆盖错误密码和空用户名。"
     }
   ]
 }
