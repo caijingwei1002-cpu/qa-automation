@@ -18,6 +18,7 @@
 - [Day 9：自动等待](#day-9自动等待)
 - [Day 10：失败证据](#day-10失败证据)
 - [Day 11：标记与套件](#day-11标记与套件)
+- [Day 12：数据与辅助函数](#day-12数据与辅助函数)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -1161,6 +1162,88 @@ markers =
 
 ---
 
+## Day 12：数据与辅助函数
+
+### 核心知识点
+
+测试数据、动作和断言是测试中的三种不同职责：数据决定“拿什么测”，动作描述“如何操作”，断言说明“操作后必须满足什么业务结果”。辅助函数（helper）适合封装可复用动作，fixture 适合准备页面、浏览器上下文和测试前置条件，测试函数则应保留业务场景和断言。
+
+### 它解决的问题
+
+当每个测试都重复定位输入框、填充文本和提交时，测试主体会被操作细节淹没，定位器变化也需要逐个文件修复。把稳定且无业务判断的动作集中起来，可以减少重复和维护成本；同时把断言留在测试主体，读者仍能直接看到每个测试验证的业务结果，避免 helper 产生隐藏断言和不透明的假通过。
+
+### 理论基础
+
+#### 1. 三种职责的边界
+
+| 职责 | 典型内容 | 应该放在哪里 |
+| --- | --- | --- |
+| 测试数据 | `"Buy milk"`、边界文本、参数化列表、重复次数 | 测试或 fixture |
+| 动作 | 定位输入框、填充文本、按 Enter | `helpers.py` |
+| 断言 | 数量、文本、状态、计数和可见性 | 测试函数 |
+
+fixture 是测试生命周期和前置条件的抽象，例如打开页面或准备两条 Todo；它不是把所有业务验证都藏起来的地方。helper 是动作级复用，不应替测试决定期望结果。
+
+#### 2. 最小代码骨架
+
+~~~python
+from playwright.sync_api import Page
+
+
+def add_todo(page: Page, text: str) -> None:
+    todo_input = page.get_by_placeholder("What needs to be done?")
+    todo_input.fill(text)
+    todo_input.press("Enter")
+
+
+def test_add_todo(todo_page: Page):
+    add_todo(todo_page, "Buy milk")
+
+    todo_items = todo_page.locator(".todo-list").get_by_role("listitem")
+    expect(todo_items).to_have_count(1)
+    expect(todo_items).to_contain_text("Buy milk")
+~~~
+
+这个执行链是：测试提供数据 → helper 执行动作 → 测试读取业务对象并断言。循环仍由测试或 fixture 控制，因此抽取动作不会改变测试覆盖的数据数量或数据集合。
+
+#### 3. 适用场景与边界
+
+适合抽取：多个测试重复、动作语义稳定、动作本身不依赖某个测试专属期望的操作。暂不适合抽取：只出现一次且带有复杂业务判断的流程，或把动作、数据变换和断言混在一起的“万能 helper”。如果不同测试需要不同的期望结果，应共享动作而不是共享断言。
+
+#### 4. 常见错误、反例与假通过
+
+1. 在 helper 中加入 `expect`，会隐藏测试目标，使同一个动作无法自然复用于不同期望。
+2. 抽取动作时误改测试数据，例如把参数化变量固定成某个文本、丢失边界输入的空格，可能让测试“通过”但覆盖范围已经缩小。
+3. 让 helper 同时创建随机数据、准备 fixture 和断言，会让失败难以复现、职责难以定位。
+4. 只看到全套测试通过就认为产品没有缺陷；通过结果只能说明当前收集到的测试在当前环境和覆盖范围内通过。
+
+### 记忆要点
+
+**helper 负责怎么做，fixture 负责准备条件，test 负责表达业务行为和断言；抽取动作，不抽走数据控制和验收标准。**
+
+### 代码落地
+
+本日新增 `test-projects/01-todomvc-ui/tests/helpers.py` 的 `add_todo(page, text)`。`tests/conftest.py` 的 `todo_page_with_todos` fixture 使用它准备两条固定 Todo；新增、完成、边界输入、参数化、定位和等待测试也复用该动作。输入框定位、`fill` 和 `press` 最终只保留在 helper 中，数量、文本、状态和计数断言仍位于测试主体。
+
+全套验证命令得到 `13 passed in 11.10s`。验证结果保存于 `artifacts/day-012/verification.md`。
+
+### 知识验收
+
+1. 为什么 `add_todo` 可以共享，而 `expect` 应保留在具体测试中？
+2. fixture 与 helper 的职责有什么不同？
+3. 参数化测试和重复 Todo 场景中，为什么数据控制逻辑不能被 helper 吞掉？
+4. `13 passed` 能证明什么，不能证明什么？
+
+### 关联产出
+
+- 目标文件：`test-projects/01-todomvc-ui/tests/helpers.py`
+- 相关 fixture：`test-projects/01-todomvc-ui/tests/conftest.py`
+- 相关测试：`test-projects/01-todomvc-ui/tests/`
+- 验证命令：`pytest test-projects/01-todomvc-ui/tests -q`
+- 验证证据：`artifacts/day-012/verification.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -1177,6 +1260,7 @@ markers =
 | 自动等待与条件等待 | Day 9 | Locator 操作自动等待、`expect` 业务状态等待与固定等待边界 |
 | 失败证据 | Day 10 | screenshot、Trace、日志与失败保留策略 |
 | 标记与测试套件 | Day 11 | smoke/regression 集合关系、marker 声明与 `-m` 筛选 |
+| 测试数据、动作与断言 | Day 12 | helper、fixture 与测试主体的职责边界 |
 
 ## 每日完结后的知识落盘流程
 

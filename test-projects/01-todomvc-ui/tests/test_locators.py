@@ -7,16 +7,13 @@ Use CSS mainly for structural containers or missing semantic hooks.
 
 from playwright.sync_api import Page, expect
 import pytest
-
+from helpers import add_todo
 
 pytestmark = pytest.mark.regression
 
 
 def test_prefer_semantic_locators(todo_page: Page):
-    todo_input = todo_page.get_by_placeholder("What needs to be done?")
-    todo_input.fill("Stable locator")
-    todo_input.press("Enter")
-
+    add_todo(todo_page, "Stable locator")
     todo_item = (
         todo_page.locator(".todo-list")
         .get_by_role("listitem")

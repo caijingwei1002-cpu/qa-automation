@@ -1,5 +1,5 @@
 {
-  "current_day": 12,
+  "current_day": 13,
   "completed_days": [
     1,
     2,
@@ -11,7 +11,8 @@
     8,
     9,
     10,
-    11
+    11,
+    12
   ],
   "history": [
     {
@@ -79,6 +80,12 @@
       "date": "2026-08-18",
       "result": "完成 Day 11：注册 smoke/regression 标记，4 条关键路径 smoke 测试通过，13 条 regression 测试通过，并保存标记收集、执行结果和 WinError 5 根因证据。",
       "next_step": "Day 12：区分测试数据、动作和断言，提取 Todo 数据工厂或辅助函数，保留断言在测试中。"
+    },
+    {
+      "day": 12,
+      "date": "2026-08-18",
+      "result": "完成 Day 12：新增 add_todo 动作辅助函数，fixture 和相关测试复用公共动作，断言仍保留在测试中；全套 13 条测试通过并保存验证证据。",
+      "next_step": "Day 13：学习按风险选择回归范围，执行完整回归并整理失败清单。"
     }
   ]
 }

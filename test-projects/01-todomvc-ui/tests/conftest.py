@@ -4,7 +4,7 @@ import pytest
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 import re
 from pathlib import Path
-
+from helpers import add_todo
 
 TODO_MVC_URL = os.getenv("TODO_MVC_URL", "http://127.0.0.1:8080")
 
@@ -85,10 +85,7 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture
 def todo_page_with_todos(todo_page: Page):
-    todo_input = todo_page.get_by_placeholder("What needs to be done?")
-
     for todo_text in ["Buy milk", "Learn pytest"]:
-        todo_input.fill(todo_text)
-        todo_input.press("Enter")
+        add_todo(todo_page, todo_text)
 
     yield todo_page
