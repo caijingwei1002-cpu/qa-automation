@@ -1,6 +1,11 @@
+import pytest
 from playwright.sync_api import Page, expect
 
 
+pytestmark = pytest.mark.regression
+
+
+@pytest.mark.smoke
 def test_add_todo(todo_page: Page):
     todo_input = todo_page.get_by_placeholder("What needs to be done?")
     todo_input.fill("Buy milk")
@@ -12,6 +17,7 @@ def test_add_todo(todo_page: Page):
     expect(todo_page.locator(".todo-count")).to_contain_text("1")
 
 
+@pytest.mark.smoke
 def test_complete_todo(todo_page: Page):
     todo_input = todo_page.get_by_placeholder("What needs to be done?")
     todo_input.fill("Learn checkbox state")
@@ -29,6 +35,7 @@ def test_complete_todo(todo_page: Page):
     expect(todo_page.locator(".todo-count")).to_contain_text("0")
 
 
+@pytest.mark.smoke
 def test_delete_todo(todo_page_with_todos: Page):
     todo_items = todo_page_with_todos.locator(".todo-list").get_by_role("listitem")
 

@@ -2,6 +2,9 @@ import pytest
 from playwright.sync_api import Page, expect
 
 
+pytestmark = pytest.mark.regression
+
+
 @pytest.mark.parametrize(
     "todo_text",
     ["Buy milk", "Learn pytest", "Write parameterized test"],

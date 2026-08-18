@@ -1,6 +1,11 @@
+import pytest
 from playwright.sync_api import Page, expect
 
 
+pytestmark = pytest.mark.regression
+
+
+@pytest.mark.smoke
 def test_filter_todos(todo_page_with_todos: Page):
     todo_items = todo_page_with_todos.locator(".todo-list").get_by_role("listitem")
 

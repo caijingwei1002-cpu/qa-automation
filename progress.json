@@ -1,5 +1,5 @@
 {
-  "current_day": 11,
+  "current_day": 12,
   "completed_days": [
     1,
     2,
@@ -10,7 +10,8 @@
     7,
     8,
     9,
-    10
+    10,
+    11
   ],
   "history": [
     {
@@ -72,6 +73,12 @@
       "date": "2026-08-18",
       "result": "完成 Day 10：配置失败截图和 Trace 保留，制造可控断言失败并确认 PNG 与 Trace ZIP 证据；全套 13 个测试通过。",
       "next_step": "Day 11：学习 smoke、regression 标记策略，先检查实际 pytest 配置和测试分布。"
+    },
+    {
+      "day": 11,
+      "date": "2026-08-18",
+      "result": "完成 Day 11：注册 smoke/regression 标记，4 条关键路径 smoke 测试通过，13 条 regression 测试通过，并保存标记收集、执行结果和 WinError 5 根因证据。",
+      "next_step": "Day 12：区分测试数据、动作和断言，提取 Todo 数据工厂或辅助函数，保留断言在测试中。"
     }
   ]
 }

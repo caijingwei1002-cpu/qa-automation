@@ -6,6 +6,10 @@ Use CSS mainly for structural containers or missing semantic hooks.
 """
 
 from playwright.sync_api import Page, expect
+import pytest
+
+
+pytestmark = pytest.mark.regression
 
 
 def test_prefer_semantic_locators(todo_page: Page):

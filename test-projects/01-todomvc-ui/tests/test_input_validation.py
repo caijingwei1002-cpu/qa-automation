@@ -1,4 +1,8 @@
+import pytest
 from playwright.sync_api import Page, expect
+
+
+pytestmark = pytest.mark.regression
 
 
 def test_blank_todo_is_not_created(todo_page: Page):

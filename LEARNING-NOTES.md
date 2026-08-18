@@ -17,6 +17,7 @@
 - [Day 8：稳定定位](#day-8稳定定位)
 - [Day 9：自动等待](#day-9自动等待)
 - [Day 10：失败证据](#day-10失败证据)
+- [Day 11：标记与套件](#day-11标记与套件)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -1060,6 +1061,106 @@ else:
 - 失败证据：`artifacts/day-010/test_add_todo.png`、`artifacts/day-010/test_add_todo.zip`
 ---
 
+## Day 11：标记与套件
+
+### 核心知识点
+
+使用 pytest marker 按风险和反馈速度组织测试套件：`smoke` 是少量、高价值的关键路径集合，`regression` 是覆盖面更大的功能回归集合。smoke 通常是 regression 的子集，而不是与 regression 互斥的两组测试。
+
+### 它解决的问题
+
+如果所有测试只能整套执行，提交后的快速反馈会变慢；如果只运行少数测试，又可能漏掉边界输入和历史功能回归。marker 让同一批测试可以按执行目的筛选：开发中快速运行 smoke，发布或较大修改后运行 regression。
+
+### 理论基础
+
+#### 1. marker 是分类，不是测试逻辑
+
+marker 只给测试增加可查询的分类标签，不会替代操作、观察点或断言，也不会自动让测试跳过。`pytest -m smoke` 只是选择带有 `smoke` 标签的测试执行。
+
+#### 2. smoke 与 regression 的集合关系
+
+本项目采用以下关系：
+
+~~~text
+全部已收集测试：13
+└── regression：13
+    └── smoke：4 条关键路径
+~~~
+
+关键路径同时拥有两个 marker：
+
+~~~python
+import pytest
+
+pytestmark = pytest.mark.regression
+
+
+@pytest.mark.smoke
+def test_add_todo(todo_page):
+    ...
+~~~
+
+模块级 `pytestmark` 让模块中的测试进入 regression；函数级 `@pytest.mark.smoke` 再把关键路径加入 smoke。这样 `pytest -m smoke` 不会漏掉核心功能，`pytest -m regression` 也不会因为 smoke 筛选而排除核心测试。
+
+#### 3. marker 必须在项目配置中声明
+
+最小配置如下：
+
+~~~ini
+[pytest]
+addopts = -ra --strict-markers
+
+markers =
+    smoke: critical user journeys for fast feedback
+    regression: broader functional regression coverage
+~~~
+
+声明 marker 有两个作用：让团队知道每个标签的语义，并在 `--strict-markers` 下阻止拼写错误或未注册的 marker 被悄悄使用。
+
+#### 4. 筛选结果如何解释
+
+如果执行 smoke 得到：
+
+~~~text
+4 passed, 9 deselected
+~~~
+
+它表示 pytest 总共发现 13 个测试，其中 4 个符合 `-m smoke` 并实际运行，9 个因为筛选条件被排除。`deselected` 不是 failed，也不是 skipped；它不代表那 9 个测试已经通过，因为它们这次根本没有执行。
+
+### 常见错误、反例与假通过
+
+1. 只写 `@pytest.mark.smoke` 而不在 `pytest.ini` 注册 marker，可能产生未知 marker 警告；启用 `--strict-markers` 后会直接暴露配置问题。
+2. 把 smoke 和 regression 设计成互斥集合，可能导致运行 regression 时漏掉核心关键路径。除非项目有特殊约定，核心测试应同时属于两个集合。
+3. 把所有测试都标为 smoke，会让 smoke 失去快速反馈价值；边界输入、参数化数据和定位专项通常优先留在 regression。
+4. 看到 `deselected` 就把它当作通过，属于错误的结果解读；要确认完整质量仍需运行 regression 或默认全量套件。
+5. marker 名称不能代替风险分析。哪些测试进入 smoke，应该由用户关键路径、失败影响和执行成本共同决定。
+
+### 记忆要点
+
+**smoke 看关键路径，regression 看覆盖面；marker 负责选择，不负责断言；核心测试可同时属于两个集合。**
+
+### 代码落地
+
+本日将 `smoke` 和 `regression` 注册在 `test-projects/01-todomvc-ui/pytest.ini`。6 个测试模块通过模块级 `pytestmark` 进入 regression；`test_add_todo`、`test_complete_todo`、`test_delete_todo`、`test_filter_todos` 通过函数级 `@pytest.mark.smoke` 进入关键路径集合。
+
+收集结果为 smoke 4/13、regression 13/13；实际执行结果为 smoke `4 passed, 9 deselected`，regression `13 passed`。首次运行因 Playwright 启动子进程时的 Windows named pipe 权限 `WinError 5` 在 fixture 初始化阶段受阻，授权环境重跑后通过；该环境根因和处理记录在 `artifacts/day-011/verification.md`。
+
+### 知识验收
+
+1. 为什么 smoke 通常是 regression 的子集，而不是两组互斥测试？
+2. `pytestmark` 和函数级 `@pytest.mark.smoke` 在本日分别承担什么作用？
+3. `4 passed, 9 deselected` 能证明什么，不能证明什么？
+4. 为什么 marker 声明和 `--strict-markers` 能减少配置错误？
+
+### 关联产出
+
+- 目标配置：`test-projects/01-todomvc-ui/pytest.ini`
+- 标记测试：`test-projects/01-todomvc-ui/tests/`
+- 运行说明：`test-projects/01-todomvc-ui/README.md`
+- 验证证据：`artifacts/day-011/verification.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -1075,6 +1176,7 @@ else:
 | 稳定定位 | Day 8 | role、label、text、placeholder 与 CSS 结构作用域 |
 | 自动等待与条件等待 | Day 9 | Locator 操作自动等待、`expect` 业务状态等待与固定等待边界 |
 | 失败证据 | Day 10 | screenshot、Trace、日志与失败保留策略 |
+| 标记与测试套件 | Day 11 | smoke/regression 集合关系、marker 声明与 `-m` 筛选 |
 
 ## 每日完结后的知识落盘流程
 

@@ -1,4 +1,8 @@
+import pytest
 from playwright.sync_api import Page, expect
+
+
+pytestmark = pytest.mark.regression
 
 
 def test_todo_creation_waits_for_list_state(todo_page: Page):
