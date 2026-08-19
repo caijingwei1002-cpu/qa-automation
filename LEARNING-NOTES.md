@@ -25,6 +25,7 @@
 - [Day 16：登录异常](#day-16登录异常)
 - [Day 17：特殊用户](#day-17特殊用户)
 - [Day 18：商品列表](#day-18商品列表)
+- [Day 19：商品详情](#day-19商品详情)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -1868,6 +1869,116 @@ Day 18 在 `test-projects/02-saucedemo-ui/tests/test_inventory.py` 中新增 `te
 
 ---
 
+## Day 19：商品详情
+
+### 核心知识点
+
+列表到详情的导航验证（navigation validation）要验证的不只是 URL 变化，还要证明点击的商品身份正确、关键字段在两个页面之间一致，并且返回操作恢复了列表页面。
+
+### 它解决的问题
+
+如果测试只断言进入 `/inventory-item.html`，任何商品详情页都可能让测试通过；如果只验证商品名称，价格等关键数据仍可能错配；如果只验证返回 URL，列表页面也可能没有真正渲染恢复。分层验证可以把导航、身份、数据和页面恢复分别证据化。
+
+### 理论基础
+
+#### 1. 四层证据模型
+
+| 层次 | 典型断言 | 证明什么 |
+| --- | --- | --- |
+| 导航目的地 | `/inventory-item.html?id=...` | 浏览器进入了带商品标识的详情路由 |
+| 商品身份 | 详情名称为 `Sauce Labs Backpack` | 详情页对应刚才选择的目标商品 |
+| 数据一致性 | 详情价格等于列表预期价格 | 关键字段没有在列表和详情之间错配 |
+| 返回状态 | `/inventory.html` 与 `Products` 标题 | 返回了商品列表路由且列表 UI 重新出现 |
+
+URL 证明“去了哪里”，名称证明“去的是谁”，价格证明“关键数据是否一致”；这些断言不能互相完全替代。
+
+#### 2. 列表到详情再返回的执行链
+
+```text
+登录并进入商品列表
+    ↓
+定位唯一目标商品
+    ↓
+记录或确认独立的预期名称和价格
+    ↓
+点击列表中的真实商品元素
+    ↓
+验证详情 URL、名称和价格
+    ↓
+点击返回商品列表
+    ↓
+验证列表 URL 和页面标题
+```
+
+测试必须点击列表中的真实元素，而不是直接拼接或访问详情 URL。否则测试绕过了用户实际操作，无法验证列表链接是否把用户带到了正确商品。
+
+#### 3. 最小代码骨架
+
+```python
+expected_name = "Sauce Labs Backpack"
+expected_price = "$29.99"
+
+inventory_item = page.locator(".inventory_item").filter(
+    has_text=expected_name
+)
+expect(inventory_item).to_have_count(1)
+expect(inventory_item.locator(".inventory_item_price")).to_have_text(
+    expected_price
+)
+
+inventory_item.locator(".inventory_item_name").click()
+
+expect(page).to_have_url(
+    re.compile(r"/inventory-item\.html\?id=\d+$")
+)
+expect(page.locator(".inventory_details_name")).to_have_text(expected_name)
+expect(page.locator(".inventory_details_price")).to_have_text(expected_price)
+
+page.get_by_role("button", name="Back to products").click()
+expect(page).to_have_url(re.compile(r"/inventory\.html$"))
+expect(page.locator(".title")).to_have_text("Products")
+```
+
+今天使用独立预期值先验证列表，再验证详情。这与直接从列表 DOM 读取值并把它当作预期不同：后者只能证明两个页面彼此相同，不能单独证明列表数据本身正确。Day 18 的列表完整性测试负责覆盖商品列表的独立正确性，Day 19 负责跨页面一致性。
+
+#### 4. 适用场景与边界
+
+适合在商品、订单、用户或搜索结果等“列表项进入详情”的业务流中使用。至少选择一个有明确业务预期的实体，验证真实点击、详情身份和关键字段。今天只覆盖一个商品和名称/价格，不扩展到所有商品参数化、购物车或结账流程；多商品覆盖可作为后续扩展。
+
+#### 5. 常见错误、反例与假通过
+
+1. 只断言详情 URL：可能打开了错误商品。
+2. 直接访问详情 URL：绕过了列表到详情的真实导航链路。
+3. 只验证名称不验证价格：商品身份正确但价格仍可能错配。
+4. 使用过于宽泛的文本定位：可能点击到错误元素或多个商品。
+5. 直接读取列表 DOM 作为唯一预期：列表和详情同时错误时仍可能通过。
+6. 返回后只验证 URL：列表页面可能空白或关键 UI 没有恢复。
+
+### 记忆要点
+
+**URL 证明去了哪里，名称证明去的是谁，价格证明数据一致，返回后的 UI 证明业务闭环恢复。**
+
+### 代码落地
+
+Day 19 在 `test-projects/02-saucedemo-ui/tests/test_product_detail.py` 中新增 `test_product_detail_matches_inventory_and_returns`。测试登录标准用户后定位唯一的 `Sauce Labs Backpack`，先验证列表名称和价格，再点击商品名称，验证带 id 的详情路由、详情名称和价格，最后点击 `Back to products` 并验证商品列表 URL 和 `Products` 标题。
+
+### 知识验收
+
+1. 为什么只断言 `/inventory-item.html` 不能证明商品身份正确？
+2. 名称断言和价格断言分别证明什么？
+3. 为什么返回后要同时验证 URL 和页面标题？
+4. 为什么不能把页面实时读出的值无条件当作测试预期？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_product_detail.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_product_detail.py -q`
+- 验证结果：`1 passed in 4.04s`
+- 验证证据：`artifacts/day-019/verification.md`
+- 当天记录：`daily-log/day-019.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -1891,6 +2002,7 @@ Day 18 在 `test-projects/02-saucedemo-ui/tests/test_inventory.py` 中新增 `te
 | 负向场景与错误信息断言 | Day 16 | Authentication 与 Validation、错误提示、成功状态排除与失败分层 |
 | 测试账号与风险场景 | Day 17 | 特殊账号业务规则、异常观察、对照证据与 Bug 判断边界 |
 | 列表完整性与集合断言 | Day 18 | 数量、成员集合、逐项字段、重复检测与顺序边界 |
+| 列表到详情的导航验证 | Day 19 | 导航目的地、商品身份、跨页面字段一致性与返回状态 |
 
 ## 每日完结后的知识落盘流程
 
