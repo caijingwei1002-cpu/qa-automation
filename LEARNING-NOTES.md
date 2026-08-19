@@ -27,6 +27,7 @@
 - [Day 18：商品列表](#day-18商品列表)
 - [Day 19：商品详情](#day-19商品详情)
 - [Day 20：商品排序](#day-20商品排序)
+- [Day 21：加入购物车](#day-21加入购物车)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -2105,6 +2106,128 @@ Day 20 在 `test-projects/02-saucedemo-ui/tests/test_sorting.py` 中新增参数
 
 ---
 
+## Day 21：加入购物车
+
+### 核心知识点
+
+跨页面状态断言（cross-page state assertion）验证一次操作产生的状态是否在不同页面和组件中保持一致。加入购物车不能只证明按钮被点击，还要验证徽标数量、购物车内部条目、商品身份和关键字段。
+
+### 它解决的问题
+
+点击没有报错不代表商品成功加入；徽标为 1 不代表加入的是目标商品；购物车只有一项也不代表名称和价格正确。组合多个相互独立的观察点，才能证明完整业务状态。
+
+### 理论基础
+
+#### 1. 跨页面状态证据链
+
+```text
+列表页确认目标商品和价格
+    ↓
+在目标商品卡片内点击 Add to cart
+    ↓
+徽标变成 1
+    ↓
+进入购物车页面
+    ↓
+购物车只有一项
+    ↓
+名称和价格符合独立预期
+```
+
+每一层断言回答的问题不同，不能只用一条断言推断整个链路正确。
+
+#### 2. 数量、身份和数据的职责
+
+| 断言 | 证明什么 | 不能单独证明什么 |
+| --- | --- | --- |
+| 徽标文本为 `1` | 全局购物车数量提示已更新 | 商品身份和购物车内部内容 |
+| `.cart_item` 数量为 1 | 购物车内容区域有一个条目 | 这个条目是否是目标商品 |
+| 名称为 Backpack | 商品身份正确 | 价格是否正确 |
+| 价格为 `$29.99` | 关键业务数据正确 | 购物车是否包含额外商品 |
+
+组合断言才能同时回答“多少”“是谁”和“数据是否正确”。
+
+#### 3. 先定位业务对象，再定位操作
+
+```python
+inventory_item = page.locator(".inventory_item").filter(
+    has_text=expected_name
+)
+expect(inventory_item).to_have_count(1)
+inventory_item.get_by_role("button", name="Add to cart").click()
+```
+
+按钮定位被限制在 Backpack 商品卡片内部，表达的是“给 Backpack 加购”，而不是“点击页面第一个加购按钮”。这能抵抗商品排序和页面位置变化。
+
+#### 4. 独立预期值与跨页面一致性
+
+```python
+expected_name = "Sauce Labs Backpack"
+expected_price = "$29.99"
+```
+
+列表页和购物车页都分别与独立预期比较。若直接读取列表页错误价格并把它当作购物车预期，只能证明两个页面彼此相同，不能证明它们符合业务规则。测试不能让 Actual Result 自己生成唯一的 Expected Result。
+
+#### 5. Browser Context 与状态隔离
+
+本项目每条测试使用新的 Browser Context。Cookie、localStorage、sessionStorage 和登录/购物车浏览状态不会从上一条测试直接继承，因此 `badge == 1` 表达的是当前测试从干净状态加入一件商品，而不是历史购物车数量叠加后的结果。
+
+```text
+Test A → Context A → 购物车 0 → 1 → 关闭
+Test B → Context B → 购物车 0 → 1 → 关闭
+```
+
+如果复用污染状态，第二条测试可能从 1 开始变成 2，失败原因会变成测试之间互相影响，而不是被测功能本身。
+
+#### 6. 最小代码骨架
+
+```python
+inventory_item.get_by_role("button", name="Add to cart").click()
+expect(page.locator('[data-test="shopping-cart-badge"]')).to_have_text("1")
+
+page.locator('[data-test="shopping-cart-link"]').click()
+expect(page.locator(".cart_item")).to_have_count(1)
+
+cart_item = page.locator(".cart_item").filter(has_text=expected_name)
+expect(cart_item).to_have_count(1)
+expect(cart_item.locator(".inventory_item_name")).to_have_text(expected_name)
+expect(cart_item.locator(".inventory_item_price")).to_have_text(expected_price)
+```
+
+#### 7. 常见错误、反例与假通过
+
+1. 只点击按钮，不验证任何业务结果。
+2. 只验证徽标为 1，错误商品也可能通过。
+3. 只验证商品项数量，不验证名称和价格。
+4. 使用 `.first` 或 `.nth(0)` 点击按钮，使测试依赖页面顺序。
+5. 用列表页实时值作为唯一预期，列表和购物车同时错误时仍可能通过。
+6. 测试之间复用购物车状态，数量断言被历史数据污染。
+
+### 记忆要点
+
+**徽标证明外部数量，商品项证明内部数量，名称证明是谁，价格证明数据；独立 Context 证明结果只由当前测试产生。**
+
+### 代码落地
+
+Day 21 在 `test-projects/02-saucedemo-ui/tests/test_cart.py` 中新增 `test_add_one_item`。测试使用独立预期名称和价格定位 Backpack 商品卡片，在卡片内部点击 `Add to cart`，验证徽标为 1；进入购物车后验证只有一个商品项，并断言名称为 Backpack、价格为 `$29.99`。
+
+### 知识验收
+
+1. 徽标数量和购物车商品项数量分别证明什么？
+2. 为什么两个数量都是 1 仍不能证明加入了正确商品？
+3. 为什么不能直接信任列表页实时值作为唯一预期？
+4. Browser Context 隔离如何保护购物车数量断言？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_cart.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_cart.py::test_add_one_item -q`
+- 验证结果：`1 passed in 3.48s`
+- 验证证据：`artifacts/day-021/verification.md`
+- 当天记录：`daily-log/day-021.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -2130,6 +2253,7 @@ Day 20 在 `test-projects/02-saucedemo-ui/tests/test_sorting.py` 中新增参数
 | 列表完整性与集合断言 | Day 18 | 数量、成员集合、逐项字段、重复检测与顺序边界 |
 | 列表到详情的导航验证 | Day 19 | 导航目的地、商品身份、跨页面字段一致性与返回状态 |
 | 页面数据提取与排序验证 | Day 20 | 列表顺序、参数化、Decimal、控件状态与无头 UI 执行 |
+| 跨页面状态断言 | Day 21 | 购物车徽标、内容数量、商品身份、独立预期与 Context 隔离 |
 
 ## 每日完结后的知识落盘流程
 
