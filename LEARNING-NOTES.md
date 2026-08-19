@@ -23,6 +23,7 @@
 - [Day 14：阶段验收](#day-14阶段验收)
 - [Day 15：项目初始化](#day-15项目初始化)
 - [Day 16：登录异常](#day-16登录异常)
+- [Day 17：特殊用户](#day-17特殊用户)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -1653,6 +1654,116 @@ Day 16 在 `test-projects/02-saucedemo-ui/tests/test_login.py` 中保留标准�
 
 ---
 
+## Day 17：特殊用户
+
+### 核心知识点
+
+测试账号不是普通测试数据的替换品，而是风险模型（risk model）的具体载体。每个账号应代表一个明确的用户状态或故障类型，测试断言必须根据该账号的业务预期设计。
+
+### 它解决的问题
+
+如果所有测试都只使用 `standard_user`，只能证明正常用户路径，无法覆盖账号锁定、特殊用户状态或登录后页面异常。把账号与风险绑定，可以让测试回答更具体的问题：系统是否正确拒绝锁定用户？问题用户能否登录？异常发生在认证阶段还是商品页面？
+
+### 理论基础
+
+#### 1. 账号与业务预期的映射
+
+不同账号代表不同的测试策略：
+
+| 账号 | 风险模型 | 主要断言或观察 |
+| --- | --- | --- |
+| `standard_user` | 正常用户 | 登录成功、进入商品页、核心内容正确 |
+| `locked_out_user` | 账号已被锁定 | 错误提示正确、不能进入商品页 |
+| `problem_user` | 可登录但登录后页面可能异常 | 先确认进入商品页，再收集异常状态 |
+| `performance_glitch_user` | 时序或性能风险 | 后续用专门的等待与性能场景验证 |
+
+因此，`locked_out_user` 不能复用标准用户的成功 URL 断言；它的业务规则是“应该被拒绝”。`problem_user` 则必须先断言登录成功，才能把后续页面现象定位到登录后阶段。
+
+#### 2. 认证结果与异常观察要分层
+
+特殊账号测试可以拆成两层：
+
+```text
+选择风险账号
+    ↓
+执行登录
+    ↓
+断言账号对应的认证结果
+    ↓
+如果登录成功，观察后续页面状态
+    ↓
+保存可重复的事实证据
+```
+
+锁定账号的稳定契约是拒绝登录，因此应断言错误容器和非商品页 URL。问题账号的第一层契约是能登录并显示商品页；图片 `alt`、`src`、DOM 或网络状态属于第二层观察数据，不能在尚未确认产品预期时直接当作“应该如此”的断言。
+
+#### 3. 最小观察代码骨架
+
+```python
+expect(page).to_have_url(re.compile(r"/inventory\.html$"))
+expect(page.locator(".title")).to_have_text("Products")
+
+images = page.locator(".inventory_item_img img")
+expect(images).to_have_count(6)
+image_states = images.evaluate_all(
+    """images => images.map(image => ({
+        alt: image.getAttribute("alt"),
+        src: image.getAttribute("src"),
+    }))"""
+)
+print(f"observed image states: {image_states}")
+```
+
+`to_have_url` 和标题断言证明认证已经到达商品页；数量断言证明图片节点完整渲染；`evaluate_all` 把页面现象转成可比较的事实。它们不能单独证明图片内容符合产品需求，因此需要把观察结果保存到证据文件，并结合对照和预期继续分析。
+
+#### 4. 从异常观察到 Bug 判断
+
+`problem_user` 观察到 6 个商品都指向同一个 `sl-404` 资源时，当前得到的是 Actual Result（实际结果），不是最终 Bug 结论。可靠判断还需要：
+
+1. 与 `standard_user` 在同一环境、同一商品列表做对照；
+2. 在独立 context 中重复执行，确认现象稳定复现；
+3. 保存截图、Trace、DOM、图片 URL 和网络状态等证据；
+4. 确认产品需求或测试账号定义中的 Expected Result（预期结果）；
+5. 排除 locator、测试数据、网络和静态资源服务问题。
+
+只有当实际结果稳定、测试和环境没有问题，且与明确预期不一致时，才适合提交产品缺陷候选。
+
+#### 5. 适用场景与边界
+
+适合用特殊账号覆盖：账号锁定、权限状态、数据异常用户、性能迟缓用户和视觉异常用户。今天只覆盖 `locked_out_user` 与 `problem_user`，不提前扩展到购物车、性能专项或完整浏览器矩阵。问题探索阶段可以记录事实；稳定回归阶段再把确认过的业务预期固化为断言。
+
+#### 6. 常见错误、反例与假通过
+
+1. 所有账号都使用“登录后进入商品页”的同一套断言，导致锁定账号的正确拒绝被当成失败。
+2. 看到 `problem_user` 页面异常就直接写死错误图片 URL，把当前缺陷误当成长期预期。
+3. 只观察问题用户而没有标准用户对照，无法判断异常是否由环境或资源服务造成。
+4. 只运行一次就下 Bug 结论，忽略偶发网络失败、缓存和时序问题。
+5. 为了让测试变绿而修改断言，没有保存原始现象和复现证据。
+
+### 记忆要点
+
+**账号代表风险，断言跟随业务预期；先确定认证边界，再记录页面异常；`Actual Result` 是证据，不等于 `Product Bug`。**
+
+### 代码落地
+
+Day 17 在 `test-projects/02-saucedemo-ui/tests/test_users.py` 中新增两个回归测试。`test_locked_out_user_cannot_login` 断言锁定提示和未进入商品页；`test_problem_user_login_records_product_state` 先断言问题用户完成登录和商品页加载，再收集 6 个商品图片的 `alt/src`。本次观察显示 6 个图片都指向 `/assets/sl-404-Cq1a9k9X.jpg`，该现象已保存到验证证据，但没有未经需求确认就直接判定为产品 Bug。
+
+### 知识验收
+
+1. 为什么锁定用户和问题用户必须使用不同的断言策略？
+2. 为什么问题用户测试要先断言能登录，再收集页面状态？
+3. 从异常观察到产品 Bug 结论还缺哪些证据？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_users.py`
+- 验证命令：`python -m pytest test-projects/02-saucedemo-ui/tests/test_users.py -q`
+- 验证结果：`2 passed in 9.41s`（补充文件末尾换行后重新验证）
+- 验证证据：`artifacts/day-017/verification.md`
+- 当天记录：`daily-log/day-017.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -1674,6 +1785,7 @@ Day 16 在 `test-projects/02-saucedemo-ui/tests/test_login.py` 中保留标准�
 | UI 自动化基础与局限 | Day 14 | 端到端链路、测试层边界、断言语义、flaky 与失败分层 |
 | 电商业务流与测试边界 | Day 15 | 登录测试切片、URL/页面断言、fixture、注释与失败分层 |
 | 负向场景与错误信息断言 | Day 16 | Authentication 与 Validation、错误提示、成功状态排除与失败分层 |
+| 测试账号与风险场景 | Day 17 | 特殊账号业务规则、异常观察、对照证据与 Bug 判断边界 |
 
 ## 每日完结后的知识落盘流程
 
