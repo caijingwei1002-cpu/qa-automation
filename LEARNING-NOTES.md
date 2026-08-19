@@ -26,6 +26,7 @@
 - [Day 17：特殊用户](#day-17特殊用户)
 - [Day 18：商品列表](#day-18商品列表)
 - [Day 19：商品详情](#day-19商品详情)
+- [Day 20：商品排序](#day-20商品排序)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -1979,6 +1980,131 @@ Day 19 在 `test-projects/02-saucedemo-ui/tests/test_product_detail.py` 中新�
 
 ---
 
+## Day 20：商品排序
+
+### 核心知识点
+
+排序验证要从页面提取有序数据，用独立规则计算期望顺序，再比较操作后的实际列表。验证对象是“成员、重复数量和先后顺序”，因此不能把列表转换成集合。
+
+### 它解决的问题
+
+排序控件显示正确选项并不代表商品真正重排；名称正序和倒序包含相同成员，集合比较会让错误顺序通过；价格是业务数值，直接按文本比较会得到错误顺序。完整测试需要同时验证控件状态和数据状态。
+
+### 理论基础
+
+#### 1. 列表与集合的验证边界
+
+```python
+expected = ["A", "B", "C"]
+actual = ["C", "B", "A"]
+
+assert set(actual) == set(expected)  # 会通过，但顺序错误
+assert actual == expected            # 正确发现排序错误
+```
+
+`set` 只适合验证成员集合，还会去掉重复项；排序测试必须保留 `list`，让顺序和重复数量都参与比较。
+
+#### 2. 独立计算排序期望
+
+```text
+提取原始页面数据
+    ↓
+测试代码独立计算升序或降序期望
+    ↓
+选择排序选项
+    ↓
+等待页面完成重排
+    ↓
+重新提取实际列表并比较
+```
+
+Day 18 已负责验证商品成员和值的正确性；Day 20 以相同数据集为基准，专门验证排序转换。职责拆分可以避免一条测试承担过多失败原因。
+
+#### 3. 价格需要按数值排序
+
+```python
+from decimal import Decimal
+
+
+def parse_price(price_text: str) -> Decimal:
+    return Decimal(price_text.strip().removeprefix("$"))
+
+
+expected_prices = sorted(
+    original_prices,
+    key=parse_price,
+)
+```
+
+`key=parse_price` 把函数本身交给 `sorted`，让每个价格文本先转换成 `Decimal` 再比较。货币适合使用十进制精确类型，避免二进制浮点表示带来的精度语义问题。
+
+#### 4. 参数化覆盖四条业务规则
+
+| 选项值 | 字段 | 方向 | 业务规则 |
+| --- | --- | --- | --- |
+| `az` | 名称 | 升序 | Name A to Z |
+| `za` | 名称 | 降序 | Name Z to A |
+| `lohi` | 价格 | 升序 | Price low to high |
+| `hilo` | 价格 | 降序 | Price high to low |
+
+参数化把数据差异放入测试参数，登录、提取、操作和断言流程只保留一份。pytest 的 `4 passed` 表示四组参数分别通过，不代表整个商品模块没有其他风险。
+
+#### 5. 控件状态与业务数据状态
+
+```python
+sort_control.select_option("za")
+expect(sort_control).to_have_value("za")
+expect(product_names).to_have_text(descending_names)
+```
+
+`to_have_value` 证明下拉框选择成功，列表文本断言证明排序业务真正生效。A→Z 是默认状态，因此测试先切换并验证 Z→A 列表，再切回 A→Z；只验证中间控件值仍可能让不重排的列表假通过。
+
+#### 6. 为什么运行测试时可能看不到网页
+
+pytest 只负责组织测试、执行断言并汇总通过或失败；是否打开网页由测试依赖和调用决定：
+
+| 测试类型 | 典型行为 | 是否需要浏览器 |
+| --- | --- | --- |
+| 纯逻辑/单元测试 | 调用函数并比较返回值 | 否 |
+| API 测试 | 发送 HTTP 请求并断言响应 | 否 |
+| UI/端到端测试 | 打开页面、定位元素、点击并断言 DOM | 是 |
+
+本项目 `browser` fixture 使用 `playwright.chromium.launch(headless=True)`。因此 SauceDemo UI 测试会在后台启动无头浏览器并执行真实页面操作，只是不会显示可见窗口。调试时可以临时使用 headed 模式观察过程，但稳定自动化执行通常使用 headless。单纯输出 `PASS` 不等于测试成功；必须有断言，并由 pytest 退出状态报告结果。
+
+#### 7. 常见错误、反例与假通过
+
+1. 使用 `set` 比较排序结果，导致顺序和重复项丢失。
+2. 把价格字符串直接交给 `sorted`，得到字符顺序而不是金额顺序。
+3. 只验证下拉框选项值，不验证商品列表。
+4. 对默认 A→Z 状态只做一次无变化选择，排序逻辑损坏也可能通过。
+5. 从排序后的页面生成同一份期望，没有独立规则作为判断依据。
+6. 看到终端打印 `PASS` 就认为测试有效，但代码没有业务断言。
+
+### 记忆要点
+
+**排序测试要保留列表顺序；名称按文本规则，价格按 `Decimal` 数值；控件值证明选择，列表顺序证明业务生效；看不到窗口不代表没有运行浏览器。**
+
+### 代码落地
+
+Day 20 在 `test-projects/02-saucedemo-ui/tests/test_sorting.py` 中新增参数化测试，使用 `az`、`za`、`lohi`、`hilo` 四组参数覆盖名称和价格升降序。测试提取商品名称与价格，通过字符串排序或 `Decimal` 排序键计算期望，选择排序选项后同时断言控件值和完整列表顺序。知识验收发现 A→Z 场景缺少中间降序列表断言，补充后复验四组用例通过。
+
+### 知识验收
+
+1. 为什么排序测试不能使用 `set`？
+2. `key=parse_price` 如何改变价格比较语义？
+3. 控件值断言和列表顺序断言分别证明什么？
+4. 为什么 Day 20 测试看不到浏览器窗口，却仍然属于 UI 测试？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_sorting.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_sorting.py -q`
+- 最终验证结果：`4 passed in 10.45s`
+- 验证证据：`artifacts/day-020/verification.md`
+- 当天记录：`daily-log/day-020.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -2003,6 +2129,7 @@ Day 19 在 `test-projects/02-saucedemo-ui/tests/test_product_detail.py` 中新�
 | 测试账号与风险场景 | Day 17 | 特殊账号业务规则、异常观察、对照证据与 Bug 判断边界 |
 | 列表完整性与集合断言 | Day 18 | 数量、成员集合、逐项字段、重复检测与顺序边界 |
 | 列表到详情的导航验证 | Day 19 | 导航目的地、商品身份、跨页面字段一致性与返回状态 |
+| 页面数据提取与排序验证 | Day 20 | 列表顺序、参数化、Decimal、控件状态与无头 UI 执行 |
 
 ## 每日完结后的知识落盘流程
 
