@@ -24,6 +24,7 @@
 - [Day 15：项目初始化](#day-15项目初始化)
 - [Day 16：登录异常](#day-16登录异常)
 - [Day 17：特殊用户](#day-17特殊用户)
+- [Day 18：商品列表](#day-18商品列表)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -1764,6 +1765,109 @@ Day 17 在 `test-projects/02-saucedemo-ui/tests/test_users.py` 中新增两个�
 
 ---
 
+## Day 18：商品列表
+
+### 核心知识点
+
+列表完整性不是“页面上有一些商品”，而是要验证集合规模、集合成员和每个成员的关键字段。集合断言把页面实际结果与独立的预期数据进行比较，避免只抽查第一项造成假通过。
+
+### 它解决的问题
+
+如果只验证第一件商品，后续商品可能缺失、重复、价格错误或图片缺失而不被发现；如果只验证数量，页面也可能用重复商品凑够数量。分层断言可以把“有多少件”“是哪几件”和“每件数据是否对应”分别验证清楚。
+
+### 理论基础
+
+#### 1. 列表完整性的三层模型
+
+| 层次 | 典型断言 | 证明什么 |
+| --- | --- | --- |
+| 集合规模 | `expect(items).to_have_count(6)` | 页面渲染了预期数量的商品 |
+| 集合成员 | `actual_names == expected_names` | 商品名称集合与预期成员一致，能发现缺失和重复 |
+| 元素字段 | 逐个断言名称、价格、图片 | 每个商品内部的字段正确对应 |
+
+三层断言的职责不同，不能用数量断言替代成员断言，也不能用第一件商品的字段替代逐项验证。
+
+#### 2. 集合断言与顺序边界
+
+今天使用集合比较表达“成员完整但不额外要求顺序”：
+
+```python
+expected_names = {name for name, _ in EXPECTED_PRODUCTS}
+actual_names = set(
+    items.locator(".inventory_item_name").all_text_contents()
+)
+assert actual_names == expected_names
+```
+
+如果顺序是明确的业务契约，可以使用有序列表断言，例如 `to_have_text([...])`；如果顺序不是业务要求，集合比较可以避免把无关的排序变化误报成失败。但集合会丢失重复项的计数信息，因此应与数量断言组合使用。
+
+#### 3. 最小代码骨架
+
+```python
+items = page.locator(".inventory_item")
+expect(items).to_have_count(len(EXPECTED_PRODUCTS))
+
+expected_names = {name for name, _ in EXPECTED_PRODUCTS}
+actual_names = set(
+    items.locator(".inventory_item_name").all_text_contents()
+)
+assert actual_names == expected_names
+
+for product_name, expected_price in EXPECTED_PRODUCTS:
+    item = items.filter(has_text=product_name)
+    expect(item).to_have_count(1)
+    expect(item.locator(".inventory_item_price")).to_have_text(expected_price)
+```
+
+预期数据必须独立于页面实际数据定义。否则如果直接把页面读出的名称或价格当作预期值，页面错误也可能让测试通过。
+
+#### 4. 图片字段断言的边界
+
+今天验证每件商品都有一张可见图片，并且 `alt` 与 `src` 非空：
+
+```python
+product_image = item.locator(".inventory_item_img img")
+expect(product_image).to_have_count(1)
+expect(product_image).to_be_visible()
+expect(product_image).to_have_attribute("alt", re.compile(r".+"))
+expect(product_image).to_have_attribute("src", re.compile(r".+"))
+```
+
+这证明图片节点存在并具备基本可用属性，但不自动证明图片内容符合视觉需求。若要判断具体图片是否正确，还需要明确的产品预期、资源可访问性或截图/网络证据。
+
+#### 5. 常见错误、反例与假通过
+
+1. 只断言 `items.first()`：后续商品的错误全部可能被漏掉。
+2. 只断言数量：重复商品仍可能通过。
+3. 只比较名称集合：价格和图片字段仍可能错误。
+4. 只比较价格集合：不同商品可能共享同一价格，无法证明价格与商品正确对应。
+5. 直接用页面实时结果生成预期：页面错误会被测试当成正确结果。
+6. 在顺序不是契约时使用有序断言：排序变化会产生不必要的失败。
+
+### 记忆要点
+
+**数量证明“有多少”，集合证明“是谁”，逐项字段证明“每个成员的数据是否正确对应”；数量与集合组合才能可靠发现缺失和重复。**
+
+### 代码落地
+
+Day 18 在 `test-projects/02-saucedemo-ui/tests/test_inventory.py` 中新增 `test_inventory_list_is_complete`。测试登录标准用户后，使用 `to_have_count` 验证 6 个商品卡片；使用 `set(actual_names) == expected_names` 验证名称集合；再按商品名称定位唯一商品，逐项验证价格、图片可见性以及 `alt/src` 非空。预期商品名称和价格在 `EXPECTED_PRODUCTS` 中独立定义。
+
+### 知识验收
+
+1. 为什么数量为 6 仍不能排除重复商品？
+2. 数量、集合和逐项字段断言分别证明什么？
+3. 今天代码中的集合断言为什么使用 `set`，而不是直接依赖有序列表？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_inventory.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_inventory.py -q`
+- 验证结果：`1 passed in 7.11s`
+- 验证证据：`artifacts/day-018/verification.md`
+- 当天记录：`daily-log/day-018.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -1786,6 +1890,7 @@ Day 17 在 `test-projects/02-saucedemo-ui/tests/test_users.py` 中新增两个�
 | 电商业务流与测试边界 | Day 15 | 登录测试切片、URL/页面断言、fixture、注释与失败分层 |
 | 负向场景与错误信息断言 | Day 16 | Authentication 与 Validation、错误提示、成功状态排除与失败分层 |
 | 测试账号与风险场景 | Day 17 | 特殊账号业务规则、异常观察、对照证据与 Bug 判断边界 |
+| 列表完整性与集合断言 | Day 18 | 数量、成员集合、逐项字段、重复检测与顺序边界 |
 
 ## 每日完结后的知识落盘流程
 

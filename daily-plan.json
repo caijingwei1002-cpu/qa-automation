@@ -1,5 +1,17 @@
 {
   "core_days": 182,
+  "evidence_workflow": {
+    "owner": "assistant",
+    "file_pattern": "artifacts/day-XXX/verification.md",
+    "trigger": "用户反馈当天验证命令的实际结果后",
+    "required_contents": [
+      "验证命令",
+      "实际结果",
+      "验证范围",
+      "问题或阻塞及根因（如有）"
+    ],
+    "finalization_gate": "只有用户明确确认当天完成后，才更新 daily-log 和 progress.json、运行 tools/validate_repo.py，并创建本地 Git 提交"
+  },
   "session_minutes": 90,
   "daily_method": {
     "study_minutes": 20,
