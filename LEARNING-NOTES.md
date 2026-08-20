@@ -29,6 +29,7 @@
 - [Day 20：商品排序](#day-20商品排序)
 - [Day 21：加入购物车](#day-21加入购物车)
 - [Day 22：多商品购物车](#day-22多商品购物车)
+- [Day 23：移除商品](#day-23移除商品)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -2367,6 +2368,113 @@ Day 22 在 `test-projects/02-saucedemo-ui/tests/test_cart.py` 中保留 Day 21 �
 
 ---
 
+## Day 23：移除商品
+
+### 核心知识点
+
+移除测试要验证状态回退（state rollback），而不是只验证 Remove 按钮被点击。商品应从“未加入”进入“已加入”，再经过移除回到“未加入”；列表页按钮、购物车徽标和购物车实际条目应共同反映这个最终状态。幂等思路（idempotency）要求重复表达同一个移除意图时，最终状态仍保持为“商品不在购物车”，但 SauceDemo UI 在第一次移除后会把 Remove 变为 Add to cart，因此不能把连续点击同一个 Remove 按钮当作有效的 UI 幂等测试。
+
+### 它解决的问题
+
+只断言 `click()` 不报错，最多证明操作找到了按钮并完成了交互，不能证明业务状态已经改变。只检查列表按钮、只检查徽标或只检查购物车条目，也可能遗漏局部状态与全局状态不同步的问题。状态回退测试通过多个观察点确认：商品 UI 状态、购物车计数和购物车内容共同回到空购物车状态。
+
+### 理论基础
+
+#### 1. 状态转换与后置条件
+
+```text
+未加入
+  ↓ Add to cart
+已加入：按钮 Remove，徽标 1，购物车有 1 条
+  ↓ Remove
+已移除：按钮 Add to cart，徽标消失，购物车有 0 条
+```
+
+测试的核心是最后一个状态，而不是中间的点击动作。每个后置条件证明的层面不同：
+
+| 观察点 | 断言 | 证明什么 | 不能单独证明什么 |
+| --- | --- | --- | --- |
+| 商品卡片 | `Remove` → `Add to cart` | 当前商品的列表页状态回退 | 购物车实际内容一定为空 |
+| 购物车徽标 | `1` → 不存在/`0` | 全局计数回退 | 具体商品一定已消失 |
+| 购物车条目 | `.cart_item` 为 `0` | 购物车内容为空 | 列表页按钮一定同步恢复 |
+
+把三类断言组合起来，才有较完整的跨页面状态证据。
+
+#### 2. 操作成功与业务结果成功
+
+```python
+cart_item.get_by_role("button", name="Remove").click()
+
+expect(page.locator(".cart_item")).to_have_count(0)
+expect(
+    page.locator('[data-test="shopping-cart-badge"]')
+).to_have_count(0)
+```
+
+第一行是动作（action），后两行是结果（result）。Playwright 的点击没有抛出异常，只说明元素可定位并完成了点击；只有后置断言通过，才说明移除后的业务状态符合预期。
+
+#### 3. 幂等思路的适用边界
+
+幂等操作的重点是：第一次执行改变状态，之后再次表达同一意图不会继续破坏系统，最终状态保持稳定。例如 API 的 `DELETE /cart/items/{id}` 通常可以重复调用而仍然得到“该商品不存在”。
+
+在本日 UI 中，第一次移除后按钮变为 `Add to cart`，页面不再提供第二个 Remove 操作。因此本日通过两个不同的移除入口验证相同的最终状态，不把不存在的第二次 Remove 点击硬塞进测试。若要直接验证重复删除，应在有明确接口契约时补充 API 测试，或先定义 UI 对“已移除商品再次移除”的业务交互。
+
+#### 4. 最小代码骨架
+
+```python
+item = page.locator(".inventory_item").filter(
+    has_text="Sauce Labs Backpack"
+)
+item.get_by_role("button", name="Add to cart").click()
+
+item.get_by_role("button", name="Remove").click()
+
+expect(item.get_by_role("button", name="Add to cart")).to_be_visible()
+expect(
+    page.locator('[data-test="shopping-cart-badge"]')
+).to_have_count(0)
+```
+
+#### 5. 适用场景与边界
+
+- 适用：加入/移除购物车、启用/禁用、收藏/取消收藏、提交/撤销等有明确前后状态的业务操作。
+- 适用：同一业务状态可从多个页面入口改变时，用跨入口测试检查状态一致性。
+- 不适用：没有定义最终状态的纯装饰性交互；不要把点击次数或 DOM 瞬间变化当成业务契约。
+- 对幂等性的验证应依据产品契约选择 UI 或 API 层，不要假设所有 UI 按钮都能安全重复点击。
+
+#### 6. 常见错误、反例与假通过
+
+1. 只写 `remove_button.click()`：没有业务结果断言，移除失败也可能通过。
+2. 只检查徽标消失：计数归零不等于能证明具体商品已从内容中消失。
+3. 只检查列表按钮恢复：局部 UI 可能恢复，但购物车数据仍可能残留。
+4. 连续点击同一个 Remove 按钮测试幂等：SauceDemo 第一次移除后该按钮已不存在，测试前提不成立。
+5. 复用上一条测试的购物车状态：没有独立 Browser Context 时，数量变化可能来自历史数据污染。
+
+### 记忆要点
+
+**点击是动作，状态断言才是证据；移除测试要证明商品、徽标和购物车内容同步回退，幂等测试必须服从真实的 UI 或 API 契约。**
+
+### 代码落地
+
+Day 23 新增 `test_cart_remove.py`，使用同一个标准用户 fixture 隔离两条测试。第一条从商品列表加入并移除 Backpack，验证卡片按钮恢复、徽标消失和购物车为空；第二条从购物车移除 Backpack，验证商品名称与价格、购物车条目归零、徽标消失，并返回列表确认按钮恢复为 `Add to cart`。两个入口都落实了“未加入 → 已加入 → 已移除”的状态回退。
+
+### 知识验收
+
+1. 为什么按钮、徽标和 `.cart_item` 数量需要组合验证？
+2. 为什么 `click()` 没有报错不能证明移除成功？
+3. 今天两个测试分别从哪里移除商品？它们共同验证了什么状态转换？
+4. 为什么本日没有连续点击同一个 Remove 按钮来声称验证幂等性？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_cart_remove.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_cart_remove.py -q`
+- 验证结果：`2 passed in 25.68s`
+- 验证证据：`artifacts/day-023/verification.md`
+- 当天记录：`daily-log/day-023.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -2394,6 +2502,7 @@ Day 22 在 `test-projects/02-saucedemo-ui/tests/test_cart.py` 中保留 Day 21 �
 | 页面数据提取与排序验证 | Day 20 | 列表顺序、参数化、Decimal、控件状态与无头 UI 执行 |
 | 跨页面状态断言 | Day 21 | 购物车徽标、内容数量、商品身份、独立预期与 Context 隔离 |
 | 集合与合计准备 | Day 22 | 多商品数量、名称—价格关联、Decimal 合计与顺序边界 |
+| 状态回退与幂等思路 | Day 23 | 移除入口、后置条件、徽标与购物车内容同步、UI/API 边界 |
 
 ## 每日完结后的知识落盘流程
 
