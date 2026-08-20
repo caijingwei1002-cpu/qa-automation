@@ -31,6 +31,7 @@
 - [Day 22：多商品购物车](#day-22多商品购物车)
 - [Day 23：移除商品](#day-23移除商品)
 - [Day 24：结算校验](#day-24结算校验)
+- [Day 25：结算概览](#day-25结算概览)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -2575,6 +2576,100 @@ Day 24 在 `test-projects/02-saucedemo-ui/tests/test_checkout_validation.py` 中
 
 ---
 
+## Day 25：结算概览
+
+### 核心知识点
+
+金额与业务计算断言（money and business-calculation assertions）要求先把页面货币文本解析为精确的 `Decimal`，再用独立预期和业务不变量验证小计、税费与总价。金额不是普通字符串，也不适合优先使用二进制浮点数进行精确相等比较。
+
+### 它解决的问题
+
+直接对 `"$29.99"` 和 `"$2.40"` 做运算会得到字符串拼接；使用 `float` 可能因为二进制近似产生 `0.30000000000000004` 一类误差。只断言金额文本存在，或只复制页面实际值生成 Expected，也无法证明业务计算正确。
+
+### 理论基础
+
+#### 1. 金额解析与 Decimal
+
+页面展示文本通常包含货币符号和标签，例如 `Item total: $29.99`。测试需要先提取货币值，再构造 `Decimal`：
+
+```python
+from decimal import Decimal
+import re
+
+MONEY_PATTERN = re.compile(r"\$([0-9]+(?:\.[0-9]{2})?)")
+
+def parse_money(text: str) -> Decimal:
+    match = MONEY_PATTERN.search(text)
+    if match is None:
+        raise ValueError(f"金额文本缺少货币值: {text!r}")
+    return Decimal(match.group(1))
+```
+
+`Decimal("0.1") + Decimal("0.2")` 保留十进制金额语义；不要先转成 `float` 再转回 `Decimal`，否则近似误差已经进入结果。
+
+#### 2. 独立预期与业务不变量
+
+本日的最小证据链是：
+
+```text
+独立商品价格预期 → 预期小计
+页面小计、税费、总价 → Decimal
+总价 == 小计 + 税费
+```
+
+小计要与独立的商品价格预期比较，防止页面错误值同时成为 Expected。税费至少应是可解析的正金额；税率只有在产品规则明确时才适合写成固定断言。总价不变量验证的是金额关系，而不是某个页面文案是否存在。
+
+| 断言 | 证明什么 | 不能单独证明什么 |
+| --- | --- | --- |
+| 实际小计等于独立预期 | 购物车商品金额汇总与选择一致 | 税费和总价计算正确 |
+| 税费可解析且为正 | 页面提供了有效收费金额 | 税率一定符合某个固定百分比 |
+| 总价等于小计加税费 | 结算金额的加法关系成立 | 商品身份或小计来源正确 |
+
+#### 3. 定位器也属于金额证据的一部分
+
+金额断言之前必须定位到正确的业务元素。SauceDemo 概览页使用 `.summary_subtotal_label`、`.summary_tax_label` 和 `.summary_total_label`，文本还包含 `Item total:`、`Tax:`、`Total:` 标签。定位器错误会在金额逻辑执行前超时；解析函数也必须适配真实文本格式。
+
+#### 4. 适用场景与边界
+
+- 适用：商品小计、税费、折扣、运费、订单总价等十进制金额关系。
+- 适用：页面展示文本带货币符号或说明标签，需要统一提取金额。
+- 适用：产品规则明确时，使用 `Decimal` 验证固定税率、折扣或四舍五入规则。
+- 不适用：用 `float` 做金额精确相等断言；应改为 `Decimal` 或明确的量化比较规则。
+- 不适用：没有独立业务预期时把页面实际值复制为 Expected；这会失去发现数据错误的能力。
+
+#### 5. 常见错误、反例与假通过
+
+1. `"$29.99" + "$2.40"`：得到字符串拼接，不是金额加法。
+2. `0.1 + 0.2 == 0.3`：二进制浮点近似可能导致精确比较失败。
+3. 只断言金额文本非空：无法证明数值可以计算或关系正确。
+4. 用页面实际小计计算 Expected 总价：页面全错时测试可能一起通过。
+5. 使用错误的 `.summary_subtotal` 定位器：测试在业务断言前超时，根因是 DOM 契约不匹配而不是金额业务失败。
+
+### 记忆要点
+
+**金额先解析为 Decimal，预期来自独立数据，最后用小计、税费和总价的不变量证明业务计算关系。**
+
+### 代码落地
+
+Day 25 在 `test-projects/02-saucedemo-ui/tests/test_checkout_summary.py` 中新增 `parse_money` 和 `open_checkout_summary`，登录并加入 Backpack 后进入订单概览页。测试使用独立 `$29.99` 预期验证小计，读取带标签的实际小计、税费和总价并转成 `Decimal`，断言税费为正且 `total == subtotal + tax`。首次运行发现概览页实际类名带 `_label` 且文本有标签前缀，修复定位器和金额提取后复验通过。
+
+### 知识验收
+
+1. 为什么金额不能直接按字符串相加，也不应优先用 `float` 精确比较？
+2. 为什么小计的 Expected 必须来自独立商品数据？
+3. `total == subtotal + tax` 证明了什么，不能证明什么？
+4. 本日首次失败的根因是什么，修复了哪两个层面？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_checkout_summary.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_checkout_summary.py -q`
+- 验证结果：首次 `1 failed in 34.10s`；修复后 `1 passed in 4.67s`
+- 验证证据：`artifacts/day-025/verification.md`
+- 当天记录：`daily-log/day-025.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -2604,6 +2699,7 @@ Day 24 在 `test-projects/02-saucedemo-ui/tests/test_checkout_validation.py` 中
 | 集合与合计准备 | Day 22 | 多商品数量、名称—价格关联、Decimal 合计与顺序边界 |
 | 状态回退与幂等思路 | Day 23 | 移除入口、后置条件、徽标与购物车内容同步、UI/API 边界 |
 | 表单验证与字段组合 | Day 24 | 单变量隔离、字段—错误映射、精确提示与未导航断言 |
+| 金额与业务计算断言 | Day 25 | Decimal 解析、独立预期、小计税费总价不变量与定位器契约 |
 
 ## 每日完结后的知识落盘流程
 
