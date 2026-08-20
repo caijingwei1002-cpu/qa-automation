@@ -33,6 +33,7 @@
 - [Day 24：结算校验](#day-24结算校验)
 - [Day 25：结算概览](#day-25结算概览)
 - [Day 26：完整下单](#day-26完整下单)
+- [Day 27：登出和会话](#day-27登出和会话)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -2772,6 +2773,104 @@ Day 26 在 `test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py` 中新增 
 
 ---
 
+## Day 27：登出和会话
+
+### 核心知识点
+
+认证状态和直接访问（authentication state and direct access）要求把“页面看起来退出了”和“受保护资源真的拒绝了无会话访问”分开验证。登出测试不仅要检查回到登录页，还要在会话失效后直接访问受保护的 `/inventory.html`，确认系统重新要求认证。
+
+### 它解决的问题
+
+只断言 Logout 后回到登录页，最多证明一次页面导航；Cookie、localStorage 或服务端会话可能仍然有效，用户手动输入受保护 URL 仍可能看到商品页。直接访问检查可以发现 UI 已退出但权限没有撤销的安全和业务缺陷。
+
+### 理论基础
+
+#### 1. 认证状态转换
+
+```text
+未认证
+  ↓ Login
+已认证：inventory.html 可访问
+  ↓ Logout
+未认证：登录页可见
+  ↓ 直接访问 inventory.html
+仍未认证：被重定向到登录页，商品页不可见
+```
+
+两个后置条件的证明范围不同：
+
+| 检查点 | 断言 | 证明什么 |
+| --- | --- | --- |
+| Logout 后 | 根路径、登录表单可见 | 页面退出行为和登录入口恢复 |
+| 直接访问受保护 URL | 仍在登录页、登录表单可见 | 会话失效且访问控制生效 |
+
+两者必须组合；前者不能替代后者。
+
+#### 2. 页面状态与权限状态
+
+页面跳转是可观察的 UI 结果，认证状态则可能存储在 Cookie、localStorage、sessionStorage 或服务端会话中。测试不需要直接读取所有存储实现，而是通过访问控制的外部行为验证最终契约：无认证状态不能访问受保护商品页。
+
+#### 3. 直接访问不是绕过测试
+
+`page.goto(".../inventory.html")` 模拟用户在地址栏输入受保护 URL 或从书签打开页面。它与点击导航不同，专门覆盖“没有经过登录入口，系统是否仍检查权限”的边界。若应用返回登录页并显示登录表单，说明保护规则在直接访问路径上生效。
+
+#### 4. 最小代码骨架
+
+```python
+page.get_by_role("button", name="Open Menu").click()
+page.get_by_role("link", name="Logout").click()
+
+expect(page).to_have_url(LOGIN_URL)
+expect(page.get_by_placeholder("Username")).to_be_visible()
+
+protected_url = page.url.rstrip("/") + "/inventory.html"
+page.goto(protected_url)
+
+expect(page).to_have_url(LOGIN_URL)
+expect(page.get_by_placeholder("Username")).to_be_visible()
+```
+
+#### 5. 适用场景与边界
+
+- 适用：登出、会话过期、刷新 Token 失败、角色降权和受保护页面直接访问。
+- 适用：需要验证 UI 退出动作与实际访问控制同时成立的 Web 应用。
+- 不适用：只依赖前端路由隐藏页面的应用；还应在 API 或服务端层验证未授权响应。
+- 不适用：没有定义受保护资源和未认证目标状态的场景；应先明确访问控制契约。
+- 多标签页、刷新、过期时间和跨域 SSO 可能有额外会话边界，应按产品契约增加独立场景。
+
+#### 6. 常见错误、反例与假通过
+
+1. 只检查 Logout 后 URL：页面跳转成功不等于会话失效。
+2. 只检查登录表单可见：前端界面可能显示登录页，但直接访问仍能读取受保护数据。
+3. 不做直接访问：遗漏地址栏、书签和刷新等受保护路由入口。
+4. 复用其他测试的登录状态：当前测试可能一开始就已认证，无法证明 Logout 的真实效果。
+5. 只验证 URL，不验证登录表单或商品内容：错误重定向或空白页也可能让 URL 断言通过。
+
+### 记忆要点
+
+**登出不仅要看起来回到登录页，还要证明失效会话无法直接访问受保护资源；页面行为和访问控制必须分层验证。**
+
+### 代码落地
+
+Day 27 在 `test-projects/02-saucedemo-ui/tests/test_session.py` 中用 `login_as_standard_user` 建立统一已认证前置；测试执行 Logout 后验证登录表单恢复，再用当前根 URL 构造 `/inventory.html` 直接访问，验证仍被重定向到登录页。每条测试使用独立 Browser Context，避免会话历史污染。
+
+### 知识验收
+
+1. 回到登录页和直接访问受保护 URL 分别证明什么？
+2. 为什么只验证 Logout 后 URL 会产生假通过？
+3. 直接访问 `/inventory.html` 覆盖了哪种用户行为边界？
+4. 为什么会话测试需要独立 Browser Context？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_session.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_session.py -q`
+- 验证结果：`1 passed in 5.39s`
+- 验证证据：`artifacts/day-027/verification.md`
+- 当天记录：`daily-log/day-027.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -2803,6 +2902,7 @@ Day 26 在 `test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py` 中新增 
 | 表单验证与字段组合 | Day 24 | 单变量隔离、字段—错误映射、精确提示与未导航断言 |
 | 金额与业务计算断言 | Day 25 | Decimal 解析、独立预期、小计税费总价不变量与定位器契约 |
 | 关键端到端业务流 | Day 26 | 状态转换检查点、导航与业务证据、订单完成后置条件与 E2E 边界 |
+| 登出和会话 | Day 27 | 认证状态转换、直接访问受保护路由、会话失效与访问控制边界 |
 
 ## 每日完结后的知识落盘流程
 
