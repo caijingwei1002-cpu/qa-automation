@@ -30,6 +30,7 @@
 - [Day 21：加入购物车](#day-21加入购物车)
 - [Day 22：多商品购物车](#day-22多商品购物车)
 - [Day 23：移除商品](#day-23移除商品)
+- [Day 24：结算校验](#day-24结算校验)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -2475,6 +2476,105 @@ Day 23 新增 `test_cart_remove.py`，使用同一个标准用户 fixture 隔离
 
 ---
 
+## Day 24：结算校验
+
+### 核心知识点
+
+表单验证与字段组合（form validation and field combinations）要求把“哪个字段缺失”“应该返回什么提示”和“失败后页面是否保持在当前表单”作为一个输入—结果契约来验证。对多个必填字段，使用单变量隔离（one-variable-at-a-time）：每个用例只清空一个字段，其余字段保持有效。
+
+### 它解决的问题
+
+如果同时清空姓名、姓氏和邮编，页面通常只显示第一个失败规则。测试即使通过，也只能证明某个校验顺序被触发，不能证明三个字段各自的规则都正确。只断言错误容器可见或 URL 没变，也可能让错误提示错位、错误类型错误或意外导航的假通过漏过去。
+
+### 理论基础
+
+#### 1. 单变量隔离与字段—错误映射
+
+对三个必填字段分别构造独立输入：
+
+| 用例 | firstName | lastName | postalCode | 预期错误 |
+| --- | --- | --- | --- | --- |
+| 缺失姓名 | 空 | 有效 | 有效 | `Error: First Name is required` |
+| 缺失姓氏 | 有效 | 空 | 有效 | `Error: Last Name is required` |
+| 缺失邮编 | 有效 | 有效 | 空 | `Error: Postal Code is required` |
+
+这种设计把失败原因归因到一个字段。参数化（parameterization）可以复用同一套动作和断言，但每行数据必须同时保存字段定位和预期错误，不能只保存一组空值。
+
+#### 2. 三层结果证据
+
+点击 Continue 是动作，不是业务结果。一次必填校验至少应组合三层证据：
+
+1. 字段输入层：目标字段为空，其余字段是有效值，证明测试前置符合意图。
+2. 反馈层：错误容器精确等于目标字段的错误文案，证明规则映射正确。
+3. 流程层：页面仍在 `/checkout-step-one.html`，证明校验失败阻止了进入下一步。
+
+精确错误文案能证明“系统指出了哪个原因”，但不能单独证明没有发生导航；URL 不变能证明流程停留，但不能证明提示内容正确。两者需要组合。
+
+#### 3. 校验失败与认证失败的边界
+
+必填校验通常发生在已经登录并进入结算表单之后；错误密码则属于认证失败，发生在登录阶段。测试前置和断言应把两种失败分开，否则同一个“没有进入下一页”可能被错误归因到错误的业务层。
+
+#### 4. 最小代码骨架
+
+```python
+CASES = [
+    ("firstName", "Error: First Name is required"),
+    ("lastName", "Error: Last Name is required"),
+    ("postalCode", "Error: Postal Code is required"),
+]
+
+@pytest.mark.parametrize("missing_field, expected_error", CASES)
+def test_required_field(page, missing_field, expected_error):
+    for field_name, valid_value in VALID_VALUES.items():
+        page.locator(f'[data-test="{field_name}"]').fill(
+            "" if field_name == missing_field else valid_value
+        )
+
+    page.get_by_role("button", name="Continue").click()
+    expect(page.locator('[data-test="error"]')).to_have_text(expected_error)
+    expect(page).to_have_url(re.compile(r"/checkout-step-one\.html$"))
+```
+
+#### 5. 适用场景与边界
+
+- 适用：姓名、地址、支付信息等多个独立必填字段；每个字段有明确错误文案的表单。
+- 适用：希望用少量参数化代码覆盖同一规则族，同时保留每个字段的可读失败 ID。
+- 不适用：字段之间存在真实组合规则时强行单变量隔离；例如“结束日期必须晚于开始日期”需要专门的跨字段组合用例。
+- 不适用：没有稳定错误契约的页面只做精确文案断言；应先确认产品允许的语义或使用更稳定的错误标识。
+
+#### 6. 常见错误、反例与假通过
+
+1. 三个字段全部留空：通常只暴露第一个错误，后续字段没有被独立验证。
+2. 只断言错误容器可见：任意错误都可能通过，字段映射错位不会被发现。
+3. 只断言 URL 没变：能证明没有前进，但不能证明提示说明了正确原因。
+4. 从页面当前文本生成 Expected：页面和预期可能一起错误，形成自证式假通过。
+5. 复用上一条测试的表单或购物车状态：上下文污染会让字段校验结果失去可归因性。
+
+### 记忆要点
+
+**一个用例只缺一个字段；精确提示证明原因，未导航证明流程被拦截，二者组合才是可靠的必填校验证据。**
+
+### 代码落地
+
+Day 24 在 `test-projects/02-saucedemo-ui/tests/test_checkout_validation.py` 中用 `open_checkout_form` 统一登录、加购 Backpack 并进入结算信息页；用 `CHECKOUT_REQUIRED_FIELD_CASES` 参数化三个字段—错误映射；每条用例先填充 `VALID_CHECKOUT_VALUES`，只清空目标字段，点击 Continue 后断言精确错误文案和 `checkout-step-one.html` URL。
+
+### 知识验收
+
+1. 为什么三个字段同时为空不能证明三个必填规则都正确？
+2. 单变量隔离在本日的代码中对应哪一段逻辑？
+3. 精确错误文案和未导航断言分别证明什么，为什么需要组合？
+4. 必填校验与错误密码登录分别属于哪个业务层？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_checkout_validation.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_checkout_validation.py -q`
+- 验证结果：`3 passed in 17.74s`
+- 验证证据：`artifacts/day-024/verification.md`
+- 当天记录：`daily-log/day-024.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -2503,6 +2603,7 @@ Day 23 新增 `test_cart_remove.py`，使用同一个标准用户 fixture 隔离
 | 跨页面状态断言 | Day 21 | 购物车徽标、内容数量、商品身份、独立预期与 Context 隔离 |
 | 集合与合计准备 | Day 22 | 多商品数量、名称—价格关联、Decimal 合计与顺序边界 |
 | 状态回退与幂等思路 | Day 23 | 移除入口、后置条件、徽标与购物车内容同步、UI/API 边界 |
+| 表单验证与字段组合 | Day 24 | 单变量隔离、字段—错误映射、精确提示与未导航断言 |
 
 ## 每日完结后的知识落盘流程
 
