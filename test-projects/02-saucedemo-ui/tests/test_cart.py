@@ -2,7 +2,7 @@ import re
 
 import pytest
 from playwright.sync_api import Page, expect
-
+from decimal import Decimal
 
 pytestmark = pytest.mark.regression
 
@@ -73,3 +73,89 @@ def test_add_one_item(
     expect(
         cart_item.locator(".inventory_item_price")
     ).to_have_text(expected_price)
+
+
+def parse_price(price_text: str) -> Decimal:
+    return Decimal(price_text.strip().removeprefix("$"))
+
+
+def test_add_multiple_items_and_verify_cart(
+    saucedemo_page: Page,
+    standard_user_credentials: dict[str, str],
+):
+    page = saucedemo_page
+
+    page.get_by_placeholder("Username").fill(
+        standard_user_credentials["username"]
+    )
+    page.get_by_placeholder("Password").fill(
+        standard_user_credentials["password"]
+    )
+    page.get_by_role("button", name="Login").click()
+
+    expect(page).to_have_url(re.compile(r"/inventory\.html$"))
+
+    selected_products = (
+        ("Sauce Labs Backpack", "$29.99"),
+        ("Sauce Labs Bike Light", "$9.99"),
+        ("Sauce Labs Onesie", "$7.99"),
+    )
+
+    expected_items = set(selected_products)
+    expected_subtotal = sum(
+        parse_price(price)
+        for _, price in selected_products
+    )
+
+    for product_name, expected_price in selected_products:
+        inventory_item = page.locator(".inventory_item").filter(
+            has_text=product_name
+        )
+
+        expect(inventory_item).to_have_count(1)
+        expect(
+            inventory_item.locator(".inventory_item_price")
+        ).to_have_text(expected_price)
+
+        inventory_item.get_by_role(
+            "button",
+            name="Add to cart",
+        ).click()
+
+    cart_badge = page.locator(
+        '[data-test="shopping-cart-badge"]'
+    )
+    expect(cart_badge).to_have_text(
+        str(len(selected_products))
+    )
+
+    page.locator(
+        '[data-test="shopping-cart-link"]'
+    ).click()
+
+    expect(page).to_have_url(re.compile(r"/cart\.html$"))
+
+    cart_items = page.locator(".cart_item")
+    expect(cart_items).to_have_count(len(selected_products))
+
+    actual_items = []
+
+    for index in range(cart_items.count()):
+        cart_item = cart_items.nth(index)
+        actual_name = cart_item.locator(
+            ".inventory_item_name"
+        ).inner_text()
+        actual_price = cart_item.locator(
+            ".inventory_item_price"
+        ).inner_text()
+
+        actual_items.append((actual_name, actual_price))
+
+    assert len(actual_items) == len(selected_products)
+    assert set(actual_items) == expected_items
+
+    actual_subtotal = sum(
+        parse_price(price)
+        for _, price in actual_items
+    )
+    assert actual_subtotal == expected_subtotal

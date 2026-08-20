@@ -28,6 +28,7 @@
 - [Day 19：商品详情](#day-19商品详情)
 - [Day 20：商品排序](#day-20商品排序)
 - [Day 21：加入购物车](#day-21加入购物车)
+- [Day 22：多商品购物车](#day-22多商品购物车)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -2228,6 +2229,144 @@ Day 21 在 `test-projects/02-saucedemo-ui/tests/test_cart.py` 中新增 `test_ad
 
 ---
 
+## Day 22：多商品购物车
+
+### 核心知识点
+
+多商品购物车验证需要同时检查集合数量、商品成员和字段关联。把每件商品表示为 `(名称, 价格)` 元组，可以在验证集合时保留“哪个价格属于哪件商品”的业务关系；使用 `Decimal` 计算合计，为后续结账金额验证准备可靠基准。
+
+### 它解决的问题
+
+只验证徽标和 `.cart_item` 数量，可能让重复或错误商品通过；分别验证名称集合和价格集合，又可能漏掉价格在商品之间串位。测试还需要明确展示顺序是否属于业务契约，避免制造不必要的脆弱断言。
+
+### 理论基础
+
+#### 1. 数量与集合的互补
+
+```python
+expect(cart_items).to_have_count(len(selected_products))
+assert set(actual_items) == expected_items
+```
+
+数量断言证明条目总数，集合断言证明成员及字段关联。集合会去重，因此不能替代数量断言；数量也不能证明具体商品身份。
+
+#### 2. 为什么使用 `(名称, 价格)` 元组
+
+分别比较名称和价格集合会丢失对应关系：
+
+```text
+预期：Backpack → $29.99，Bike Light → $9.99
+实际：Backpack → $9.99，Bike Light → $29.99
+```
+
+两个独立集合可能都相等，但元组集合会发现：
+
+```python
+expected_items = {
+    ("Sauce Labs Backpack", "$29.99"),
+    ("Sauce Labs Bike Light", "$9.99"),
+}
+```
+
+它把名称和价格绑定成同一个业务记录，能发现字段串位。
+
+#### 3. 合计准备与 Decimal
+
+```python
+expected_subtotal = sum(
+    parse_price(price)
+    for _, price in selected_products
+)
+
+actual_subtotal = sum(
+    parse_price(price)
+    for _, price in actual_items
+)
+
+assert actual_subtotal == expected_subtotal
+```
+
+今天购物车页面没有验证结账页金额，但合计断言已经证明购物车中的商品价格汇总与选择集合一致，并为后续 Checkout Overview 的金额验证准备了基准。变量本身只是数据准备，`assert` 才把它变成测试证据。
+
+#### 4. 展示顺序的需求边界
+
+如果需求只规定购物车成员和价格，不规定展示顺序，就使用集合比较：
+
+```python
+assert set(actual_items) == expected_items
+```
+
+如果需求明确规定加入顺序或排序顺序，才保留列表并进行有序比较：
+
+```python
+assert actual_items == expected_items_in_order
+```
+
+测试应严格验证业务规则，但不应把未定义的实现细节写成失败条件。
+
+#### 5. 最小代码骨架
+
+```python
+selected_products = (
+    ("Sauce Labs Backpack", "$29.99"),
+    ("Sauce Labs Bike Light", "$9.99"),
+    ("Sauce Labs Onesie", "$7.99"),
+)
+
+for product_name, expected_price in selected_products:
+    item = page.locator(".inventory_item").filter(
+        has_text=product_name
+    )
+    item.get_by_role("button", name="Add to cart").click()
+
+cart_items = page.locator(".cart_item")
+expect(cart_items).to_have_count(len(selected_products))
+
+actual_items = []
+for index in range(cart_items.count()):
+    item = cart_items.nth(index)
+    actual_items.append((
+        item.locator(".inventory_item_name").inner_text(),
+        item.locator(".inventory_item_price").inner_text(),
+    ))
+
+assert set(actual_items) == set(selected_products)
+```
+
+#### 6. 常见错误、反例与假通过
+
+1. 只验证徽标为 3：重复或错误商品仍可能通过。
+2. 只验证 `.cart_item` 数量：只能证明有几条，不能证明是哪几条。
+3. 分别比较名称集合和价格集合：名称和价格可能在不同商品之间串位。
+4. 只比较元组集合不比较数量：重复记录可能被集合去重。
+5. 定义 subtotal 但不做断言：准备的数据没有形成测试证据。
+6. 没有业务要求却强制展示顺序：导致无意义的脆弱失败。
+
+### 记忆要点
+
+**数量证明多少，元组集合证明是谁及其字段关联，Decimal 合计证明金额汇总；顺序只有在需求要求时才验证。**
+
+### 代码落地
+
+Day 22 在 `test-projects/02-saucedemo-ui/tests/test_cart.py` 中保留 Day 21 单商品测试，并新增 `test_add_multiple_items_and_verify_cart`。测试加入 Backpack、Bike Light 和 Onesie，验证徽标为 3、购物车条目为 3，将实际名称和价格组装成元组集合与预期集合比较，并用 `Decimal` 断言实际合计等于预期合计。
+
+### 知识验收
+
+1. 为什么数量和元组集合必须组合使用？
+2. 价格互换时，哪条断言可以发现字段串位？
+3. 为什么合计变量必须配合 `assert` 才有测试价值？
+4. 什么情况下才应该把购物车展示顺序作为断言？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/test_cart.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_cart.py -q`
+- 验证结果：`2 passed in 8.43s`
+- 验证证据：`artifacts/day-022/verification.md`
+- 当天记录：`daily-log/day-022.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -2254,6 +2393,7 @@ Day 21 在 `test-projects/02-saucedemo-ui/tests/test_cart.py` 中新增 `test_ad
 | 列表到详情的导航验证 | Day 19 | 导航目的地、商品身份、跨页面字段一致性与返回状态 |
 | 页面数据提取与排序验证 | Day 20 | 列表顺序、参数化、Decimal、控件状态与无头 UI 执行 |
 | 跨页面状态断言 | Day 21 | 购物车徽标、内容数量、商品身份、独立预期与 Context 隔离 |
+| 集合与合计准备 | Day 22 | 多商品数量、名称—价格关联、Decimal 合计与顺序边界 |
 
 ## 每日完结后的知识落盘流程
 
