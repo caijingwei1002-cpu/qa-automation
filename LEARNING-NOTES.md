@@ -34,6 +34,7 @@
 - [Day 25：结算概览](#day-25结算概览)
 - [Day 26：完整下单](#day-26完整下单)
 - [Day 27：登出和会话](#day-27登出和会话)
+- [Day 28：Page Object 登录页](#day-28page-object-登录页)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -2871,6 +2872,106 @@ Day 27 在 `test-projects/02-saucedemo-ui/tests/test_session.py` 中用 `login_a
 
 ---
 
+## Day 28：Page Object 登录页
+
+### 核心知识点
+
+页面对象（Page Object）是页面操作接口：集中封装页面 locator 和 UI 动作，让测试文件保留场景、数据和业务结果断言。今天的边界是“Page Object 负责怎么操作，测试负责验证什么”。
+
+### 它解决的问题
+
+如果每个测试都直接查找用户名框、密码框和登录按钮，页面结构变化会导致重复修改，测试主体也会被操作细节淹没。把这些变化点集中到 `LoginPage`，可以减少重复并保持业务意图可读；同时把断言留在测试中，避免一个登录动作强制假设所有用户都应该成功进入商品页。
+
+### 理论基础
+
+#### 1. 页面对象与测试的职责边界
+
+| 层次 | 负责内容 | 不负责内容 |
+| --- | --- | --- |
+| `LoginPage` | locator、输入、点击、读取页面元素 | 决定某个测试场景是否成功 |
+| `test_login.py` | 测试数据、场景编排、URL/文案/状态断言 | 重复实现登录页的机械操作 |
+
+测试可以读成：
+
+```text
+给定登录页和账号数据
+    当调用 LoginPage.login(username, password)
+    那么测试验证该场景的业务结果
+```
+
+#### 2. 最小代码骨架
+
+```python
+from playwright.sync_api import Page
+
+
+class LoginPage:
+    def __init__(self, page: Page):
+        self.username_input = page.get_by_placeholder("Username")
+        self.password_input = page.get_by_placeholder("Password")
+        self.login_button = page.get_by_role("button", name="Login")
+        self.error_message = page.locator('[data-test="error"]')
+
+    def login(self, username: str, password: str) -> None:
+        self.username_input.fill(username)
+        self.password_input.fill(password)
+        self.login_button.click()
+```
+
+测试调用页面对象后，仍然表达业务预期：
+
+```python
+login_page.login(username, password)
+expect(page).to_have_url(re.compile(r"/inventory\.html$"))
+```
+
+这里的 URL 断言证明导航结果，不能单独证明所有商品页内容；错误密码场景则应断言精确错误文案和未进入商品页。
+
+#### 3. 断言为什么留在测试中
+
+`login()` 是可复用动作，不能假定调用者一定是标准用户。若把“必须出现 Products”写入动作，错误密码、锁定用户和其他负向场景就无法复用同一个动作。测试保留 `expect()`，可以让每个场景明确表达自己的预期，并在失败时显示对应业务上下文。
+
+#### 4. 适用场景与边界
+
+- 适用：多个测试共享同一页面的定位器和机械操作，且页面结构变化需要集中维护。
+- 适用：登录、商品列表、购物车和结算等具有清晰页面职责的对象。
+- 不适用：把整个业务流程和所有断言塞进一个“上帝对象”；跨页面流程仍应由测试或更高层业务流程编排。
+- 不适用：为了抽象而抽象只有一次使用的简单操作；抽象必须降低重复或提高可读性。
+- 页面对象可以提供页面元素和动作，但业务规则、测试数据和场景结论应保持在测试层。
+
+#### 5. 常见错误、反例与假通过
+
+1. 把对象初始化写进函数参数列表：fixture 参数只能声明依赖，页面对象必须在函数体内创建。
+2. 在页面对象中硬编码成功断言：负向账号无法复用同一个登录动作。
+3. 测试仍直接使用登录 locator：页面对象没有真正成为唯一操作入口。
+4. 从错误的工作目录运行：模块搜索路径不含项目目录时会出现 `ModuleNotFoundError`，这不是业务断言失败。
+5. 把 Playwright `WinError 5` 当成产品缺陷：应先分层确认代码解析、模块导入和浏览器进程权限。
+
+### 记忆要点
+
+**Page Object 封装“怎么做”，测试文件保留“做什么和应该得到什么”；动作可复用，业务断言按场景决定。**
+
+### 代码落地
+
+Day 28 在 `test-projects/02-saucedemo-ui/pages/login_page.py` 中集中定义用户名、密码、登录按钮和错误提示 locator，并提供 `login(username, password)`。`test_login.py` 的标准登录、错误密码和空用户名场景都通过 `LoginPage` 操作，继续在测试中断言 URL、标题、错误文案和未导航状态。
+
+### 知识验收
+
+1. `LoginPage` 应负责什么，`test_login.py` 应保留什么？
+2. 为什么 `login()` 不应强制断言 Products 页面？
+3. 语法错误、`pages` 导入错误和 Playwright `WinError 5` 分别属于哪一层？
+4. 如何按“代码解析 → 模块导入 → 测试环境 → 测试步骤 → 业务断言”排查失败？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/pages/login_page.py`、`test-projects/02-saucedemo-ui/tests/test_login.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_login.py -q`
+- 验证结果：项目目录运行 `3 passed`；按仓库根目录路径临时设置项目模块路径后 `3 passed`；清理注释后复验 `3 passed`。
+- 验证证据：`artifacts/day-028/verification.md`
+- 当天记录：`daily-log/day-028.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -2903,6 +3004,7 @@ Day 27 在 `test-projects/02-saucedemo-ui/tests/test_session.py` 中用 `login_a
 | 金额与业务计算断言 | Day 25 | Decimal 解析、独立预期、小计税费总价不变量与定位器契约 |
 | 关键端到端业务流 | Day 26 | 状态转换检查点、导航与业务证据、订单完成后置条件与 E2E 边界 |
 | 登出和会话 | Day 27 | 认证状态转换、直接访问受保护路由、会话失效与访问控制边界 |
+| Page Object 职责边界 | Day 28 | 页面操作接口、测试业务断言、可复用动作与分层失败排查 |
 
 ## 每日完结后的知识落盘流程
 
