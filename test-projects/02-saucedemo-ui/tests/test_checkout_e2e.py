@@ -2,7 +2,10 @@ import re
 
 import pytest
 from playwright.sync_api import Page, expect
-
+from pages.cart_page import CartPage
+from pages.checkout_page import CheckoutPage
+from pages.inventory_page import InventoryPage
+from pages.login_page import LoginPage
 
 pytestmark = pytest.mark.regression
 
@@ -12,68 +15,72 @@ PRODUCT_NAME = "Sauce Labs Backpack"
 PRODUCT_PRICE = "$29.99"
 
 
-def open_order_summary(
-    page: Page,
-    credentials: dict[str, str],
-):
-    """从登录开始准备到订单概览页，形成完整下单的前置状态。"""
-    page.get_by_placeholder("Username").fill(credentials["username"])
-    page.get_by_placeholder("Password").fill(credentials["password"])
-    page.get_by_role("button", name="Login").click()
-
-    expect(page).to_have_url(re.compile(r"/inventory\.html$"))
-    expect(page.locator(".title")).to_have_text("Products")
-
-    inventory_item = page.locator(".inventory_item").filter(
-        has_text=PRODUCT_NAME
-    )
-    expect(inventory_item).to_have_count(1)
-    expect(
-        inventory_item.locator(".inventory_item_price")
-    ).to_have_text(PRODUCT_PRICE)
-    inventory_item.get_by_role("button", name="Add to cart").click()
-
-    expect(page.locator('[data-test="shopping-cart-badge"]')).to_have_text("1")
-    page.locator('[data-test="shopping-cart-link"]').click()
-    expect(page).to_have_url(re.compile(r"/cart\.html$"))
-    expect(page.locator(".title")).to_have_text("Your Cart")
-    expect(page.locator(".cart_item")).to_have_count(1)
-    expect(
-        page.locator(".cart_item").locator(".inventory_item_name")
-    ).to_have_text(PRODUCT_NAME)
-    page.get_by_role("button", name="Checkout").click()
-
-    expect(page).to_have_url(re.compile(r"/checkout-step-one\.html$"))
-    expect(page.locator(".title")).to_have_text("Checkout: Your Information")
-    page.locator('[data-test="firstName"]').fill("Ada")
-    page.locator('[data-test="lastName"]').fill("Lovelace")
-    page.locator('[data-test="postalCode"]').fill("10001")
-    page.get_by_role("button", name="Continue").click()
-
-    expect(page).to_have_url(SUMMARY_URL)
-    expect(page.locator(".title")).to_have_text("Checkout: Overview")
-
-
 def test_complete_checkout_order(
     saucedemo_page: Page,
     standard_user_credentials: dict[str, str],
 ):
     page = saucedemo_page
-    open_order_summary(page, standard_user_credentials)
 
-    page.get_by_role("button", name="Finish").click()
+    login_page = LoginPage(page)
+    inventory_page = InventoryPage(page)
+    cart_page = CartPage(page)
+    checkout_page = CheckoutPage(page)
+
+    login_page.login(
+        standard_user_credentials["username"],
+        standard_user_credentials["password"],
+    )
+
+    expect(page).to_have_url(re.compile(r"/inventory\.html$"))
+    expect(inventory_page.title).to_have_text("Products")
+
+    inventory_page.add_item(PRODUCT_NAME)
+    expect(inventory_page.shopping_cart_badge).to_have_text("1")
+
+    inventory_page.open_cart()
+
+    expect(page).to_have_url(re.compile(r"/cart\.html$"))
+    expect(cart_page.title).to_have_text("Your Cart")
+    expect(cart_page.items).to_have_count(1)
+
+    cart_item = cart_page.item(PRODUCT_NAME)
+    expect(cart_page.item_name(cart_item)).to_have_text(PRODUCT_NAME)
+    expect(cart_page.item_price(cart_item)).to_have_text(PRODUCT_PRICE)
+
+    cart_page.open_checkout()
+
+    expect(page).to_have_url(
+        re.compile(r"/checkout-step-one\.html$")
+    )
+    expect(checkout_page.title).to_have_text(
+        "Checkout: Your Information"
+    )
+
+    checkout_page.fill_customer_info(
+        "Ada",
+        "Lovelace",
+        "10001",
+    )
+    checkout_page.continue_to_overview()
+
+    expect(page).to_have_url(SUMMARY_URL)
+    expect(checkout_page.title).to_have_text(
+        "Checkout: Overview"
+    )
+
+    checkout_page.finish_checkout()
 
     # URL 和标题证明订单进入完成页面，成功文案证明业务结果可观察。
     expect(page).to_have_url(COMPLETE_URL)
-    expect(page.locator(".title")).to_have_text("Checkout: Complete!")
-    expect(page.locator(".complete-header")).to_have_text(
+    expect(checkout_page.title).to_have_text(
+        "Checkout: Complete!"
+    )
+    expect(checkout_page.complete_header).to_have_text(
         "Thank you for your order!"
     )
 
     # 完成订单后，购物车徽标和实际条目都应清空。
-    expect(
-        page.locator('[data-test="shopping-cart-badge"]')
-    ).to_have_count(0)
-    page.locator('[data-test="shopping-cart-link"]').click()
+    expect(cart_page.shopping_cart_badge).to_have_count(0)
+    cart_page.open_cart()
     expect(page).to_have_url(re.compile(r"/cart\.html$"))
-    expect(page.locator(".cart_item")).to_have_count(0)
+    expect(cart_page.items).to_have_count(0)

@@ -6,6 +6,16 @@ class CartPage:
         self.page = page
         self.title = page.locator(".title")
         self.items = page.locator(".cart_item")
+        self.checkout_button = page.get_by_role(
+            "button",
+            name="Checkout",
+        )
+        self.shopping_cart_badge = page.locator(
+            '[data-test="shopping-cart-badge"]'
+        )
+        self.shopping_cart_link = page.locator(
+            '[data-test="shopping-cart-link"]'
+        )
 
     def item(self, product_name: str) -> Locator:
         return self.items.filter(has_text=product_name)
@@ -29,3 +39,9 @@ class CartPage:
             )
 
         return records
+
+    def open_checkout(self) -> None:
+        self.checkout_button.click()
+
+    def open_cart(self) -> None:
+        self.shopping_cart_link.click()

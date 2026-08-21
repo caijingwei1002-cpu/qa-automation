@@ -36,6 +36,7 @@
 - [Day 27：登出和会话](#day-27登出和会话)
 - [Day 28：Page Object 登录页](#day-28page-object-登录页)
 - [Day 29：Page Object 商品页](#day-29page-object-商品页)
+- [Day 30：结算页面对象](#day-30结算页面对象)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -3075,6 +3076,107 @@ Day 29 创建 `InventoryPage` 和 `CartPage`，重构 `test_inventory.py` 与 `t
 
 ---
 
+## Day 30：结算页面对象
+
+### 核心知识点
+
+组织多页面业务流程，要求让每个 Page Object 负责自己的页面边界，再由测试按业务目标编排多个页面对象。页面对象负责当前页面怎么定位、怎么操作和怎么读取；测试负责跨页面步骤、Expected 和业务结果断言。
+
+### 它解决的问题
+
+完整下单 E2E 会经过登录、商品、购物车、结算信息、概览和完成页。如果这些步骤都塞进一个 `open_order_summary()` 或万能 helper，页面结构、状态转换和失败位置会被隐藏，维护和诊断成本都会上升。
+
+### 理论基础
+
+#### 1. 页面边界与动作归属
+
+动作发生在哪个页面，就由哪个页面对象封装：
+
+| 页面对象 | 负责内容 | 不负责内容 |
+| --- | --- | --- |
+| `CartPage` | 读取购物车、点击 Checkout、打开购物车入口 | 填写结算字段、判断订单成功 |
+| `CheckoutPage` | 填写姓名/姓氏/邮编、Continue、Finish、读取完成页元素 | 决定订单是否成功 |
+| E2E 测试 | 编排页面转换、保留 Expected、验证 URL/文案/后置状态 | 重复实现页面 locator |
+
+#### 2. 多页面业务流程模型
+
+```text
+LoginPage.login()
+    ↓ 登录成功
+InventoryPage.add_item()
+    ↓ 商品进入购物车
+CartPage.open_checkout()
+    ↓ 进入结算信息
+CheckoutPage.fill_customer_info()
+CheckoutPage.continue_to_overview()
+    ↓ 概览页
+CheckoutPage.finish_checkout()
+    ↓ 完成页
+测试断言 URL、标题、成功文案和购物车清空
+```
+
+每个状态转换都可以保留局部检查点，失败时能区分登录、加购、购物车、表单和完成页问题。
+
+#### 3. 最小代码骨架
+
+```python
+login_page.login(username, password)
+inventory_page.add_item(product_name)
+inventory_page.open_cart()
+cart_page.open_checkout()
+checkout_page.fill_customer_info(first_name, last_name, postal_code)
+checkout_page.continue_to_overview()
+checkout_page.finish_checkout()
+
+expect(page).to_have_url(COMPLETE_URL)
+expect(checkout_page.complete_header).to_have_text(
+    "Thank you for your order!"
+)
+```
+
+`finish_checkout()` 只执行点击；完成页 URL、成功文案和购物车清空分别由测试断言，因为它们证明的是当前 E2E 的业务结果，而不是页面对象的固定结论。
+
+#### 4. 适用场景与边界
+
+- 适用：登录、购物车、结算等多个页面组成的关键业务链路。
+- 适用：需要在状态转换处保留可读检查点、并希望失败能快速归因的 E2E。
+- 不适用：用一个万能 Page Object 包含所有页面、流程和业务断言。
+- 不适用：为了减少行数而隐藏所有状态转换；E2E 仍应能读出用户目标和关键后置条件。
+- 跨页面编排属于测试或更高层业务流程；单个 Page Object 不应跨越多个页面职责。
+
+#### 5. 常见错误、反例与假通过
+
+1. 新页面对象流程加入后仍保留旧万能 helper，导致重复实现和直接 locator 残留。
+2. 把购物车的 Checkout 按钮放进 `CheckoutPage`，违反动作发生页面边界。
+3. 在 `finish_checkout()` 内硬编码成功 URL、感谢文案或购物车清空断言，导致负向和变体场景无法复用。
+4. 只运行 `1 passed` 就认为 Page Object 重构正确；还需要扫描测试中的关键 locator 和旧 helper。
+5. 让测试只调用一个高层“完成订单”方法，隐藏登录、加购和状态转换，失败时无法定位阶段。
+
+### 记忆要点
+
+**页面对象负责当前页面的动作，测试负责跨页面流程和业务结论；E2E 既要跑通，也要读得出状态转换。**
+
+### 代码落地
+
+Day 30 创建 `CheckoutPage`，扩展 `CartPage.open_checkout()`，并删除 `open_order_summary()`。`test_checkout_e2e.py` 现在直接按 Login → Inventory → Cart → Checkout → Complete 的业务顺序调用页面对象，在关键转换处断言 URL、标题、成功文案和购物车清空。
+
+### 知识验收
+
+1. 为什么 `CartPage` 负责 `open_checkout()`，而 `CheckoutPage` 负责填写字段和 Finish？
+2. 为什么完成页 URL、成功文案和购物车清空断言应留在测试中？
+3. 删除万能 helper 解决了什么维护问题？
+4. 如何分别用运行证据和结构证据证明 E2E 重构正确？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/pages/checkout_page.py`、`test-projects/02-saucedemo-ui/pages/cart_page.py`、`test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py -q`
+- 验证结果：`1 passed in 2.68s`；静态扫描无旧 helper 和结算直接 locator。
+- 验证证据：`artifacts/day-030/verification.md`
+- 当天记录：`daily-log/day-030.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -3109,6 +3211,7 @@ Day 29 创建 `InventoryPage` 和 `CartPage`，重构 `test_inventory.py` 与 `t
 | 登出和会话 | Day 27 | 认证状态转换、直接访问受保护路由、会话失效与访问控制边界 |
 | Page Object 职责边界 | Day 28 | 页面操作接口、测试业务断言、可复用动作与分层失败排查 |
 | Page Object 商品页 | Day 29 | 重复 locator 抽取、actual/expected 分离、页面数据读取与业务断言边界 |
+| 多页面业务流程 | Day 30 | 页面职责边界、跨页面编排、状态转换检查点与万能 helper 风险 |
 
 ## 每日完结后的知识落盘流程
 

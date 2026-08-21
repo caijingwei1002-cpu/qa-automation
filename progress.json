@@ -1,5 +1,5 @@
 {
-  "current_day": 30,
+  "current_day": 31,
   "completed_days": [
     1,
     2,
@@ -29,7 +29,8 @@
     26,
     27,
     28,
-    29
+    29,
+    30
   ],
   "history": [
     {
@@ -205,6 +206,12 @@
       "date": "2026-08-21",
       "result": "完成 Day 29：创建 InventoryPage 与 CartPage，重构商品列表和购物车测试；目标测试 3 条通过并保存证据，修复遗漏 Expected 定义和旧提取循环重复追加问题。",
       "next_step": "Day 30：创建 CheckoutPage，把完整下单 E2E 重构为清晰的多页面业务步骤。"
+    },
+    {
+      "day": 30,
+      "date": "2026-08-21",
+      "result": "完成 Day 30：创建 CheckoutPage，扩展 CartPage 的 Checkout 入口并重构完整下单 E2E；目标测试 1 条通过并保存证据，删除旧万能 helper。",
+      "next_step": "Day 31：集中管理账号、地址和商品测试数据，创建 test_data.py。"
     }
   ]
 }
