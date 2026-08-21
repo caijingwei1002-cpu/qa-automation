@@ -17,6 +17,7 @@ SORT_CASES = (
 
 
 def parse_price(price_text: str) -> Decimal:
+    """去掉货币符号并按 Decimal 解析，确保价格按数值而非文本排序。"""
     return Decimal(price_text.strip().removeprefix("$"))
 
 

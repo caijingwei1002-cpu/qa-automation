@@ -15,6 +15,7 @@ def login_as_standard_user(
     page: Page,
     credentials: dict[str, str],
 ):
+    """完成两个移除场景共用的登录前置，并确认已进入商品列表。"""
     page.get_by_placeholder("Username").fill(credentials["username"])
     page.get_by_placeholder("Password").fill(credentials["password"])
     page.get_by_role("button", name="Login").click()
@@ -35,6 +36,7 @@ def test_remove_item_from_inventory_updates_cart_state(
     )
     expect(inventory_item).to_have_count(1)
 
+    # 先建立已加入状态，才能验证 Remove 后是否真正回退。
     inventory_item.get_by_role(
         "button",
         name="Add to cart",
@@ -84,6 +86,7 @@ def test_remove_item_from_cart_updates_inventory_state(
         inventory_item.locator(".inventory_item_price")
     ).to_have_text(EXPECTED_PRICE)
 
+    # 从列表页加入后切换到购物车，验证购物车入口的 Remove 行为。
     inventory_item.get_by_role(
         "button",
         name="Add to cart",

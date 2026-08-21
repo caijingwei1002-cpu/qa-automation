@@ -18,6 +18,7 @@ DAILY_METHOD = {
 
 
 def task(title: str, learn: str, deliverable: str, file: str, run: str, done: str, stretch: str) -> dict[str, str]:
+    """把简洁的任务定义展开成统一的学习、实践、验证和验收字段。"""
     return {
         "title": title,
         "learn": learn,
@@ -283,6 +284,7 @@ PHASES = [
 
 
 def build_plan() -> list[dict[str, object]]:
+    """将各阶段任务展平为连续编号的核心日计划。"""
     plan: list[dict[str, object]] = []
     day = 1
     for phase in PHASES:
@@ -311,6 +313,7 @@ def build_plan() -> list[dict[str, object]]:
 
 
 def write_outputs(plan: list[dict[str, object]]) -> None:
+    """同时生成机器读取的 JSON 计划和人类阅读的 Markdown 计划。"""
     (ROOT / "daily-plan.json").write_text(
         json.dumps(
             {

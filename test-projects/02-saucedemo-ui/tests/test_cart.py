@@ -76,6 +76,7 @@ def test_add_one_item(
 
 
 def parse_price(price_text: str) -> Decimal:
+    """将页面货币文本转为 Decimal，避免按字符串或浮点近似比较金额。"""
     return Decimal(price_text.strip().removeprefix("$"))
 
 
@@ -95,18 +96,21 @@ def test_add_multiple_items_and_verify_cart(
 
     expect(page).to_have_url(re.compile(r"/inventory\.html$"))
 
+    # 用独立的名称—价格预期驱动加购，避免从页面实时数据生成 Expected。
     selected_products = (
         ("Sauce Labs Backpack", "$29.99"),
         ("Sauce Labs Bike Light", "$9.99"),
         ("Sauce Labs Onesie", "$7.99"),
     )
 
+    # 元组集合保留商品与价格的绑定关系，Decimal 合计作为后续金额校验基准。
     expected_items = set(selected_products)
     expected_subtotal = sum(
         parse_price(price)
         for _, price in selected_products
     )
 
+    # 先定位目标商品卡片，再在卡片内部点击按钮，避免点击错误商品。
     for product_name, expected_price in selected_products:
         inventory_item = page.locator(".inventory_item").filter(
             has_text=product_name
@@ -122,6 +126,7 @@ def test_add_multiple_items_and_verify_cart(
             name="Add to cart",
         ).click()
 
+    # 徽标只证明加入数量，后续还要进入购物车验证实际条目。
     cart_badge = page.locator(
         '[data-test="shopping-cart-badge"]'
     )
@@ -138,6 +143,7 @@ def test_add_multiple_items_and_verify_cart(
     cart_items = page.locator(".cart_item")
     expect(cart_items).to_have_count(len(selected_products))
 
+    # 从页面提取实际的名称—价格记录，用于与独立预期比较。
     actual_items = []
 
     for index in range(cart_items.count()):
@@ -151,9 +157,11 @@ def test_add_multiple_items_and_verify_cart(
 
         actual_items.append((actual_name, actual_price))
 
+    # 数量防止集合去重掩盖重复条目，元组集合验证成员和字段关联。
     assert len(actual_items) == len(selected_products)
     assert set(actual_items) == expected_items
 
+    # 金额汇总验证购物车价格没有遗漏、重复或串位。
     actual_subtotal = sum(
         parse_price(price)
         for _, price in actual_items

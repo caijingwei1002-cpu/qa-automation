@@ -46,15 +46,18 @@ LEGACY_DIRS = {
 
 
 def load_json(relative: str) -> dict:
+    """以 UTF-8 读取仓库根目录下的 JSON 配置文件。"""
     path = ROOT / relative
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def fail(errors: list[str], message: str) -> None:
+    """集中收集校验错误，最后一次性输出而不是遇到首个错误就退出。"""
     errors.append(message)
 
 
 def main() -> int:
+    """检查仓库结构、生成计划、学习记录和 Git 边界是否保持一致。"""
     errors: list[str] = []
 
     for relative in [

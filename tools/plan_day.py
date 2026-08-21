@@ -23,12 +23,14 @@ LOG_DIR = ROOT / "daily-log"
 ARTIFACT_DIR = ROOT / "artifacts"
 TEMPLATE_PATH = ROOT / "templates" / "daily-log.md"
 def load_json(path: Path, default: Any) -> Any:
+    """读取 UTF-8 JSON；文件不存在时返回调用方提供的默认结构。"""
     if not path.exists():
         return default
     return json.loads(path.read_text(encoding="utf-8"))
 
 
 def load_progress() -> dict[str, Any]:
+    """读取进度并补齐旧版本文件可能缺少的默认字段。"""
     progress = load_json(
         PROGRESS_PATH,
         {"current_day": 1, "completed_days": [], "history": []},
@@ -76,6 +78,7 @@ def save_progress(progress: dict[str, Any]) -> None:
 
 
 def phase_for_day(curriculum: dict[str, Any], day: int) -> tuple[dict[str, Any], int]:
+    """把绝对学习日映射为所属阶段及阶段内的相对天数。"""
     remaining = day
     for phase in curriculum["phases"]:
         if remaining <= phase["days"]:
@@ -85,6 +88,7 @@ def phase_for_day(curriculum: dict[str, Any], day: int) -> tuple[dict[str, Any],
 
 
 def plan_for_day(curriculum: dict[str, Any], day: int) -> dict[str, Any]:
+    """按优先级选择详细日计划、核心回退计划或长期专项计划。"""
     core_days = curriculum["core_days"]
     if day <= 0:
         raise ValueError("day must be positive")
@@ -148,6 +152,7 @@ def plan_for_day(curriculum: dict[str, Any], day: int) -> dict[str, Any]:
 
 
 def render_log(plan: dict[str, Any], result: str = "", next_step: str = "") -> str:
+    """将日计划字段填入日志模板，并保留固定的学习闭环结构。"""
     text = TEMPLATE_PATH.read_text(encoding="utf-8")
     replacements = {
         "{{day}}": str(plan["day"]),
@@ -196,6 +201,7 @@ def fill_log_field(text: str, label: str, value: str) -> str:
 
 
 def write_daily_log(plan: dict[str, Any], result: str = "", next_step: str = "") -> Path:
+    """创建或增量更新日志，避免覆盖学习者已经填写的复盘内容。"""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     artifact_path = ARTIFACT_DIR / f"day-{plan['day']:03d}"
     artifact_path.mkdir(parents=True, exist_ok=True)
@@ -265,6 +271,7 @@ def command_complete(args: argparse.Namespace) -> None:
     progress = load_progress()
     plan = plan_for_day(curriculum, args.day)
     write_daily_log(plan, args.result, args.next_step)
+    # 完成命令只追加未完成日，并将下一天推进到当前完成日之后。
     if args.day not in progress["completed_days"]:
         progress["completed_days"].append(args.day)
         progress["completed_days"].sort()
