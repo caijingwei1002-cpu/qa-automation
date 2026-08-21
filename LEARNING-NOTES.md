@@ -35,6 +35,7 @@
 - [Day 26：完整下单](#day-26完整下单)
 - [Day 27：登出和会话](#day-27登出和会话)
 - [Day 28：Page Object 登录页](#day-28page-object-登录页)
+- [Day 29：Page Object 商品页](#day-29page-object-商品页)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -2972,6 +2973,108 @@ Day 28 在 `test-projects/02-saucedemo-ui/pages/login_page.py` 中集中定义�
 
 ---
 
+## Day 29：Page Object 商品页
+
+### 核心知识点
+
+减少重复选择器和操作，要求把同一页面反复出现的 locator、页面动作和数据读取集中到有明确职责的 Page Object，同时让测试保留测试数据、业务流程和断言。
+
+### 它解决的问题
+
+商品列表和购物车测试如果各自重复 `.inventory_item`、`.cart_item`、商品名称/价格和购物车入口 locator，页面结构变化时容易漏改，多个测试也可能使用不一致的操作。集中抽取可以降低维护成本，但不能把所有业务规则塞进页面对象。
+
+### 理论基础
+
+#### 1. 页面职责与抽取边界
+
+| 页面对象 | 负责内容 | 不负责内容 |
+| --- | --- | --- |
+| `InventoryPage` | 商品卡片、商品名称/价格/图片、加购、徽标、购物车入口、页面数据读取 | 商品集合是否完整、价格是否正确等业务结论 |
+| `CartPage` | 购物车条目、名称/价格读取、名称—价格记录提取 | Expected 商品集合、金额合计和断言结果 |
+
+测试可以表达为：
+
+```text
+给定独立的商品 Expected
+    当通过 InventoryPage 加购并通过 CartPage 读取 actual
+    那么测试比较数量、集合、字段关联和金额业务规则
+```
+
+#### 2. Page Object 提供 actual，测试决定 expected
+
+`CartPage.item_records()` 只负责从 UI 读取当前显示的名称—价格记录：
+
+```python
+actual_records = cart_page.item_records()
+assert set(actual_records) == expected_records
+```
+
+页面对象不应保存某个测试专用的 Expected，也不应在读取方法内部执行集合或金额断言。这样同一个读取动作才能复用于单商品、多商品、删除后状态等不同场景。
+
+#### 3. 最小代码骨架
+
+```python
+class InventoryPage:
+    def item(self, product_name: str) -> Locator:
+        return self.items.filter(has_text=product_name)
+
+    def add_item(self, product_name: str) -> None:
+        self.item(product_name).get_by_role(
+            "button", name="Add to cart"
+        ).click()
+
+
+class CartPage:
+    def item_records(self) -> list[tuple[str, str]]:
+        return [
+            (self.item_name(item).inner_text(), self.item_price(item).inner_text())
+            for item in self.items.all()
+        ]
+```
+
+上面的对象提供定位、动作和读取；测试仍负责 `expected_items`、数量、集合和 `Decimal` 合计。
+
+#### 4. 适用场景与边界
+
+- 适用：多个测试共享页面结构和机械动作，页面变化需要集中维护的场景。
+- 适用：商品列表、购物车、结算等职责清晰的页面对象。
+- 不适用：创建一个包含所有页面和所有业务流程的万能 `BasePage`；跨页面流程仍应由测试编排。
+- 不适用：把一次性操作过度抽象，抽象应减少重复或提高可读性。
+- 页面对象可以返回 locator 或 actual 数据，但业务 Expected 和场景结论应留在测试层。
+
+#### 5. 常见错误、反例与假通过
+
+1. 抽取页面操作时顺手删除测试 Expected，导致 `NameError` 或失去独立预期。
+2. 新方法已经读取数据，旧提取循环仍保留，造成重复追加和结果错误。
+3. 只看到测试通过就认为重复已消失；还需要静态搜索关键 locator。
+4. 在 Page Object 内硬编码商品集合或金额预期，使对象无法复用于其他场景。
+5. 过度封装跨页面业务流程，导致测试无法清楚表达每个状态转换和断言。
+
+### 记忆要点
+
+**页面对象集中“怎么找、怎么操作、怎么读取”；测试保留 Expected、业务规则和 actual/expected 比较。**
+
+### 代码落地
+
+Day 29 创建 `InventoryPage` 和 `CartPage`，重构 `test_inventory.py` 与 `test_cart.py`。登录复用 Day 28 的 `LoginPage`；目标测试不再直接使用商品卡片、购物车条目或关键入口 locator，测试仍保留集合、价格、图片和 Decimal 合计断言。
+
+### 知识验收
+
+1. `InventoryPage` 和 `CartPage` 分别抽取了哪些重复内容？
+2. 为什么 `item_records()` 可以读取 actual，却不能替测试比较 Expected？
+3. `NameError` 和旧循环重复追加分别如何排查？
+4. 除了测试通过，还应如何证明关键 locator 已从测试中抽走？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/pages/inventory_page.py`、`test-projects/02-saucedemo-ui/pages/cart_page.py`、`test-projects/02-saucedemo-ui/tests/test_inventory.py`、`test-projects/02-saucedemo-ui/tests/test_cart.py`
+- 验证命令：`pytest test-projects/02-saucedemo-ui/tests/test_inventory.py test-projects/02-saucedemo-ui/tests/test_cart.py -q`
+- 验证结果：`3 passed in 12.86s`；目标测试静态扫描无直接页面结构 locator。
+- 验证证据：`artifacts/day-029/verification.md`
+- 当天记录：`daily-log/day-029.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -3005,6 +3108,7 @@ Day 28 在 `test-projects/02-saucedemo-ui/pages/login_page.py` 中集中定义�
 | 关键端到端业务流 | Day 26 | 状态转换检查点、导航与业务证据、订单完成后置条件与 E2E 边界 |
 | 登出和会话 | Day 27 | 认证状态转换、直接访问受保护路由、会话失效与访问控制边界 |
 | Page Object 职责边界 | Day 28 | 页面操作接口、测试业务断言、可复用动作与分层失败排查 |
+| Page Object 商品页 | Day 29 | 重复 locator 抽取、actual/expected 分离、页面数据读取与业务断言边界 |
 
 ## 每日完结后的知识落盘流程
 

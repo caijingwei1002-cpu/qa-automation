@@ -1,5 +1,5 @@
 {
-  "current_day": 29,
+  "current_day": 30,
   "completed_days": [
     1,
     2,
@@ -28,7 +28,8 @@
     25,
     26,
     27,
-    28
+    28,
+    29
   ],
   "history": [
     {
@@ -198,6 +199,12 @@
       "date": "2026-08-21",
       "result": "完成 Day 28：创建 LoginPage 并重构三个登录测试，验证标准登录、错误密码和空用户名；目标测试 3 条通过并保存证据，记录语法、导入路径和 Playwright 权限问题。",
       "next_step": "Day 29：减少商品页和购物车测试中的重复定位器与操作，创建 InventoryPage 与 CartPage。"
+    },
+    {
+      "day": 29,
+      "date": "2026-08-21",
+      "result": "完成 Day 29：创建 InventoryPage 与 CartPage，重构商品列表和购物车测试；目标测试 3 条通过并保存证据，修复遗漏 Expected 定义和旧提取循环重复追加问题。",
+      "next_step": "Day 30：创建 CheckoutPage，把完整下单 E2E 重构为清晰的多页面业务步骤。"
     }
   ]
 }
