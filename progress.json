@@ -1,5 +1,5 @@
 {
-  "current_day": 33,
+  "current_day": 34,
   "completed_days": [
     1,
     2,
@@ -32,7 +32,8 @@
     29,
     30,
     31,
-    32
+    32,
+    33
   ],
   "history": [
     {
@@ -226,6 +227,12 @@
       "date": "2026-08-24",
       "result": "完成 Day 32：创建 config.py 实现 base_url 优先级解析与 http(s) 校验，在 pytest 注册 --base-url 并注入 saucedemo_page；合法 smoke 1 条通过，非法配置按预期返回 ValueError，保存两类证据。",
       "next_step": "Day 33：学习兼容性矩阵和执行成本，在 Chromium、Firefox 运行 smoke 并记录结果。"
+    },
+    {
+      "day": 33,
+      "date": "2026-08-24",
+      "result": "完成 Day 33：在 pytest 中加入 --browser 选项并支持 Chromium/Firefox；两种浏览器运行同一 smoke 集合均通过，记录 Chromium 2.73s、Firefox 5.01s 和 Firefox 浏览器包安装依赖。",
+      "next_step": "Day 34：学习区分产品缺陷、脚本缺陷和环境问题，接入 HTML/Allure 报告并分析一次失败。"
     }
   ]
 }

@@ -39,6 +39,7 @@
 - [Day 30：结算页面对象](#day-30结算页面对象)
 - [Day 31：测试数据模型](#day-31测试数据模型)
 - [Day 32：环境配置](#day-32环境配置)
+- [Day 33：多浏览器](#day-33多浏览器)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -3377,6 +3378,97 @@ Day 32 创建 `config.py`，实现 `resolve_base_url()`；在 pytest 中注册 `
 - 验证证据：`artifacts/day-032/smoke-valid.txt`、`artifacts/day-032/smoke-invalid.txt`、`artifacts/day-032/verification.md`
 - 当天记录：`daily-log/day-032.md`
 
+## Day 33：多浏览器
+
+### 核心知识点
+
+兼容性矩阵描述“哪些浏览器运行哪些测试”，执行成本则描述每个组合需要多少时间、资源和维护成本。矩阵的目标不是盲目增加浏览器数量，而是根据用户风险、浏览器使用占比、变更范围和测试价值选择覆盖。
+
+### 它解决的问题
+
+只在 Chromium 运行测试可能漏掉 Firefox 的兼容性问题；在所有浏览器上重复完整回归又会放大运行时间和维护成本。把关键路径 smoke 放到多个高价值浏览器上，可以用较低成本获得早期信号，再把完整回归集中在主浏览器或高风险变更范围。
+
+### 理论基础
+
+#### 1. 兼容性矩阵
+
+```text
+                 smoke       full regression
+Chromium           通过            按风险
+Firefox            通过            按风险
+WebKit             未纳入          未纳入
+```
+
+矩阵的每一格都应有明确的选择理由。今天只建立 Chromium × smoke 和 Firefox × smoke 两格，不把 WebKit 或移动视口扩展到当前目标之外。
+
+#### 2. 浏览器选择与 fixture
+
+```python
+parser.addoption(
+    "--browser",
+    action="store",
+    choices=("chromium", "firefox"),
+    default="chromium",
+)
+
+browser_types = {
+    "chromium": playwright.chromium,
+    "firefox": playwright.firefox,
+}
+browser = browser_types[browser_name].launch(headless=True)
+```
+
+浏览器选择由命令行控制，测试主体不需要知道当前使用哪一个浏览器；同一套 smoke 逻辑才能进行有意义的横向比较。
+
+#### 3. 成本记录
+
+```text
+Chromium smoke: 1 passed, 2.73s
+Firefox smoke:  1 passed, 5.01s
+```
+
+通过状态说明功能信号一致，耗时差异说明执行成本不同。后续可以据此决定哪些浏览器进入每次提交、夜间回归或发布前验证。
+
+### 适用场景与边界
+
+- 适用：面向不同浏览器用户、使用跨浏览器渲染或交互能力的 Web 产品。
+- 适用：关键路径需要多个浏览器的快速回归信号。
+- 不适用：没有用户风险或产品需求依据时机械增加浏览器数量。
+- 不适用：只比较通过/失败而不记录浏览器版本、执行时间和环境依赖。
+- 边界：浏览器二进制包是 Playwright 库之外的独立依赖，需要单独安装和记录。
+
+### 常见错误、反例与假通过
+
+1. 只把浏览器名写进报告，却没有真正用不同浏览器启动测试。
+2. 在不同浏览器运行不同测试集合，导致结果无法比较。
+3. 只看绿色结果，不记录 Firefox 等浏览器的额外执行成本。
+4. 浏览器未安装时把启动错误误判为兼容性缺陷。
+5. 为了追求矩阵数量加入 WebKit、移动视口和完整回归，超出当天风险与时间范围。
+6. 把浏览器选择逻辑散落在每个测试中，导致测试主体与环境耦合。
+
+### 记忆要点
+
+**矩阵按风险选格子，smoke 先跨浏览器守关键路径，完整回归按成本和变更范围扩展。**
+
+### 代码落地
+
+Day 33 在 pytest 中增加 `--browser` 选项，session browser fixture 支持 Chromium 与 Firefox；同一个 smoke 集合在两个浏览器中均通过，并记录了执行时间差异。
+
+### 知识验收
+
+1. 为什么兼容性矩阵不是浏览器越多、测试越多越好？
+2. 为什么今天选择在 Chromium 和 Firefox 运行 smoke，而不是立即运行两个浏览器的完整回归？
+3. Firefox 用时更高时，如何使用矩阵决定后续覆盖范围？
+4. 如何区分浏览器未安装、浏览器进程权限错误和真实兼容性失败？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/tests/conftest.py`、`test-projects/02-saucedemo-ui/pytest.ini`
+- 验证命令：`python -m pytest tests -m smoke -q --browser=chromium|firefox --base-url=...`
+- 验证结果：Chromium `1 passed, 20 deselected in 2.73s`；Firefox `1 passed, 20 deselected in 5.01s`
+- 验证证据：`artifacts/day-033/smoke-chromium.txt`、`artifacts/day-033/smoke-firefox.txt`、`artifacts/day-033/verification.md`
+- 当天记录：`daily-log/day-033.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -3414,6 +3506,7 @@ Day 32 创建 `config.py`，实现 `resolve_base_url()`；在 pytest 中注册 `
 | 多页面业务流程 | Day 30 | 页面职责边界、跨页面编排、状态转换检查点与万能 helper 风险 |
 | 测试数据模型 | Day 31 | 共享事实、场景选择、字段映射、商品目录与数据驱动重构边界 |
 | 环境配置 | Day 32 | base_url 优先级、命令行覆盖、URL 校验、fixture 注入与错误分层 |
+| 多浏览器 | Day 33 | 兼容性矩阵、smoke 覆盖、浏览器依赖与执行成本取舍 |
 
 ## 每日完结后的知识落盘流程
 

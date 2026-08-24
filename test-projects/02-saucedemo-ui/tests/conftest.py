@@ -17,6 +17,13 @@ def pytest_addoption(parser):
         default=None,
         help="覆盖 SauceDemo base URL",
     )
+    parser.addoption(
+        "--browser",
+        action="store",
+        choices=("chromium", "firefox"),
+        default="chromium",
+        help="选择 Playwright 浏览器",
+    )
 
 @pytest.fixture
 def saucedemo_base_url(pytestconfig):
@@ -26,13 +33,21 @@ def saucedemo_base_url(pytestconfig):
 
 
 @pytest.fixture(scope="session")
-def browser():
-    # 浏览器启动成本较高，整个测试会话只创建一个实例。
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
-        yield browser
-        browser.close()
+def browser(pytestconfig):
+    # 每个测试会话只启动一个指定类型的浏览器。
+    browser_name = pytestconfig.getoption("--browser")
 
+    with sync_playwright() as playwright:
+        browser_types = {
+            "chromium": playwright.chromium,
+            "firefox": playwright.firefox,
+        }
+        selected_browser = browser_types[browser_name]
+        browser = selected_browser.launch(headless=True)
+
+        yield browser
+
+        browser.close()
 
 @pytest.fixture
 def context(browser: Browser):
