@@ -1,5 +1,5 @@
 {
-  "current_day": 32,
+  "current_day": 33,
   "completed_days": [
     1,
     2,
@@ -31,7 +31,8 @@
     28,
     29,
     30,
-    31
+    31,
+    32
   ],
   "history": [
     {
@@ -219,6 +220,12 @@
       "date": "2026-08-24",
       "result": "完成 Day 31：创建 test_data.py 集中管理用户、结算地址、六个商品和商品目录；迁移登录、用户、库存、详情、购物车和结算测试；完整回归 21 条通过，并记录一次 SauceDemo 瞬时连接关闭和工作目录模块导入问题。",
       "next_step": "Day 32：学习 base_url 和环境切换，加入测试配置与命令行选项。"
+    },
+    {
+      "day": 32,
+      "date": "2026-08-24",
+      "result": "完成 Day 32：创建 config.py 实现 base_url 优先级解析与 http(s) 校验，在 pytest 注册 --base-url 并注入 saucedemo_page；合法 smoke 1 条通过，非法配置按预期返回 ValueError，保存两类证据。",
+      "next_step": "Day 33：学习兼容性矩阵和执行成本，在 Chromium、Firefox 运行 smoke 并记录结果。"
     }
   ]
 }

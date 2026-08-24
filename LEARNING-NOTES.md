@@ -38,6 +38,7 @@
 - [Day 29：Page Object 商品页](#day-29page-object-商品页)
 - [Day 30：结算页面对象](#day-30结算页面对象)
 - [Day 31：测试数据模型](#day-31测试数据模型)
+- [Day 32：环境配置](#day-32环境配置)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -3288,6 +3289,94 @@ Day 31 创建 `test_data.py`，集中账号、顾客地址、六个商品和 `PR
 - 验证证据：`artifacts/day-031/verification.md`、`artifacts/day-031/pytest-full.txt`
 - 当天记录：`daily-log/day-031.md`
 
+## Day 32：环境配置
+
+### 核心知识点
+
+环境配置的目标是让测试逻辑与被测系统地址解耦。一个可维护的 `base_url` 解析器应定义清晰的来源优先级、校验输入，并把最终结果通过 fixture 注入测试；页面对象或 `page.goto()` 不应自行决定环境。
+
+### 它解决的问题
+
+如果 URL 直接写在 fixture 或每个测试里，切换本地、测试和演示环境需要修改代码，错误地址也可能直到浏览器导航时才暴露。集中解析后，命令行可以临时覆盖环境变量，非法配置会在测试准备阶段明确失败。
+
+### 理论基础
+
+#### 1. 配置来源优先级
+
+```text
+--base-url > SAUCEDEMO_URL > DEFAULT_BASE_URL
+```
+
+命令行适合单次运行覆盖，环境变量适合机器或 CI 配置，代码默认值只作为开发兜底。优先级必须写进代码和验证证据，而不是依赖使用者猜测。
+
+#### 2. 配置解析与页面准备分层
+
+```python
+def resolve_base_url(cli_value: str | None = None) -> str:
+    candidate = cli_value or os.getenv("SAUCEDEMO_URL") or DEFAULT_BASE_URL
+    parsed = urlparse(candidate)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("base_url 必须是完整的 http(s) URL")
+    return candidate.rstrip("/") + "/"
+```
+
+```python
+@pytest.fixture
+def saucedemo_base_url(pytestconfig):
+    return resolve_base_url(pytestconfig.getoption("--base-url"))
+
+@pytest.fixture
+def saucedemo_page(page, saucedemo_base_url):
+    page.goto(saucedemo_base_url)
+    yield page
+```
+
+`resolve_base_url()` 决定“去哪儿”，fixture 决定“怎么准备页面”，`page.goto()` 只执行“去”。
+
+#### 3. 错误配置应尽早失败
+
+合法 URL 的 smoke 通过证明配置可以驱动真实页面；非法 URL 的 `ValueError` 证明错误不会静默进入浏览器。两类证据都需要保留，不能只记录绿色测试。
+
+### 适用场景与边界
+
+- 适用：本地、测试、预发布等环境需要复用同一套自动化脚本。
+- 适用：CI 需要通过环境变量或命令行注入目标地址。
+- 不适用：把真实密码等敏感信息写入普通配置文件；凭据应继续由安全环境变量注入。
+- 不适用：让页面对象内部自行读取环境变量，导致配置来源分散、测试难以覆盖。
+- 安全边界：性能和破坏性测试仍必须指向明确授权的本地或测试目标。
+
+### 常见错误、反例与假通过
+
+1. 只支持环境变量，不支持单次命令行覆盖，临时验证需要修改 shell 状态。
+2. 不校验 URL，把 `not-a-url` 交给浏览器，错误信息变成难以定位的导航异常。
+3. 在多个 fixture 或测试中重复读取 `SAUCEDEMO_URL`，优先级不一致。
+4. 把 `page.goto()`、URL 解析、环境选择和浏览器准备全部塞进一个万能 fixture。
+5. 只验证默认 URL，不验证非法值；配置错误路径没有证据。
+6. 把浏览器启动权限错误误判为 URL 配置错误；应根据失败发生的 fixture 阶段分层诊断。
+
+### 记忆要点
+
+**配置先解析和校验，fixture 再准备页面，导航动作最后执行；命令行覆盖环境变量，环境变量覆盖默认值。**
+
+### 代码落地
+
+Day 32 创建 `config.py`，实现 `resolve_base_url()`；在 pytest 中注册 `--base-url`，通过 `saucedemo_base_url` 注入 `saucedemo_page`。合法 URL 的 smoke 通过，非法 URL 在 setup 阶段返回明确 `ValueError`。
+
+### 知识验收
+
+1. `--base-url`、`SAUCEDEMO_URL` 和默认 URL 的优先级是什么？
+2. 为什么 `resolve_base_url()` 负责“去哪儿”，fixture 负责“怎么准备页面”，而 `page.goto()` 只负责“去”？
+3. 为什么非法 URL 应在 fixture 阶段失败，而不是依赖浏览器返回模糊的导航错误？
+4. 如何区分配置错误与 Playwright 浏览器进程权限错误？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/config.py`、`test-projects/02-saucedemo-ui/tests/conftest.py`
+- 验证命令：`python -m pytest tests -m smoke -q --base-url=...`（在 `test-projects/02-saucedemo-ui` 目录执行）
+- 验证结果：合法 URL `1 passed, 20 deselected`；非法 URL `ValueError`、退出码 `1`
+- 验证证据：`artifacts/day-032/smoke-valid.txt`、`artifacts/day-032/smoke-invalid.txt`、`artifacts/day-032/verification.md`
+- 当天记录：`daily-log/day-032.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -3324,6 +3413,7 @@ Day 31 创建 `test_data.py`，集中账号、顾客地址、六个商品和 `PR
 | Page Object 商品页 | Day 29 | 重复 locator 抽取、actual/expected 分离、页面数据读取与业务断言边界 |
 | 多页面业务流程 | Day 30 | 页面职责边界、跨页面编排、状态转换检查点与万能 helper 风险 |
 | 测试数据模型 | Day 31 | 共享事实、场景选择、字段映射、商品目录与数据驱动重构边界 |
+| 环境配置 | Day 32 | base_url 优先级、命令行覆盖、URL 校验、fixture 注入与错误分层 |
 
 ## 每日完结后的知识落盘流程
 

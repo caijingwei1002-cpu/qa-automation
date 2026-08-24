@@ -1,0 +1,37 @@
+E                                                                        [100%]
+=================================== ERRORS ====================================
+_________________ ERROR at setup of test_standard_user_login __________________
+
+pytestconfig = <_pytest.config.Config object at 0x00000187E0BA5710>
+
+    @pytest.fixture
+    def saucedemo_base_url(pytestconfig):
+>       return resolve_base_url(
+            pytestconfig.getoption("--base-url")
+        )
+
+tests\conftest.py:23:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cli_value = 'not-a-url'
+
+    def resolve_base_url(cli_value: str | None = None) -> str:
+        """�������С�����������Ĭ��ֵ�����ȼ�������У��Ŀ���ַ��"""
+        candidate = (
+            cli_value
+            or os.getenv("SAUCEDEMO_URL")
+            or DEFAULT_BASE_URL
+        )
+    
+        parsed = urlparse(candidate)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+>           raise ValueError(
+                "base_url ������������ http(s) URL��"
+                f"��ǰֵΪ��{candidate!r}"
+            )
+E           ValueError: base_url ������������ http(s) URL����ǰֵΪ��'not-a-url'
+
+config.py:18: ValueError
+=========================== short test summary info ===========================
+ERROR tests/test_login.py::test_standard_user_login - ValueError: base_url ��...
+20 deselected, 1 error in 0.78s

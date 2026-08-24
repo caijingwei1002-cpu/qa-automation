@@ -8,12 +8,21 @@ from playwright.sync_api import (
     sync_playwright,
 )
 from test_data import DEFAULT_PASSWORD, STANDARD_USER
+from config import resolve_base_url
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--base-url",
+        action="store",
+        default=None,
+        help="覆盖 SauceDemo base URL",
+    )
 
-SAUCEDEMO_URL = os.getenv(
-    "SAUCEDEMO_URL",
-    "https://www.saucedemo.com/",
-)
+@pytest.fixture
+def saucedemo_base_url(pytestconfig):
+    return resolve_base_url(
+        pytestconfig.getoption("--base-url")
+    )
 
 
 @pytest.fixture(scope="session")
@@ -42,9 +51,12 @@ def page(context: BrowserContext):
 
 
 @pytest.fixture
-def saucedemo_page(page: Page):
-    # 统一从登录页开始，保证登录测试的前置状态一致。
-    page.goto(SAUCEDEMO_URL)
+def saucedemo_page(
+    page: Page,
+    saucedemo_base_url: str,
+):
+    # 统一从配置解析出的地址开始。
+    page.goto(saucedemo_base_url)
     page.wait_for_load_state("domcontentloaded")
     yield page
 
