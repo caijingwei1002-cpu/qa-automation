@@ -1,5 +1,5 @@
 {
-  "current_day": 34,
+  "current_day": 35,
   "completed_days": [
     1,
     2,
@@ -33,7 +33,8 @@
     30,
     31,
     32,
-    33
+    33,
+    34
   ],
   "history": [
     {
@@ -233,6 +234,12 @@
       "date": "2026-08-24",
       "result": "完成 Day 33：在 pytest 中加入 --browser 选项并支持 Chromium/Firefox；两种浏览器运行同一 smoke 集合均通过，记录 Chromium 2.73s、Firefox 5.01s 和 Firefox 浏览器包安装依赖。",
       "next_step": "Day 34：学习区分产品缺陷、脚本缺陷和环境问题，接入 HTML/Allure 报告并分析一次失败。"
+    },
+    {
+      "day": 34,
+      "date": "2026-08-24",
+      "result": "完成 Day 34：接入 pytest-html 步骤日志、失败截图和人工分类附件；通过受控错误预期确认脚本缺陷证据链，恢复断言后完整回归 21 条通过，并补充报告说明与验证摘要。",
+      "next_step": "Day 35：独立新增跨页面回归场景并写架构说明，完成 SauceDemo UI 框架阶段验收。"
     }
   ]
 }

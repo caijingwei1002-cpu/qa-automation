@@ -1,8 +1,13 @@
+import logging
 import re
 
 import pytest
 from playwright.sync_api import Page, expect
+
 from pages.login_page import LoginPage
+
+
+logger = logging.getLogger(__name__)
 
 
 # 标准登录是关键用户路径，也属于完整回归范围。
@@ -16,6 +21,7 @@ def test_standard_user_login(
 ):
     # 使用 fixture 提供的账号，避免把凭据散落在测试代码中。
     login_page = LoginPage(saucedemo_page)
+    logger.info("STEP: 使用标准用户凭据登录")
     login_page.login(
         standard_user_credentials["username"],
         standard_user_credentials["password"],
@@ -23,10 +29,12 @@ def test_standard_user_login(
 
     # 本测试只验证登录，不扩展到商品、购物车或结账流程。
     # URL 证明登录后的路由正确。
+    logger.info("STEP: 验证登录后进入商品列表 URL")
     expect(saucedemo_page).to_have_url(
         re.compile(r"/inventory\.html$")
     )
     # 页面标题证明商品页已经真正加载，而不只是 URL 发生了跳转。
+    logger.info("STEP: 验证商品列表页标题")
     expect(saucedemo_page.locator(".title")).to_have_text("Products")
 
 

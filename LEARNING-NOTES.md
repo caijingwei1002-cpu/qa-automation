@@ -40,6 +40,7 @@
 - [Day 31：测试数据模型](#day-31测试数据模型)
 - [Day 32：环境配置](#day-32环境配置)
 - [Day 33：多浏览器](#day-33多浏览器)
+- [Day 34：报告与 flaky 分析](#day-34报告与-flaky-分析)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -3469,6 +3470,134 @@ Day 33 在 pytest 中增加 `--browser` 选项，session browser fixture 支持 
 - 验证证据：`artifacts/day-033/smoke-chromium.txt`、`artifacts/day-033/smoke-firefox.txt`、`artifacts/day-033/verification.md`
 - 当天记录：`daily-log/day-033.md`
 
+## Day 34：报告与 flaky 分析
+
+### 核心知识点
+
+测试失败首先是一个现象，不是根因。区分产品缺陷、脚本缺陷和环境问题，需要把自动采集的客观证据与人工归因分开：hook 记录“发生了什么”，人根据需求、代码和环境证据判断“为什么发生”，报告保存本次确认后的结论。
+
+flaky 也不是任意偶发失败的同义词。只有在代码、数据和环境条件保持一致时重复执行，结果仍在通过与失败之间波动，才有证据将它作为 flaky 问题继续分析。
+
+### 它解决的问题
+
+如果看到 `AssertionError`、元素找不到或超时就直接创建产品缺陷，测试团队会把错误预期、失效 locator、浏览器权限和网络问题错误地归给产品；如果所有失败都先重跑，也会掩盖真实缺陷并让不稳定脚本长期存在。
+
+报告与分类机制把步骤、堆栈、URL、截图、实际值和环境错误组织在一起，使结论可以被复核。它还保留“未分类”状态：证据不足时不猜测责任归属。
+
+### 理论基础
+
+#### 1. 现象、证据与结论是三层信息
+
+| 层次 | 示例 | 能否直接定责 |
+| --- | --- | --- |
+| 失败现象 | 标题断言失败、找不到登录按钮、导航超时 | 不能 |
+| 客观证据 | URL、DOM、实际文本、截图、调用日志、网络或权限错误 | 仍需结合正确预期分析 |
+| 分类结论 | 产品缺陷、脚本缺陷、环境问题 | 必须说明证据链和排除理由 |
+
+`AssertionError` 只说明自动化预期与实际结果不一致。正确预期来自需求、产品规则或可靠对照；断言类型本身无法判断是产品实现错误还是测试 expected 值错误。
+
+#### 2. 三类问题的证据标准
+
+| 分类 | 判断条件 | 典型证据 |
+| --- | --- | --- |
+| 产品缺陷 | 测试步骤、预期和环境正常，但产品实际行为仍错误 | 正确页面已加载、locator 有效、人工可复现、截图或接口响应显示错误产品状态 |
+| 脚本缺陷 | 产品行为正常，但测试实现、数据、等待或预期错误 | DOM 中目标存在、actual 符合产品规则、locator 失效、expected 写错、修正脚本后稳定通过 |
+| 环境问题 | 产品逻辑与测试实现没有相应异常，运行条件阻断执行 | 浏览器启动失败、`WinError 5`、DNS/网络超时、服务不可达、环境变量或版本差异 |
+
+分类还要看问题落点。同一个错误路径若只是在终端临时输入，是操作错误；若被写入 README 或 CI 脚本，则成为文档或自动化脚本缺陷。
+
+#### 3. 证据采集与人工归因的执行链
+
+```text
+测试执行
+  → STEP 日志记录业务进度
+  → pytest/Playwright 保存堆栈、expected、actual 和调用日志
+  → 失败 hook 在页面仍可用时截取 PNG
+  → 初次报告保持未分类
+  → 人工结合需求、脚本和环境分析
+  → 通过显式元数据写入分类与理由
+  → 恢复或修复后运行完整回归
+```
+
+自动化可以可靠判断“测试在哪个阶段失败”“页面当时是什么样”，但不能凭异常类自动理解产品需求。将分类作为显式元数据，既避免机器猜测，也让报告中的结论可追溯。
+
+#### 4. 最小报告 hook 骨架
+
+```python
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    if report.when != "call" or not report.failed:
+        return
+
+    extras = list(getattr(report, "extras", []))
+    page = item.funcargs.get("saucedemo_page")
+    if page is not None:
+        extras.append(capture_page_as_png_extra(page))
+
+    category = item.config.getoption("--failure-category")
+    reason = item.config.getoption("--failure-reason")
+    if category is not None:
+        extras.append(classification_text_extra(category, reason))
+
+    report.extras = extras
+```
+
+截图失败必须被隔离，不能覆盖原始测试失败。分类参数未提供时不应生成猜测性结论。页面在 fixture setup 前尚未创建时，也不能强求截图，应转而依赖权限、进程、网络和配置证据。
+
+#### 5. 确定性失败与 flaky 的区别
+
+本日把 `Products` 的正确预期临时改为 `Products-INTENTIONAL-FAILURE`。相同代码每次都会在同一断言失败，这是可重复的脚本缺陷，不是 flaky。
+
+判断 flaky 至少需要控制代码版本、测试数据、浏览器和目标环境，并保存多次运行的结果与时间。如果结果波动，再比较失败步骤、截图、网络、资源负载和环境差异，寻找与失败相关的变量。单纯“重跑后通过”只能增加怀疑，不能完成根因分析。
+
+#### 6. 适用场景与边界
+
+- 适用：UI 回归、CI 失败诊断、需要跨环境复核的自动化报告；
+- 适用：产品、测试和环境责任容易混淆的失败；
+- 不适用：证据不足时强行选择分类；
+- 不适用：把重试当作默认修复；
+- 边界：self-contained HTML 适合单次报告和附件携带，但不自动提供历史趋势；
+- 边界：当前 hook 只覆盖已有 `saucedemo_page` 的 call 阶段失败。
+
+#### 7. 常见错误、反例与假通过
+
+1. 看到 `AssertionError` 就归为产品缺陷，忽略 expected 可能写错。
+2. 根据一次本地通过、一次 CI 失败就宣布 flaky，没有控制变量或重复数据。
+3. hook 自动根据异常类型定责，把证据采集器变成不可靠的缺陷分类器。
+4. 截图代码抛异常并覆盖原始失败，导致关键证据丢失。
+5. 使用相对报告路径却忽略当前工作目录，使证据写入错误位置。
+6. 报告只写“FAILED”，没有步骤、actual、截图、URL 和分类理由。
+
+#### 8. 记忆要点
+
+**先分离现象、证据和结论：hook 记录发生了什么，人判断为什么发生；一次失败不等于 flaky，一次重跑通过也不等于根因消失。**
+
+### 代码落地
+
+Day 34 接入 `pytest-html`，在登录测试中使用 `STEP:` INFO 日志记录登录、URL 验证和标题验证；`pytest_runtest_makereport` 在 call 阶段失败时把 Playwright 截图编码为 self-contained PNG 附件，并通过 `--failure-category`、`--failure-reason` 接收人工分类。
+
+受控失败报告保存了 `Products-INTENTIONAL-FAILURE` 与实际 `Products`、三条步骤、失败堆栈、页面截图和“脚本缺陷”结论。断言恢复为 `Products` 后，完整回归 21 条通过。`pytest.ini` 同时加入项目 `pythonpath`，避免从仓库根目录运行时同名 `config/` 遮蔽 SauceDemo 的 `config.py`。
+
+### 知识验收
+
+1. 为什么 `AssertionError` 不能自动分类为产品缺陷或脚本缺陷？
+2. 产品缺陷、脚本缺陷和环境问题分别需要哪些支持证据？
+3. 为什么 hook 应采集客观证据，而分类应通过显式元数据写入？
+4. 本次 `Products` 受控失败为什么是确定性脚本缺陷，而不是 flaky？
+5. setup 阶段浏览器启动失败为什么可能没有截图，应查看哪些替代证据？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/README.md`
+- 代码文件：`test-projects/02-saucedemo-ui/tests/conftest.py`、`test-projects/02-saucedemo-ui/tests/test_login.py`
+- 依赖与配置：`test-projects/02-saucedemo-ui/requirements.txt`、`test-projects/02-saucedemo-ui/pytest.ini`
+- 验证命令：`python -m pytest test-projects/02-saucedemo-ui/tests -q`
+- 验证结果：恢复受控断言后 `21 passed in 73.87s`
+- 验证证据：`artifacts/day-034/verification.md`；本地 HTML 为 `artifacts/day-034/day34-classified-failure.html`
+- 当天记录：`daily-log/day-034.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -3507,6 +3636,7 @@ Day 33 在 pytest 中增加 `--browser` 选项，session browser fixture 支持 
 | 测试数据模型 | Day 31 | 共享事实、场景选择、字段映射、商品目录与数据驱动重构边界 |
 | 环境配置 | Day 32 | base_url 优先级、命令行覆盖、URL 校验、fixture 注入与错误分层 |
 | 多浏览器 | Day 33 | 兼容性矩阵、smoke 覆盖、浏览器依赖与执行成本取舍 |
+| 失败分类与 flaky 分析 | Day 34 | 现象—证据—结论分离、产品/脚本/环境归因、HTML 失败证据与人工分类元数据 |
 
 ## 每日完结后的知识落盘流程
 

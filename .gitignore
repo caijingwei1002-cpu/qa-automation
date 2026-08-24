@@ -25,6 +25,7 @@ allure-report/
 artifacts/*
 !artifacts/.gitkeep
 !artifacts/**/
+artifacts/**/*.html
 !artifacts/**/*.md
 !artifacts/**/*.png
 !artifacts/**/*.jpg
