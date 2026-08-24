@@ -2,16 +2,16 @@ import re
 
 import pytest
 from playwright.sync_api import Page, expect
+from test_data import BACKPACK, CHECKOUT_CUSTOMER
 
 
 pytestmark = pytest.mark.regression
 
 CHECKOUT_FORM_URL = re.compile(r"/checkout-step-one\.html$")
-PRODUCT_NAME = "Sauce Labs Backpack"
 VALID_CHECKOUT_VALUES = {
-    "firstName": "Ada",
-    "lastName": "Lovelace",
-    "postalCode": "10001",
+    "firstName": CHECKOUT_CUSTOMER["first_name"],
+    "lastName": CHECKOUT_CUSTOMER["last_name"],
+    "postalCode": CHECKOUT_CUSTOMER["postal_code"],
 }
 CHECKOUT_REQUIRED_FIELD_CASES = [
     ("firstName", "Error: First Name is required"),
@@ -33,7 +33,7 @@ def open_checkout_form(
     expect(page.locator(".title")).to_have_text("Products")
 
     inventory_item = page.locator(".inventory_item").filter(
-        has_text=PRODUCT_NAME
+        has_text=BACKPACK["name"]
     )
     expect(inventory_item).to_have_count(1)
     inventory_item.get_by_role("button", name="Add to cart").click()

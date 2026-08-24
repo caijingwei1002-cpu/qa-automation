@@ -2,6 +2,7 @@ import re
 
 import pytest
 from playwright.sync_api import Page, expect
+from test_data import LOCKED_OUT_USER, PROBLEM_USER
 
 
 # 特殊账号场景属于完整回归范围，不纳入最小 smoke。
@@ -13,7 +14,7 @@ def test_locked_out_user_cannot_login(
     standard_user_credentials: dict[str, str],
 ):
     # 使用锁定账号和有效密码，验证账号状态优先于正常登录路径。
-    saucedemo_page.get_by_placeholder("Username").fill("locked_out_user")
+    saucedemo_page.get_by_placeholder("Username").fill(LOCKED_OUT_USER)
     saucedemo_page.get_by_placeholder("Password").fill(
         standard_user_credentials["password"]
     )
@@ -37,7 +38,7 @@ def test_problem_user_login_records_product_state(
     standard_user_credentials: dict[str, str],
 ):
     # problem_user 的风险发生在登录后的页面状态，而不是登录认证阶段。
-    saucedemo_page.get_by_placeholder("Username").fill("problem_user")
+    saucedemo_page.get_by_placeholder("Username").fill(PROBLEM_USER)
     saucedemo_page.get_by_placeholder("Password").fill(
         standard_user_credentials["password"]
     )

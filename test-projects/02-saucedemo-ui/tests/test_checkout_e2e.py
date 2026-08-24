@@ -6,13 +6,13 @@ from pages.cart_page import CartPage
 from pages.checkout_page import CheckoutPage
 from pages.inventory_page import InventoryPage
 from pages.login_page import LoginPage
+from test_data import BACKPACK, CHECKOUT_CUSTOMER
 
 pytestmark = pytest.mark.regression
 
 SUMMARY_URL = re.compile(r"/checkout-step-two\.html$")
 COMPLETE_URL = re.compile(r"/checkout-complete\.html$")
-PRODUCT_NAME = "Sauce Labs Backpack"
-PRODUCT_PRICE = "$29.99"
+
 
 
 def test_complete_checkout_order(
@@ -34,7 +34,7 @@ def test_complete_checkout_order(
     expect(page).to_have_url(re.compile(r"/inventory\.html$"))
     expect(inventory_page.title).to_have_text("Products")
 
-    inventory_page.add_item(PRODUCT_NAME)
+    inventory_page.add_item(BACKPACK["name"])
     expect(inventory_page.shopping_cart_badge).to_have_text("1")
 
     inventory_page.open_cart()
@@ -43,9 +43,9 @@ def test_complete_checkout_order(
     expect(cart_page.title).to_have_text("Your Cart")
     expect(cart_page.items).to_have_count(1)
 
-    cart_item = cart_page.item(PRODUCT_NAME)
-    expect(cart_page.item_name(cart_item)).to_have_text(PRODUCT_NAME)
-    expect(cart_page.item_price(cart_item)).to_have_text(PRODUCT_PRICE)
+    cart_item = cart_page.item(BACKPACK["name"])
+    expect(cart_page.item_name(cart_item)).to_have_text(BACKPACK["name"])
+    expect(cart_page.item_price(cart_item)).to_have_text(BACKPACK["price"])
 
     cart_page.open_checkout()
 
@@ -57,9 +57,9 @@ def test_complete_checkout_order(
     )
 
     checkout_page.fill_customer_info(
-        "Ada",
-        "Lovelace",
-        "10001",
+        CHECKOUT_CUSTOMER["first_name"],
+        CHECKOUT_CUSTOMER["last_name"],
+        CHECKOUT_CUSTOMER["postal_code"],
     )
     checkout_page.continue_to_overview()
 

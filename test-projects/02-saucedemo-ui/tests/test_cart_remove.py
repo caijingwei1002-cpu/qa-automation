@@ -2,13 +2,14 @@ import re
 
 import pytest
 from playwright.sync_api import Page, expect
+from test_data import BACKPACK
 
 
 pytestmark = pytest.mark.regression
 
 
-EXPECTED_NAME = "Sauce Labs Backpack"
-EXPECTED_PRICE = "$29.99"
+EXPECTED_NAME = BACKPACK["name"]
+EXPECTED_PRICE = BACKPACK["price"]
 
 
 def login_as_standard_user(

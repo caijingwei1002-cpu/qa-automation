@@ -37,6 +37,7 @@
 - [Day 28：Page Object 登录页](#day-28page-object-登录页)
 - [Day 29：Page Object 商品页](#day-29page-object-商品页)
 - [Day 30：结算页面对象](#day-30结算页面对象)
+- [Day 31：测试数据模型](#day-31测试数据模型)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -3177,6 +3178,116 @@ Day 30 创建 `CheckoutPage`，扩展 `CartPage.open_checkout()`，并删除 `op
 
 ---
 
+## Day 31：测试数据模型
+
+### 核心知识点
+
+测试数据模块负责集中管理可复用的业务事实，例如账号、结算地址、商品名称和价格；测试文件负责选择测试场景、组织参数组合、调用页面动作并验证业务结果。数据抽取的目标不是让所有变量都离开测试，而是让变化数据只有一个事实来源。
+
+### 它解决的问题
+
+当同一个商品、账号或地址在多个测试中重复出现时，数据变更需要逐个文件搜索，容易遗漏并造成测试之间的不一致。集中数据后，测试主体可以更清楚地表达“选择什么场景”和“验证什么行为”，维护成本也更低。
+
+### 理论基础
+
+#### 1. 数据事实与测试场景的边界
+
+| 内容 | 适合放置 | 原因 |
+| --- | --- | --- |
+| 用户名、默认密码、顾客地址 | `test_data.py` 或环境配置 | 是可复用的测试事实；密码仍应允许环境变量覆盖 |
+| 商品名称、价格、完整商品目录 | `test_data.py` | 多个列表、详情、购物车和结算测试共享 |
+| `selected_products` | 测试文件 | 表达本测试要覆盖的商品组合 |
+| `CHECKOUT_REQUIRED_FIELD_CASES` | 测试文件 | 表达参数化场景与预期错误 |
+| URL、错误文案、金额不变量 | 测试文件 | 属于当前测试的验证规则和业务结论 |
+
+#### 2. 共享事实与本地语义别名
+
+```python
+from test_data import BACKPACK
+
+expected_name = BACKPACK["name"]
+expected_price = BACKPACK["price"]
+```
+
+`BACKPACK` 是事实数据；`expected_name` 和 `expected_price` 是测试中的语义角色。局部别名不构成第二份数据源，因为它们没有再次硬编码具体值。
+
+#### 3. 页面字段映射
+
+业务数据字段可以使用稳定、易读的 Python 命名；页面定位字段可以保留页面契约要求的名称：
+
+```python
+CHECKOUT_CUSTOMER = {
+    "first_name": "Ada",
+    "last_name": "Lovelace",
+    "postal_code": "10001",
+}
+
+valid_values = {
+    "firstName": CHECKOUT_CUSTOMER["first_name"],
+    "lastName": CHECKOUT_CUSTOMER["last_name"],
+    "postalCode": CHECKOUT_CUSTOMER["postal_code"],
+}
+```
+
+这样不会把 `data-test` 等 UI 细节反向污染通用业务数据模型。
+
+#### 4. 商品目录与测试选择
+
+```python
+PRODUCT_CATALOG = (
+    BACKPACK,
+    BIKE_LIGHT,
+    BOLT_T_SHIRT,
+    FLEECE_JACKET,
+    ONESIE,
+    RED_T_SHIRT,
+)
+
+selected_products = (BACKPACK, BIKE_LIGHT, ONESIE)
+```
+
+完整目录是共享事实；三商品组合是某个购物车场景的选择。购物车测试可以把字典转换为名称—价格元组，和页面提取结果进行集合比较，同时保留商品与价格的绑定关系。
+
+### 适用场景与边界
+
+- 适用：同一账号、地址、商品或业务常量被多个测试共享。
+- 适用：需要一次修改即可同步多个测试的稳定测试数据。
+- 不适用：把页面 locator、URL、错误文案和业务断言全部塞进数据模块。
+- 不适用：把每个测试的场景组合都做成全局数据，导致测试意图变得不清楚。
+- 安全边界：公开训练账号可以有默认值；真实凭据应由环境变量或安全配置注入。
+
+### 常见错误、反例与假通过
+
+1. 只抽取一个文件中的常量，却不扫描其他测试，导致重复数据仍然存在。
+2. 把 `selected_products` 也放进全局模块，读者看不出当前测试为什么选择这三个商品。
+3. 直接使用同一页面提取出的价格作为 Expected，形成“自己证明自己”的假通过。
+4. 用 `CHECKOUT_CUSTOMER` 直接替代页面字段映射，混淆业务字段名和 UI 字段名。
+5. 只看到单个测试通过就认为重构安全；必须结合静态扫描、目标测试和完整回归证据。
+6. 从错误工作目录运行项目测试，导致模块导入失败；运行命令应明确项目模块边界。
+
+### 记忆要点
+
+**数据模块提供可复用事实，测试文件表达场景和结论；抽取数据不等于抽取测试意图。**
+
+### 代码落地
+
+Day 31 创建 `test_data.py`，集中账号、顾客地址、六个商品和 `PRODUCT_CATALOG`，并迁移 SauceDemo 的登录、特殊用户、库存、详情、购物车和结算测试。测试保留场景组合、字段映射、URL/错误规则和业务断言。
+
+### 知识验收
+
+1. 为什么商品、用户和地址适合放进 `test_data.py`？
+2. 为什么 `CHECKOUT_REQUIRED_FIELD_CASES` 仍然留在测试文件？
+3. 为什么多商品测试中的 `selected_products` 仍由测试自己选择？
+4. 如何用静态扫描和完整回归分别证明数据已集中且行为未改变？
+
+### 关联产出
+
+- 目标文件：`test-projects/02-saucedemo-ui/test_data.py` 及其使用方测试
+- 验证命令：`python -m pytest tests -q`（在 `test-projects/02-saucedemo-ui` 目录执行）
+- 验证结果：`21 passed in 51.03s`
+- 验证证据：`artifacts/day-031/verification.md`、`artifacts/day-031/pytest-full.txt`
+- 当天记录：`daily-log/day-031.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -3212,6 +3323,7 @@ Day 30 创建 `CheckoutPage`，扩展 `CartPage.open_checkout()`，并删除 `op
 | Page Object 职责边界 | Day 28 | 页面操作接口、测试业务断言、可复用动作与分层失败排查 |
 | Page Object 商品页 | Day 29 | 重复 locator 抽取、actual/expected 分离、页面数据读取与业务断言边界 |
 | 多页面业务流程 | Day 30 | 页面职责边界、跨页面编排、状态转换检查点与万能 helper 风险 |
+| 测试数据模型 | Day 31 | 共享事实、场景选择、字段映射、商品目录与数据驱动重构边界 |
 
 ## 每日完结后的知识落盘流程
 

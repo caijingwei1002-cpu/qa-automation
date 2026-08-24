@@ -7,6 +7,7 @@ from playwright.sync_api import (
     Page,
     sync_playwright,
 )
+from test_data import DEFAULT_PASSWORD, STANDARD_USER
 
 
 SAUCEDEMO_URL = os.getenv(
@@ -52,6 +53,6 @@ def saucedemo_page(page: Page):
 def standard_user_credentials():
     # 优先读取环境变量；默认值是公开训练账号，不把凭据散落在测试步骤中。
     return {
-        "username": os.getenv("SAUCEDEMO_USERNAME", "standard_user"),
-        "password": os.getenv("SAUCEDEMO_PASSWORD", "secret_sauce"),
+        "username": os.getenv("SAUCEDEMO_USERNAME", STANDARD_USER),
+        "password": os.getenv("SAUCEDEMO_PASSWORD", DEFAULT_PASSWORD),
     }

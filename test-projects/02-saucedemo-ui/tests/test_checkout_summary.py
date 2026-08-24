@@ -3,14 +3,13 @@ from decimal import Decimal
 
 import pytest
 from playwright.sync_api import Page, expect
+from test_data import BACKPACK, CHECKOUT_CUSTOMER
 
 
 pytestmark = pytest.mark.regression
 
 SUMMARY_URL = re.compile(r"/checkout-step-two\.html$")
 MONEY_PATTERN = re.compile(r"\$([0-9]+(?:\.[0-9]{2})?)")
-PRODUCT_NAME = "Sauce Labs Backpack"
-EXPECTED_PRODUCT_PRICE = "$29.99"
 
 
 def parse_money(text: str) -> Decimal:
@@ -34,12 +33,12 @@ def open_checkout_summary(
     expect(page.locator(".title")).to_have_text("Products")
 
     inventory_item = page.locator(".inventory_item").filter(
-        has_text=PRODUCT_NAME
+        has_text=BACKPACK["name"]
     )
     expect(inventory_item).to_have_count(1)
     expect(
         inventory_item.locator(".inventory_item_price")
-    ).to_have_text(EXPECTED_PRODUCT_PRICE)
+    ).to_have_text(BACKPACK["price"])
     inventory_item.get_by_role("button", name="Add to cart").click()
 
     page.locator('[data-test="shopping-cart-link"]').click()
@@ -50,9 +49,15 @@ def open_checkout_summary(
 
     expect(page).to_have_url(re.compile(r"/checkout-step-one\.html$"))
     expect(page.locator(".title")).to_have_text("Checkout: Your Information")
-    page.locator('[data-test="firstName"]').fill("Ada")
-    page.locator('[data-test="lastName"]').fill("Lovelace")
-    page.locator('[data-test="postalCode"]').fill("10001")
+    page.locator('[data-test="firstName"]').fill(
+        CHECKOUT_CUSTOMER["first_name"]
+    )
+    page.locator('[data-test="lastName"]').fill(
+        CHECKOUT_CUSTOMER["last_name"]
+    )
+    page.locator('[data-test="postalCode"]').fill(
+        CHECKOUT_CUSTOMER["postal_code"]
+    )
     page.get_by_role("button", name="Continue").click()
 
     expect(page).to_have_url(SUMMARY_URL)
@@ -66,7 +71,7 @@ def test_checkout_summary_amounts(
     page = saucedemo_page
     open_checkout_summary(page, standard_user_credentials)
 
-    expected_subtotal = parse_money(EXPECTED_PRODUCT_PRICE)
+    expected_subtotal = parse_money(BACKPACK["price"])
     actual_subtotal = parse_money(
         page.locator(".summary_subtotal_label").inner_text()
     )

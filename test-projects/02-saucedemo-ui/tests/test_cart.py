@@ -6,6 +6,7 @@ from decimal import Decimal
 from pages.cart_page import CartPage
 from pages.inventory_page import InventoryPage
 from pages.login_page import LoginPage
+from test_data import BACKPACK, BIKE_LIGHT, ONESIE
 
 pytestmark = pytest.mark.regression
 
@@ -23,8 +24,8 @@ def test_add_one_item(
         standard_user_credentials["username"],
         standard_user_credentials["password"],
     )
-    expected_name = "Sauce Labs Backpack"
-    expected_price = "$29.99"
+    expected_name = BACKPACK["name"]
+    expected_price = BACKPACK["price"]
 
     expect(page).to_have_url(re.compile(r"/inventory\.html$"))
     expect(inventory_page.title).to_have_text("Products")
@@ -90,20 +91,25 @@ def test_add_multiple_items_and_verify_cart(
 
     # 用独立的名称—价格预期驱动加购，避免从页面实时数据生成 Expected。
     selected_products = (
-        ("Sauce Labs Backpack", "$29.99"),
-        ("Sauce Labs Bike Light", "$9.99"),
-        ("Sauce Labs Onesie", "$7.99"),
+        BACKPACK,
+        BIKE_LIGHT,
+        ONESIE,
     )
 
     # 元组集合保留商品与价格的绑定关系，Decimal 合计作为后续金额校验基准。
-    expected_items = set(selected_products)
+    expected_items = {
+        (product["name"], product["price"])
+        for product in selected_products
+    }
     expected_subtotal = sum(
-        parse_price(price)
-        for _, price in selected_products
+        parse_price(product["price"])
+        for product in selected_products
     )
 
     # 先定位目标商品卡片，再在卡片内部点击按钮，避免点击错误商品。
-    for product_name, expected_price in selected_products:
+    for product in selected_products:
+        product_name = product["name"]
+        expected_price = product["price"]
         inventory_item = inventory_page.item(product_name)
 
         expect(inventory_item).to_have_count(1)

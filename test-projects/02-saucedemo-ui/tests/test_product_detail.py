@@ -2,7 +2,7 @@ import re
 
 import pytest
 from playwright.sync_api import Page, expect
-
+from test_data import BACKPACK
 
 pytestmark = pytest.mark.regression
 
@@ -23,8 +23,8 @@ def test_product_detail_matches_inventory_and_returns(
 
     expect(page).to_have_url(re.compile(r"/inventory\.html$"))
 
-    expected_name = "Sauce Labs Backpack"
-    expected_price = "$29.99"
+    expected_name = BACKPACK["name"]
+    expected_price = BACKPACK["price"]
 
     inventory_item = page.locator(".inventory_item").filter(
         has_text=expected_name
