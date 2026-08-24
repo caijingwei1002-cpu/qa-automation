@@ -1,4 +1,4 @@
-from playwright.sync_api import Page
+from playwright.sync_api import Locator, Page
 
 
 class CheckoutPage:
@@ -27,6 +27,9 @@ class CheckoutPage:
         self.complete_header = page.locator(
             ".complete-header"
         )
+        self.overview_items = page.locator(
+            ".cart_item"
+        )
 
     def fill_customer_info(
         self,
@@ -43,3 +46,23 @@ class CheckoutPage:
 
     def finish_checkout(self) -> None:
         self.finish_button.click()
+
+    def overview_item_name(self, item: Locator) -> Locator:
+        return item.locator(".inventory_item_name")
+
+    def overview_item_price(self, item: Locator) -> Locator:
+        return item.locator(".inventory_item_price")
+
+    def overview_item_records(self) -> list[tuple[str, str]]:
+        records = []
+
+        for index in range(self.overview_items.count()):
+            item = self.overview_items.nth(index)
+            records.append(
+                (
+                    self.overview_item_name(item).inner_text(),
+                    self.overview_item_price(item).inner_text(),
+                )
+            )
+
+        return records

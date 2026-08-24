@@ -6,11 +6,21 @@
 
 学习重点：登录、异常用户、商品、购物车、结算、Page Object、浏览器矩阵和稳定性。
 
-## Day 34：HTML 报告与失败分类
+## 项目结构与职责边界
+
+- `tests/` 组织业务场景、预期结果和断言。
+- `pages/` 封装页面结构、定位器和可复用操作。
+- `test_data.py` 集中管理用户、地址和商品数据。
+- `conftest.py` 提供浏览器、页面与公共测试 fixture。
+- `config.py` 解析并校验运行环境配置。
+
+Page Object 只负责容易随页面结构变化的定位器和操作；跨页面流程、预期数据、比较规则和业务断言保留在测试中。这样既能集中处理 DOM 变化，也不会隐藏测试意图。
+
+阶段验收场景 `test_two_item_checkout_preserves_product_records` 覆盖登录、商品列表、购物车、结算概览和订单完成页，并验证商品名称与价格在跨页面流程中保持一致。
+
+## 安装与运行
 
 以下命令均从仓库根目录 `D:\qa-automation-learning` 执行。
-
-### 安装与运行
 
 安装当前项目已验证的 Python 依赖与 Playwright 浏览器：
 
@@ -32,6 +42,8 @@ python -m pytest test-projects\02-saucedemo-ui\tests -q `
   --html=artifacts\day-034\day34-report.html `
   --self-contained-html
 ```
+
+## HTML 报告与失败分类
 
 ### 报告包含的证据
 
