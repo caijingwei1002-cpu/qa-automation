@@ -1,5 +1,5 @@
 {
-  "current_day": 40,
+  "current_day": 41,
   "completed_days": [
     1,
     2,
@@ -39,7 +39,8 @@
     36,
     37,
     38,
-    39
+    39,
+    40
   ],
   "history": [
     {
@@ -275,6 +276,12 @@
       "date": "2026-08-25",
       "result": "完成创建后查询一致性测试：使用 POST 返回的动态 bookingid 回查 GET 详情，验证状态码、响应对象和字段与 payload 一致；目标测试 1 passed in 0.16s，并记录 BOOKING_URL 脚本缺陷修复与数据清理风险。",
       "next_step": "继续 API 资源生命周期，设计更新、删除或测试数据清理策略。"
+    },
+    {
+      "day": 40,
+      "date": "2026-08-25",
+      "result": "完成参数化过滤查询测试：使用 params= 覆盖 firstname、lastname 和 checkin 日期边界，回查动态 bookingid 并按 equals/after 语义验证详情；目标测试 3 passed in 0.28s，API 全量 7 passed in 0.28s，记录空日期数据和 PowerShell Accept 头问题的归因与修正。",
+      "next_step": "学习 Token 认证接口，获取 token 并验证有效/无效凭证行为。"
     }
   ]
 }

@@ -46,6 +46,7 @@
 - [Day 37：查询列表](#day-37查询列表)
 - [Day 38：创建预订](#day-38创建预订)
 - [Day 39：查询单条](#day-39查询单条)
+- [Day 40：过滤查询](#day-40过滤查询)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -4127,6 +4128,108 @@ assert booking["bookingdates"] == payload["bookingdates"]
 - 证据目录：`artifacts/day-039/`
 - 当天记录：`daily-log/day-039.md`
 
+## Day 40：过滤查询
+
+### 核心知识点
+
+查询参数（query parameters）用于在不改变资源路径的情况下表达过滤条件。过滤测试不能只验证 `200`，还要验证查询参数确实发送、响应结构可解析，并且每个返回资源的真实详情满足过滤语义；不同字段可能有不同的比较关系，例如姓名等值匹配、日期边界匹配。
+
+### 它解决的问题
+
+手动拼接 URL 容易漏掉 `?`、`&` 或特殊字符编码；只看列表接口的状态码和 `bookingid` 又可能把不符合条件的资源误判为过滤成功。把查询列表和动态详情核对结合起来，才能证明过滤结果的业务含义，而不是只证明服务器返回了一个响应。
+
+### 理论基础
+
+#### 定义与关键概念
+
+| 检查层 | 代码证据 | 证明什么 |
+| --- | --- | --- |
+| 参数构造 | `requests.get(url, params=params)` | 参数由 HTTP 客户端编码并进入实际请求 URL |
+| HTTP 状态 | `response.status_code == 200` | 过滤请求在 HTTP 层成功 |
+| 集合结构 | `isinstance(data, list)` | 返回体符合 ID 集合接口结构 |
+| 资源身份 | 每项包含 `bookingid` | 每个过滤结果可继续查询详情 |
+| 详情语义 | 动态 GET 后字段比较 | 返回资源真正满足过滤条件 |
+
+#### 心智模型或执行链
+
+```text
+准备过滤参数和比较规则
+  → 使用 params=发送 GET /booking
+  → 验证状态码和列表结构
+  → 读取每个返回的 bookingid
+  → GET /booking/{bookingid} 查询真实详情
+  → 按字段语义执行 equals 或 after 比较
+  → 记录实际 URL、ID、预期值和实际值
+```
+
+#### 最小代码骨架
+
+```python
+FILTER_CASES = [
+    ({"firstname": "Jim"}, ("firstname",), "Jim", "equals"),
+    ({"checkin": "2015-01-01"}, ("bookingdates", "checkin"), "2015-01-01", "after"),
+]
+
+response = requests.get(booking_url, params=params, timeout=3.0)
+assert response.status_code == 200
+
+for summary in response.json():
+    detail = requests.get(
+        f"{booking_url}/{summary['bookingid']}",
+        timeout=3.0,
+    ).json()
+    actual = read_nested_value(detail, detail_path)
+    assert actual == expected if comparison == "equals" else actual > expected
+```
+
+#### 断言、数据或状态的含义
+
+`params=` 证明测试把参数交给客户端编码；`200` 只证明 HTTP 成功；列表和 `bookingid` 证明结果可继续关联；详情字段断言才证明过滤语义。姓名过滤通常是 `actual == expected`。本地 Restful Booker 的 `checkin` 实现按边界之后筛选，因此用 `actual > boundary` 验证；如果产品契约要求包含边界，应另写等于边界的契约测试，不应默默混用两种语义。
+
+#### 适用场景与边界
+
+- 适用：姓名、日期、状态、分页和组合条件等 GET 集合过滤。
+- 适用：列表响应只返回 ID，需要回查资源详情才能验证业务字段的接口。
+- 边界：过滤测试依赖可用数据；任意写死一个未来日期可能得到空列表，空列表不能自动算通过。
+- 边界：测试应使用 `conftest.py` 提供的环境 URL 和超时 fixture，不应把共享配置隐藏在业务断言中。
+
+#### 常见错误、反例与假通过
+
+1. 手动拼接 `?firstname=...`，导致编码、分隔符或参数复用错误。
+2. 只断言 `200`、列表和 `bookingid`，没有回查详情字段。
+3. 把所有字段都使用同一种比较：姓名应等值，日期可能是边界比较。
+4. 使用不存在的日期并看到 `200 + []`，就直接提交产品过滤缺陷。
+5. 为了让测试变绿删除 `assert data`，把没有任何匹配数据误判为过滤通过。
+6. 使用 PowerShell 手工查询详情时未设置 `Accept: application/json`，把本地服务的 `418` 误判成接口详情缺陷。
+7. 直接 `from conftest import ...`，而不是让 pytest 注入 fixture，导致配置发现和测试职责混乱。
+
+#### 记忆要点
+
+**过滤测试要证明“参数发对了、结构拿到了、每条真实资源都满足过滤语义”；`200` 和空列表都不是业务正确性的充分证据。**
+
+### 代码落地
+
+本日新增 `conftest.py`，集中提供 `booking_url` 和 `request_timeout_seconds` fixture；`test_filters.py` 使用参数化覆盖 `firstname=Jim`、`lastname=Brown` 和 `checkin=2015-01-01`。测试对姓名执行 `equals`，对日期执行 `after`，并通过动态 `bookingid` 查询详情后比较字段路径。
+
+初次日期用例使用 `checkin=2026-08-25`，实际得到 `200 + []`；检查本地数据后确认该日期不是稳定的已有数据。手工详情查询还因 PowerShell `Accept` 头缺失得到 `418`，补充 `Accept: application/json` 后确认详情接口可用。修正边界和比较规则后目标测试 3 条通过，API 全量回归 7 条通过。
+
+### 知识验收
+
+1. 为什么 `params=` 比手动拼接查询字符串更适合参数化过滤？
+2. 哪个断言真正证明返回 booking 满足过滤条件？
+3. 为什么 `200 + []` 不能直接判定过滤接口有缺陷？
+4. 姓名过滤和日期过滤为什么需要不同的比较规则？
+5. 如何记录实际 URL、booking ID、详情字段和环境证据来支持失败归因？
+
+### 关联产出
+
+- 测试配置：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 测试文件：`test-projects/03-restful-booker-api/tests/test_filters.py`
+- 验证命令：`python -m pytest test-projects/03-restful-booker-api/tests/test_filters.py -q`；`python -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：目标测试 `3 passed in 0.28s`；API 全量 `7 passed in 0.28s`
+- 证据目录：`artifacts/day-040/`
+- 当天记录：`daily-log/day-040.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -4171,6 +4274,7 @@ assert booking["bookingdates"] == payload["bookingdates"]
 | GET 与集合响应 | Day 37 | HTTP 状态、JSON 列表、元素类型、必需字段与结构失败证据 |
 | POST 与 JSON 请求体 | Day 38 | 请求序列化、资源 ID、响应字段一致性、持久化回查边界与清理风险 |
 | 创建后查询与动态 ID 关联 | Day 39 | POST 输出驱动 GET、资源可见性、字段一致性和数据链路归因 |
+| 查询参数与过滤语义 | Day 40 | params 编码、列表到详情核对、equals/after 比较和数据环境归因 |
 
 ## 每日完结后的知识落盘流程
 
