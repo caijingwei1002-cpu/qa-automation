@@ -1,5 +1,5 @@
 {
-  "current_day": 38,
+  "current_day": 39,
   "completed_days": [
     1,
     2,
@@ -37,7 +37,8 @@
     34,
     35,
     36,
-    37
+    37,
+    38
   ],
   "history": [
     {
@@ -261,6 +262,12 @@
       "date": "2026-08-25",
       "result": "完成 GET /booking 集合响应测试：使用 RESTFUL_BOOKER_URL，验证 200 状态、JSON 列表、元素对象和 bookingid 字段；目标测试 1 passed in 0.13s，API 全量回归 2 passed in 0.11s。",
       "next_step": "核对 POST /booking 的请求 JSON 和响应字段，准备创建 booking 的最小测试。"
+    },
+    {
+      "day": 38,
+      "date": "2026-08-25",
+      "result": "完成 POST /booking 创建预订测试：使用 JSON payload 和 RESTFUL_BOOKER_URL，验证 200 状态、整数 bookingid、booking 对象及返回字段与请求一致；目标测试 1 passed in 0.12s，API 全量回归 3 passed in 0.10s，并记录持久化回查与清理作为后续风险。",
+      "next_step": "使用 POST 返回的动态 bookingid 调 GET 详情接口，验证创建数据可以被后续查询到。"
     }
   ]
 }

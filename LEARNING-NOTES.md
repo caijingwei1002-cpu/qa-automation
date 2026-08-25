@@ -44,6 +44,7 @@
 - [Day 35：阶段验收](#day-35阶段验收)
 - [Day 36：HTTP 与健康检查](#day-36http-与健康检查)
 - [Day 37：查询列表](#day-37查询列表)
+- [Day 38：创建预订](#day-38创建预订)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -3926,6 +3927,105 @@ for index, booking in enumerate(data):
 - 验证证据：`artifacts/day-037/verification.md`
 - 当天记录：`daily-log/day-037.md`
 
+## Day 38：创建预订
+
+### 核心知识点
+
+POST 测试不能只验证成功状态码。应明确构造 JSON 请求体，验证服务返回有效资源 ID，并比较响应中的资源字段与请求数据一致；如果要证明数据已经持久化，还需要在后续用动态 ID 查询该资源。
+
+### 它解决的问题
+
+只断言 `200` 可能把 `{\"message\": \"success\"}` 之类没有资源结果的响应误判为创建成功。只断言 `bookingid` 又可能漏掉服务忽略或错误改写请求字段。请求体、资源 ID、返回对象和字段一致性组合起来，才能证明本次创建响应满足基本契约。
+
+### 理论基础
+
+#### 定义与关键概念
+
+| 检查层 | 断言示例 | 证明什么 |
+| --- | --- | --- |
+| 请求 JSON | `requests.post(..., json=payload)` | Python 数据按 JSON 发送，避免手动拼接字符串 |
+| HTTP 状态 | `response.status_code == 200` | 创建请求在 HTTP 层返回接口预期状态 |
+| 资源标识 | `bookingid` 存在且为整数 | 服务返回了可用于后续关联的资源 ID |
+| 返回对象 | `booking` 存在且为对象 | 响应包含创建资源的结构化表示 |
+| 字段一致性 | 返回字段逐项等于 payload | 创建结果与本次请求数据一致 |
+| 持久化回查 | `GET /booking/{bookingid}` | 进一步证明资源可被后续请求查询，超出本日最小范围 |
+
+#### 心智模型或执行链
+
+```text
+定义可辨识的 payload
+  → 用 json=payload 发送 POST /booking
+  → 验证 HTTP 状态
+  → 解析 JSON 响应
+  → 验证 bookingid 和 booking 对象
+  → 逐项比较返回字段与 payload
+  → 如需证明持久化，再用动态 bookingid GET 回查
+```
+
+#### 最小代码骨架
+
+```python
+response = requests.post(booking_url, json=payload, timeout=3.0)
+assert response.status_code == 200
+
+data = response.json()
+assert isinstance(data["bookingid"], int)
+assert isinstance(data["booking"], dict)
+
+for field, expected in payload.items():
+    actual = data["booking"].get(field)
+    assert actual == expected, (
+        f"Field {field!r} mismatch: expected {expected!r}, got {actual!r}"
+    )
+```
+
+#### 断言、数据或状态的含义
+
+`json=payload` 让 `requests` 负责 JSON 序列化和请求头处理；状态码证明 HTTP 层结果；`bookingid` 证明服务返回资源身份；字段比较证明返回的创建内容没有偏离请求。上述响应仍可能只是服务端返回的表示，不能单独证明数据已经持久化到可查询状态。
+
+#### 适用场景与边界
+
+- 适用：创建资源、提交表单、写入订单或生成任务的 API 测试。
+- 适用：需要把请求数据与响应资源建立对应关系的接口。
+- 边界：本日只验证创建响应，不覆盖用 ID 查询、更新、删除和数据清理。
+- 边界：每次运行都会创建 booking，长期回归需要数据隔离或清理策略。
+
+#### 常见错误、反例与假通过
+
+1. 使用 `data=payload` 或手动拼 JSON，导致 Content-Type 或序列化行为不符合契约。
+2. 只断言 `200`，没有证明资源 ID 和返回资源内容存在。
+3. 只断言 `bookingid` 存在，不比较响应字段，无法发现服务错误地使用默认值或旧数据。
+4. 硬编码目标 URL，绕过 `RESTFUL_BOOKER_URL` 环境切换。
+5. 把响应回显当作持久化证明；真正的持久化需要后续 GET 回查。
+6. 不记录每次创建的动态 ID，也没有清理策略，导致测试环境数据不断累积。
+
+#### 记忆要点
+
+**POST 用 JSON 发送意图，状态码证明请求结果，ID 证明资源身份，字段比较证明创建内容；持久化要靠后续查询证据。**
+
+### 代码落地
+
+本日新增 `test_create_booking.py`，通过 `RESTFUL_BOOKER_URL` 和本地默认地址向 `/booking` 发送包含姓名、价格、押金状态、日期和附加需求的 JSON payload。测试验证 `200`、整数 `bookingid`、`booking` 对象，并逐项比较返回字段与 payload。目标测试通过 `1 passed in 0.12s`，与健康检查和列表查询合并后的 API 全量回归通过 `3 passed in 0.10s`。
+
+代码审查曾发现并修正 URL 配置、`os` 导入和响应字段比较遗漏；本次没有把 GET 回查和清理提前塞入最小目标，作为后续动态 ID 关联与数据治理风险保留。
+
+### 知识验收
+
+1. 为什么 `200` 不能单独证明 booking 创建成功？
+2. `bookingid` 和返回字段逐项比较分别证明什么？
+3. 为什么 `json=payload` 比手动拼 JSON 更适合当前测试？
+4. 为什么响应字段与 payload 一致仍不能完全证明数据已持久化？
+5. 每次创建 booking 却没有清理，会给后续回归带来什么风险？
+
+### 关联产出
+
+- 测试文件：`test-projects/03-restful-booker-api/tests/test_create_booking.py`
+- 依赖文件：`test-projects/03-restful-booker-api/requirements.txt`
+- 验证命令：`python -m pytest test-projects/03-restful-booker-api/tests/test_create_booking.py -q`；`python -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：目标测试 `1 passed in 0.12s`；API 全量 `3 passed in 0.10s`
+- 验证证据：`artifacts/day-038/verification.md`
+- 当天记录：`daily-log/day-038.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -3968,6 +4068,7 @@ for index, booking in enumerate(data):
 | 框架可维护性与阶段验收 | Day 35 | 改动局部性、分层职责、最小扩展、意图可见性与完整回归 |
 | HTTP 与健康检查 | Day 36 | 状态码、响应体、请求超时、性能阈值、目标配置与失败分类 |
 | GET 与集合响应 | Day 37 | HTTP 状态、JSON 列表、元素类型、必需字段与结构失败证据 |
+| POST 与 JSON 请求体 | Day 38 | 请求序列化、资源 ID、响应字段一致性、持久化回查边界与清理风险 |
 
 ## 每日完结后的知识落盘流程
 
