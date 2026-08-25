@@ -1,5 +1,5 @@
 {
-  "current_day": 37,
+  "current_day": 38,
   "completed_days": [
     1,
     2,
@@ -36,7 +36,8 @@
     33,
     34,
     35,
-    36
+    36,
+    37
   ],
   "history": [
     {
@@ -254,6 +255,12 @@
       "date": "2026-08-25",
       "result": "完成 Restful Booker 本地健康检查：声明 pytest/requests 依赖，使用 RESTFUL_BOOKER_URL，验证 /ping 返回 201 Created 且响应耗时不超过 1 秒；记录并修复路径、依赖、公网耗时和重复 URL 赋值问题，完整验证 1 passed in 0.08s。",
       "next_step": "读取 GET /booking 契约，查询 booking IDs 并校验响应结构。"
+    },
+    {
+      "day": 37,
+      "date": "2026-08-25",
+      "result": "完成 GET /booking 集合响应测试：使用 RESTFUL_BOOKER_URL，验证 200 状态、JSON 列表、元素对象和 bookingid 字段；目标测试 1 passed in 0.13s，API 全量回归 2 passed in 0.11s。",
+      "next_step": "核对 POST /booking 的请求 JSON 和响应字段，准备创建 booking 的最小测试。"
     }
   ]
 }

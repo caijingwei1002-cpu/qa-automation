@@ -43,6 +43,7 @@
 - [Day 34：报告与 flaky 分析](#day-34报告与-flaky-分析)
 - [Day 35：阶段验收](#day-35阶段验收)
 - [Day 36：HTTP 与健康检查](#day-36http-与健康检查)
+- [Day 37：查询列表](#day-37查询列表)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -3827,6 +3828,104 @@ assert elapsed <= 1.0  # 项目性能阈值，不等于官方 SLA
 - 验证证据：`artifacts/day-036/verification.md`
 - 当天记录：`daily-log/day-036.md`
 
+## Day 37：查询列表
+
+### 核心知识点
+
+集合接口测试应把 HTTP 成功和响应数据契约分层验证。`200` 只能说明请求在 HTTP 层返回了预期状态；还需要确认响应是合法 JSON、顶层是列表、每个元素是对象，并且包含接口要求的必需字段。
+
+### 它解决的问题
+
+如果只断言 `status_code == 200`，服务可能返回错误的 JSON 对象、空结构或缺少关键字段，测试仍会假通过。分层断言可以把失败定位到 HTTP 状态、JSON 解析、顶层集合、元素类型或字段结构，报告也能保留实际索引和数据。
+
+### 理论基础
+
+#### 定义与关键概念
+
+| 检查层 | 断言示例 | 证明什么 |
+| --- | --- | --- |
+| HTTP 状态 | `response.status_code == 200` | 请求在 HTTP 层返回了接口预期状态 |
+| JSON 解析 | `response.json()` 成功 | 响应体可以按 JSON 解释 |
+| 顶层集合 | `isinstance(data, list)` | 响应符合列表接口的顶层结构 |
+| 元素类型 | `isinstance(item, dict)` | 每个列表项是可读取字段的对象 |
+| 必需字段 | `"bookingid" in item` | 每个元素包含接口契约要求的身份字段 |
+
+这些层次必须同时满足。状态码正确不等于业务数据正确；结构错误首先是契约不符合的现象，最终产品、脚本还是环境归属仍要结合可靠契约和运行证据判断。
+
+#### 心智模型或执行链
+
+```text
+以 RESTFUL_BOOKER_URL 解析目标
+  → GET /booking 并设置请求 timeout
+  → 验证 HTTP 状态
+  → 解析 JSON
+  → 验证顶层 list
+  → 遍历元素验证 dict 和 bookingid
+  → 用索引、实际类型和实际数据输出可定位失败信息
+```
+
+#### 最小代码骨架
+
+```python
+response = requests.get(bookings_url, timeout=3.0)
+assert response.status_code == 200
+
+data = response.json()
+assert isinstance(data, list)
+
+for index, booking in enumerate(data):
+    assert isinstance(booking, dict)
+    assert "bookingid" in booking, (
+        f"Item {index} is missing 'bookingid': {booking}"
+    )
+```
+
+#### 断言、数据或状态的含义
+
+`status_code == 200` 只证明 HTTP 层成功；`response.json()` 失败说明响应无法按 JSON 解析；列表和元素断言证明数据形状；`bookingid` 断言证明每个条目具备后续关联所需的身份字段。失败消息中的索引和实际对象是定位集合中单个坏元素的关键证据。
+
+#### 适用场景与边界
+
+- 适用：返回资源集合、ID 列表或分页结果的 GET 接口。
+- 适用：需要在后续接口关联前确认集合形状和最小身份字段的 API 测试。
+- 边界：本日只验证列表结构，不证明每个 booking 的完整详情字段、排序、分页或业务内容正确。
+- 边界：空列表是否允许要由接口契约决定；本日完成标准不强制要求列表非空。
+
+#### 常见错误、反例与假通过
+
+1. 只断言 `200`，把错误的 JSON 对象当成成功响应。
+2. 只断言列表长度，不验证元素类型和身份字段，无法发现坏元素或缺字段。
+3. 直接访问固定 `localhost`，忽略仓库的 `RESTFUL_BOOKER_URL` 环境配置。
+4. 遇到 `bookingid` 缺失就直接创建产品缺陷，没有先确认接口契约和测试预期。
+5. 在失败消息中不带元素索引和实际对象，导致集合失败难以定位。
+
+#### 记忆要点
+
+**200 只证明 HTTP 成功；集合接口还要证明 JSON、列表、元素类型和必需字段，断言信息必须能定位具体坏元素。**
+
+### 代码落地
+
+本日新增 `test_get_bookings.py`，通过 `RESTFUL_BOOKER_URL` 和本地默认地址构造 `/booking`，设置 `3.0s` 请求超时，依次验证 `200`、列表类型、元素对象类型和 `bookingid` 字段。目标测试通过 `1 passed in 0.13s`，与 Day 36 健康检查合并后的 API 测试通过 `2 passed in 0.11s`。
+
+代码中的错误消息使用元素索引、实际类型和实际对象。例如，若第二个元素缺少字段，示例证据应类似 `Item 1 is missing 'bookingid': {'id': 2}`；这只是失败信息设计示例，不是本次真实失败结果。
+
+### 知识验收
+
+1. 为什么 `200` 不能单独证明 `/booking` 响应正确？
+2. 顶层列表、元素对象和 `bookingid` 字段分别证明什么？
+3. 为什么空列表是否通过要由接口契约决定，而不是测试作者凭感觉决定？
+4. 如果只有一个元素缺少 `bookingid`，失败消息应包含哪些定位证据？
+5. 响应结构失败为什么仍不能自动归因于产品缺陷？
+
+### 关联产出
+
+- 测试文件：`test-projects/03-restful-booker-api/tests/test_get_bookings.py`
+- 依赖文件：`test-projects/03-restful-booker-api/requirements.txt`
+- 验证命令：`python -m pytest test-projects/03-restful-booker-api/tests/test_get_bookings.py -q`；`python -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：目标测试 `1 passed in 0.13s`；API 全量 `2 passed in 0.11s`
+- 验证证据：`artifacts/day-037/verification.md`
+- 当天记录：`daily-log/day-037.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -3868,6 +3967,7 @@ assert elapsed <= 1.0  # 项目性能阈值，不等于官方 SLA
 | 失败分类与 flaky 分析 | Day 34 | 现象—证据—结论分离、产品/脚本/环境归因、HTML 失败证据与人工分类元数据 |
 | 框架可维护性与阶段验收 | Day 35 | 改动局部性、分层职责、最小扩展、意图可见性与完整回归 |
 | HTTP 与健康检查 | Day 36 | 状态码、响应体、请求超时、性能阈值、目标配置与失败分类 |
+| GET 与集合响应 | Day 37 | HTTP 状态、JSON 列表、元素类型、必需字段与结构失败证据 |
 
 ## 每日完结后的知识落盘流程
 
