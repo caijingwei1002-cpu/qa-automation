@@ -45,6 +45,7 @@
 - [Day 36：HTTP 与健康检查](#day-36http-与健康检查)
 - [Day 37：查询列表](#day-37查询列表)
 - [Day 38：创建预订](#day-38创建预订)
+- [Day 39：查询单条](#day-39查询单条)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -4026,6 +4027,106 @@ for field, expected in payload.items():
 - 验证证据：`artifacts/day-038/verification.md`
 - 当天记录：`daily-log/day-038.md`
 
+## Day 39：查询单条
+
+### 核心知识点
+
+接口关联（API chaining）是把前一个请求的真实输出作为后一个请求的输入。创建资源后，测试应读取本次 POST 返回的动态 `bookingid`，再用这个 ID 查询详情，并将查询结果与原始 payload 比较，才能验证创建结果可以被后续接口访问且内容一致。
+
+### 它解决的问题
+
+写死详情 ID 可能命中不存在、过期或属于其他测试的 booking；只检查 GET 的 `200` 也可能把错误资源误判为本次创建结果。动态 ID 让请求之间建立可复现的因果关系，字段比较则避免“查询成功但数据错误”的假通过。
+
+### 理论基础
+
+#### 定义与关键概念
+
+| 检查层 | 证据 | 证明什么 |
+| --- | --- | --- |
+| 创建状态 | POST 返回 `200` | 创建请求在 HTTP 层得到预期结果 |
+| 动态身份 | 读取本次响应的 `bookingid` | 后续查询指向本次创建的资源，而不是固定历史数据 |
+| 查询状态 | GET `/booking/{bookingid}` 返回 `200` | 该资源可以被后续请求访问 |
+| 查询结构 | GET 响应是对象 | 响应具备读取 booking 字段的结构 |
+| 数据一致性 | 查询字段与原始 payload 相等 | 创建、持久化和查询链路返回了预期内容 |
+
+#### 心智模型或执行链
+
+```text
+准备唯一可辨识的 payload
+  → POST /booking
+  → 读取本次响应的 bookingid
+  → GET /booking/{动态 bookingid}
+  → 验证 HTTP 状态和对象结构
+  → 比较查询字段与原始 payload
+  → 根据证据区分脚本、环境和产品数据一致性问题
+```
+
+#### 最小代码骨架
+
+```python
+create_response = requests.post(booking_url, json=payload, timeout=3.0)
+assert create_response.status_code == 200
+
+booking_id = create_response.json()["bookingid"]
+
+get_response = requests.get(
+    f"{booking_url}/{booking_id}",
+    timeout=3.0,
+)
+assert get_response.status_code == 200
+
+booking = get_response.json()
+assert booking["firstname"] == payload["firstname"]
+assert booking["bookingdates"] == payload["bookingdates"]
+```
+
+#### 断言、数据或状态的含义
+
+动态 ID 断言证明测试没有把查询目标写死，但它本身不能证明资源已经正确保存。GET 的 `200` 证明查询请求在 HTTP 层成功，但不能证明查到的就是本次资源。字段一致性断言把查询结果和创建意图绑定起来；若字段不一致，应先检查 ID 获取、URL 拼接、字段比较和环境数据，再判断是否存在产品持久化或查询缺陷。
+
+#### 适用场景与边界
+
+- 适用：POST 创建后需要 GET 回查的资源接口，以及订单、任务、用户等多接口业务链路。
+- 适用：需要验证创建结果可见性、持久化和读写一致性的 API 测试。
+- 边界：一次成功回查只能证明本次运行中的可见性，不能替代并发、重试、事务隔离或长期一致性测试。
+- 边界：测试仍会创建 booking；长期回归需要数据隔离、清理或专用测试环境。
+
+#### 常见错误、反例与假通过
+
+1. 写死 `booking_id = 123`，误把历史资源当成本次创建结果。
+2. POST 后直接查询固定 ID，测试之间互相污染，失败原因难以复现。
+3. 只断言 GET `200`，不比较字段，无法发现查到错误资源。
+4. 忘记定义 `BOOKING_URL` 等脚本变量，测试在执行阶段触发 `NameError`。
+5. 字段不一致时立即提交产品缺陷，没有先排除脚本取错 ID、环境数据污染或契约理解错误。
+
+#### 记忆要点
+
+**用 POST 的动态输出驱动 GET，才能证明“这一次创建的资源可被查询”；`200` 证明请求成功，字段一致才证明数据链路正确。**
+
+### 代码落地
+
+本日新增 `test_booking_flow.py`。测试通过 `RESTFUL_BOOKER_URL` 构造 `/booking`，发送与 Day 38 相同的 JSON payload，读取 POST 返回的动态 `bookingid`，再 GET 同一 ID；随后验证 GET 返回 `200`、对象结构以及姓名、价格、押金状态、日期和附加需求与 payload 一致。
+
+代码审查在执行前发现 `BOOKING_URL` 被使用但未定义，属于脚本缺陷风险；补充 `BOOKING_URL = f"{BASE_URL}/booking"` 后，目标测试通过。这个修复不改变产品，只修正测试执行配置。
+
+### 知识验收
+
+1. 为什么创建后查询必须使用本次 POST 返回的动态 `bookingid`？
+2. GET 返回 `200` 和字段与 payload 一致分别证明什么？
+3. 如果字段不一致，为什么不能立刻判定为产品缺陷？
+4. 哪些证据可以帮助区分取错 ID、环境污染和服务端数据一致性问题？
+5. 重复运行创建—查询测试时，为什么仍需要考虑测试数据清理？
+
+### 关联产出
+
+- 测试文件：`test-projects/03-restful-booker-api/tests/test_booking_flow.py`
+- 验证命令：`python -m pytest test-projects/03-restful-booker-api/tests/test_booking_flow.py -q`
+- 验证结果：目标测试 `1 passed in 0.16s`
+- 验证范围：本次创建资源的动态 ID 回查与字段一致性
+- 代码审查问题：缺少 `BOOKING_URL` 定义；修正后复验通过
+- 证据目录：`artifacts/day-039/`
+- 当天记录：`daily-log/day-039.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -4069,6 +4170,7 @@ for field, expected in payload.items():
 | HTTP 与健康检查 | Day 36 | 状态码、响应体、请求超时、性能阈值、目标配置与失败分类 |
 | GET 与集合响应 | Day 37 | HTTP 状态、JSON 列表、元素类型、必需字段与结构失败证据 |
 | POST 与 JSON 请求体 | Day 38 | 请求序列化、资源 ID、响应字段一致性、持久化回查边界与清理风险 |
+| 创建后查询与动态 ID 关联 | Day 39 | POST 输出驱动 GET、资源可见性、字段一致性和数据链路归因 |
 
 ## 每日完结后的知识落盘流程
 
