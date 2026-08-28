@@ -1,7 +1,9 @@
+"""验证 booking 列表过滤参数与详情字段之间的关联。"""
+
 import pytest
-import requests
 
 
+# 每组数据覆盖一个查询参数及其预期的比较语义。
 FILTER_CASES = [
     pytest.param(
         {"firstname": "Jim"},
@@ -28,6 +30,7 @@ FILTER_CASES = [
 
 
 def read_nested_value(data, path):
+    # 读取 bookingdates.checkin 这类嵌套响应字段，供过滤断言使用。
     for key in path:
         data = data[key]
     return data
@@ -42,14 +45,10 @@ def test_filter_bookings(
     detail_path,
     expected_value,
     comparison,
-    booking_url,
-    request_timeout_seconds,
+    booking_client,
 ):
-    response = requests.get(
-        booking_url,
-        params=params,
-        timeout=request_timeout_seconds,
-    )
+    # 先验证过滤后的集合，再查询每个返回 ID 的详情确认过滤准确性。
+    response = booking_client.get_bookings(params=params)
 
     assert response.status_code == 200, (
         f"Expected status code 200, got {response.status_code}; "
@@ -63,6 +62,7 @@ def test_filter_bookings(
         f"request_url={response.request.url}"
     )
 
+    # 过滤结果不能为空，否则后面的详情校验没有实际对象可验证。
     assert data, (
         f"Expected at least one booking for params={params!r}; "
         f"request_url={response.request.url}"
@@ -82,10 +82,8 @@ def test_filter_bookings(
 
         booking_id = booking_summary["bookingid"]
 
-        detail_response = requests.get(
-            f"{booking_url}/{booking_id}",
-            timeout=request_timeout_seconds,
-        )
+        # 列表接口只返回 ID 摘要，必须回查详情才能验证实际过滤字段。
+        detail_response = booking_client.get_booking(booking_id)
 
         assert detail_response.status_code == 200
 
@@ -96,6 +94,7 @@ def test_filter_bookings(
             f"bookingid={booking_id}"
         )
 
+        # 过滤断言针对详情资源，而不是只检查摘要列表中的 ID。
         actual_value = read_nested_value(booking_detail, detail_path)
         if comparison == "equals":
             matches = actual_value == expected_value

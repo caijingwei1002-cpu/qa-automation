@@ -58,6 +58,24 @@ python tools/plan_day.py status
 python tools/validate_repo.py
 ```
 
+## 开课前进度自检
+
+当学习请求中写明 `Day N` 时，先执行只读校验，再开始讲解、提问或修改文件：
+
+```powershell
+python tools/plan_day.py check-day N
+```
+
+校验以 `progress.json` 的 `current_day` 为准。如果请求日与当前学习日不一致，先说明请求日是已完成、遗漏还是尚未到达；除非学习者明确要求复习或重学，否则不进入该日教学。`today` 和 `plan N` 命令都会生成对应日志和证据目录，因此不能用于开课前的只读自检，只应在学习日确认后使用。
+
+从 Day 48 开始，正式验证证据统一保存为 `artifacts/day-XXX/verification.md`。使用以下命令执行当天计划中的目标测试和项目全量回归；命令会优先使用仓库 `.venv`，并把真实结果自动写入标准证据文件：
+
+```powershell
+python tools/run_day_verification.py 48
+```
+
+`verification.md` 是正式总结证据，其他 `.txt` 文件只能作为可选原始输出。完成学习日时，`plan_day.py complete` 会校验证据文件、目标测试、全量回归、关键验证和环境结论；证据不完整时不会推进 `progress.json`。
+
 完成一个学习日并记录实际结果：
 
 ```powershell

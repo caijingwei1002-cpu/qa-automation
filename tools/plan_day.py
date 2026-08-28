@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -22,6 +23,25 @@ PROGRESS_PATH = ROOT / "progress.json"
 LOG_DIR = ROOT / "daily-log"
 ARTIFACT_DIR = ROOT / "artifacts"
 TEMPLATE_PATH = ROOT / "templates" / "daily-log.md"
+VERIFICATION_TEMPLATE_PATH = ROOT / "templates" / "verification.md"
+EVIDENCE_STANDARD_START_DAY = 48
+
+
+def verification_path(day: int) -> Path:
+    """返回某个学习日的正式验证证据路径。"""
+    return ARTIFACT_DIR / f"day-{day:03d}" / "verification.md"
+
+
+def default_full_run(plan: dict[str, Any]) -> str:
+    """为有 tests 目录的项目生成统一的全量回归命令。"""
+    project = str(plan.get("project", "")).strip("/")
+    project_tests = ROOT / Path(project) / "tests" if project else None
+    if project_tests and project_tests.is_dir():
+        normalized_project = project.replace("\\", "/")
+        return f"pytest {normalized_project}/tests -q"
+    return str(plan["run"])
+
+
 def load_json(path: Path, default: Any) -> Any:
     """读取 UTF-8 JSON；文件不存在时返回调用方提供的默认结构。"""
     if not path.exists():
@@ -65,6 +85,7 @@ def enrich_daily_plan(plan: dict[str, Any]) -> dict[str, Any]:
     )
     plan.setdefault("file", f"daily-log/day-{plan['day']:03d}.md")
     plan.setdefault("run", "git diff --check")
+    plan.setdefault("full_run", default_full_run(plan))
     plan.setdefault("done", "产出完成、命令执行并记录结果")
     plan.setdefault("stretch", "补充一个边界场景或改进建议")
     return plan
@@ -188,6 +209,106 @@ def render_log(plan: dict[str, Any], result: str = "", next_step: str = "") -> s
     return text
 
 
+def render_verification(
+    plan: dict[str, Any],
+    *,
+    target_command: str | None = None,
+    target_result: str = "待运行",
+    full_command: str | None = None,
+    full_result: str = "待运行",
+    key_checks: str = "- 待补充本日关键验证。",
+    environment_notes: str = "- 待记录环境信息、异常根因和最终结论。",
+) -> str:
+    """将日计划填入统一验证证据模板。"""
+    text = VERIFICATION_TEMPLATE_PATH.read_text(encoding="utf-8")
+    replacements = {
+        "{{day}}": str(plan["day"]),
+        "{{date}}": date.today().isoformat(),
+        "{{phase}}": plan["phase"],
+        "{{project}}": plan["project"],
+        "{{theme}}": plan["theme"],
+        "{{target_command}}": target_command or plan["run"],
+        "{{target_result}}": target_result,
+        "{{full_command}}": full_command or plan["full_run"],
+        "{{full_result}}": full_result,
+        "{{key_checks}}": key_checks,
+        "{{environment_notes}}": environment_notes,
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text
+
+
+def ensure_verification(plan: dict[str, Any]) -> Path:
+    """创建正式验证证据文件，但不覆盖学习者已填写的内容。"""
+    path = verification_path(plan["day"])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        path.write_text(render_verification(plan), encoding="utf-8")
+    return path
+
+
+def normalize_evidence_reference(text: str, plan: dict[str, Any]) -> str:
+    """让当天日志始终指向正式 verification.md 文件。"""
+    expected = f"artifacts/day-{plan['day']:03d}/verification.md"
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if line.startswith("证据路径："):
+            lines[index] = f"证据路径：`{expected}`"
+            return "\n".join(lines) + "\n"
+    return text
+
+
+def _section(text: str, heading: str) -> str:
+    """提取一个二级标题到下一个二级标题之间的内容。"""
+    start = text.find(heading)
+    if start == -1:
+        return ""
+    next_heading = re.search(r"\n## ", text[start + len(heading):])
+    end = start + len(heading) + next_heading.start() if next_heading else len(text)
+    return text[start:end]
+
+
+def validate_verification(path: Path, plan: dict[str, Any]) -> list[str]:
+    """校验正式证据的结构、真实结果和必要说明。"""
+    errors: list[str] = []
+    if not path.is_file():
+        return [f"missing verification evidence: {path}"]
+
+    text = path.read_text(encoding="utf-8")
+    if f"# Day {plan['day']} 验证证据" not in text:
+        errors.append("verification.md has an invalid Day heading")
+
+    if any(marker in text for marker in ("待运行", "待填写", "{{")):
+        errors.append("verification.md still contains an unfilled placeholder")
+
+    result_pattern = re.compile(
+        r"(?:\b\d+\s+(?:passed|failed|error(?:s)?|skipped|xfailed|xpassed)\b|\b(?:passed|failed)\b)",
+        re.IGNORECASE,
+    )
+    for heading in ("## 目标测试", "## 全量回归"):
+        section = _section(text, heading)
+        if not section:
+            errors.append(f"verification.md is missing section: {heading}")
+            continue
+        if "命令：" not in section:
+            errors.append(f"verification.md section {heading} is missing command")
+        if "结果：" not in section:
+            errors.append(f"verification.md section {heading} is missing result")
+        if not result_pattern.search(section):
+            errors.append(f"verification.md section {heading} has no executable result")
+
+    checks = _section(text, "## 关键验证")
+    if not checks or not re.search(r"(?m)^\s*-\s+\S", checks):
+        errors.append("verification.md is missing key validation notes")
+
+    environment = _section(text, "## 环境问题与结论")
+    if not environment or not re.search(r"(?m)^\s*-\s+\S", environment):
+        errors.append("verification.md is missing environment or conclusion notes")
+
+    return errors
+
+
 def fill_log_field(text: str, label: str, value: str) -> str:
     """Fill a blank log field without replacing existing notes."""
     lines = text.splitlines()
@@ -205,6 +326,7 @@ def write_daily_log(plan: dict[str, Any], result: str = "", next_step: str = "")
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     artifact_path = ARTIFACT_DIR / f"day-{plan['day']:03d}"
     artifact_path.mkdir(parents=True, exist_ok=True)
+    ensure_verification(plan)
     log_path = LOG_DIR / f"day-{plan['day']:03d}.md"
     existing = log_path.read_text(encoding="utf-8") if log_path.exists() else ""
     old_blank_markers = (
@@ -223,15 +345,18 @@ def write_daily_log(plan: dict[str, Any], result: str = "", next_step: str = "")
             and all(f"{marker}\n\n" in existing for marker in old_blank_markers)
         )
     )
-    if result or next_step:
+    if result or next_step or not log_path.exists() or needs_template_refresh:
         updated = existing or render_log(plan)
         if result:
             updated = fill_log_field(updated, "结果：", result)
         if next_step:
             updated = fill_log_field(updated, "明天的第一步：", next_step)
+    else:
+        updated = existing
+
+    updated = normalize_evidence_reference(updated, plan)
+    if updated != existing:
         log_path.write_text(updated, encoding="utf-8")
-    elif not log_path.exists() or needs_template_refresh:
-        log_path.write_text(render_log(plan, result, next_step), encoding="utf-8")
     return log_path
 
 
@@ -260,6 +385,31 @@ def command_today(args: argparse.Namespace) -> None:
     print_plan(plan, write_daily_log(plan))
 
 
+def command_check_day(args: argparse.Namespace) -> None:
+    """只读核验用户声称的学习日，避免重复开始已完成内容。"""
+    curriculum = load_json(CURRICULUM_PATH, {})
+    progress = load_progress()
+    requested_day = args.day
+    current_day = progress["current_day"]
+
+    if requested_day != current_day:
+        if requested_day in progress["completed_days"]:
+            requested_status = "已完成"
+        elif requested_day < current_day:
+            requested_status = "早于当前进度，但未记录为已完成"
+        else:
+            requested_status = "尚未到达"
+        current_plan = plan_for_day(curriculum, current_day)
+        print(f"学习日冲突：请求 Day {requested_day}，仓库当前为 Day {current_day}。")
+        print(f"Day {requested_day} 状态：{requested_status}。")
+        print(f"当前主题：{current_plan['phase']} / {current_plan['theme']}")
+        print("请先向学习者说明冲突；除非学习者明确要求复习或重学，否则不要开始请求中的学习日。")
+        raise SystemExit(2)
+
+    print(f"学习日校验通过：Day {current_day}。")
+    print_plan(plan_for_day(curriculum, current_day))
+
+
 def command_plan(args: argparse.Namespace) -> None:
     curriculum = load_json(CURRICULUM_PATH, {})
     plan = plan_for_day(curriculum, args.day)
@@ -270,7 +420,21 @@ def command_complete(args: argparse.Namespace) -> None:
     curriculum = load_json(CURRICULUM_PATH, {})
     progress = load_progress()
     plan = plan_for_day(curriculum, args.day)
-    write_daily_log(plan, args.result, args.next_step)
+    log_path = write_daily_log(plan, args.result, args.next_step)
+    if args.day >= EVIDENCE_STANDARD_START_DAY:
+        evidence = verification_path(args.day)
+        errors = validate_verification(evidence, plan)
+        expected_reference = f"artifacts/day-{args.day:03d}/verification.md"
+        log_text = log_path.read_text(encoding="utf-8")
+        if expected_reference not in log_text:
+            errors.append(
+                f"daily log {log_path.name} must reference {expected_reference}"
+            )
+        if errors:
+            print("完成校验失败，进度未更新：")
+            for error in errors:
+                print(f"- {error}")
+            raise SystemExit(2)
     # 完成命令只追加未完成日，并将下一天推进到当前完成日之后。
     if args.day not in progress["completed_days"]:
         progress["completed_days"].append(args.day)
@@ -307,6 +471,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("today", help="显示并生成当前学习日")
+    check_day = sub.add_parser("check-day", help="只读核验请求的学习日是否为当前进度")
+    check_day.add_argument("day", type=int)
     plan = sub.add_parser("plan", help="显示并生成指定学习日")
     plan.add_argument("day", type=int)
     complete = sub.add_parser("complete", help="完成一个学习日并记录结果")
@@ -321,6 +487,7 @@ def main() -> None:
     args = build_parser().parse_args()
     commands = {
         "today": command_today,
+        "check-day": command_check_day,
         "plan": command_plan,
         "complete": command_complete,
         "status": command_status,

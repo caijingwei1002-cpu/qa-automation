@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from build_daily_plan import DAILY_METHOD, build_plan  # noqa: E402
+from plan_day import EVIDENCE_STANDARD_START_DAY, validate_verification  # noqa: E402
 
 
 EXPECTED_ASSETS = {
@@ -71,6 +72,7 @@ def main() -> int:
         "progress.json",
         "LEARNING-NOTES.md",
         "templates/daily-log.md",
+        "templates/verification.md",
         ".github/workflows/repository-validation.yml",
     ]:
         if not (ROOT / relative).is_file():
@@ -225,6 +227,14 @@ def main() -> int:
             fail(errors, f"daily log {log_path.name} is missing the knowledge writeback section")
         if "LEARNING-NOTES.md" not in completed_log or f"章节：Day {completed_day}" not in completed_log:
             fail(errors, f"daily log {log_path.name} does not link its knowledge writeback to LEARNING-NOTES.md")
+
+        if completed_day >= EVIDENCE_STANDARD_START_DAY:
+            evidence_path = ROOT / f"artifacts/day-{completed_day:03d}" / "verification.md"
+            for evidence_error in validate_verification(evidence_path, {"day": completed_day}):
+                fail(errors, f"Day {completed_day} verification evidence: {evidence_error}")
+            expected_evidence_file = f"artifacts/day-{completed_day:03d}/verification.md"
+            if expected_evidence_file not in completed_log:
+                fail(errors, f"daily log {log_path.name} must reference {expected_evidence_file}")
 
     nested_git = [
         path for path in ROOT.rglob(".git") if path != ROOT / ".git"

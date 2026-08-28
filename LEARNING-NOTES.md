@@ -47,6 +47,17 @@
 - [Day 38：创建预订](#day-38创建预订)
 - [Day 39：查询单条](#day-39查询单条)
 - [Day 40：过滤查询](#day-40过滤查询)
+- [Day 41：Token 鉴权](#day-41token-鉴权)
+- [Day 42：完整更新 PUT](#day-42完整更新-put)
+- [Day 43：部分更新 PATCH](#day-43部分更新-patch)
+- [Day 44：删除与清理](#day-44删除与清理)
+- [Day 45：API Client](#day-45api-client)
+- [Day 46：Booking Client](#day-46booking-client)
+- [Day 47：Fixture 生命周期](#day-47fixture-生命周期)
+- [Day 48：数据工厂](#day-48数据工厂)
+- [Day 49：参数化边界](#day-49参数化边界)
+- [Day 50：缺失字段](#day-50缺失字段)
+- [Day 51：类型错误](#day-51类型错误)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -4230,6 +4241,1121 @@ for summary in response.json():
 - 证据目录：`artifacts/day-040/`
 - 当天记录：`daily-log/day-040.md`
 
+## Day 41：Token 鉴权
+
+### 核心知识点
+
+认证测试要区分 HTTP 层结果和业务层认证结果。HTTP 状态码说明请求是否被接口处理，响应体中的 `token` 或 `reason` 才说明凭据是否认证成功。本地 Restful Booker 的 `POST /auth` 对有效和无效凭据都返回 `200`，因此不能把 `200` 直接等同于登录成功。
+
+### 它解决的问题
+
+只断言 `status_code == 200` 会产生认证假通过：错误密码也可能被测试判定为成功。通过同时检查响应结构、非空 Token 和明确失败原因，测试才能证明认证业务结果。
+
+### 理论基础
+
+| 检查层 | 代码证据 | 证明什么 |
+| --- | --- | --- |
+| 请求构造 | `requests.post(url, json=payload, timeout=...)` | 凭据以 JSON 发送，并受超时保护 |
+| HTTP 状态 | `response.status_code == 200` | 认证请求在 HTTP 层被正常处理 |
+| 响应结构 | `isinstance(data, dict)` | 响应符合认证接口对象结构 |
+| 成功语义 | 非空字符串 `data["token"]` | 有效凭据确实产生了可用 Token |
+| 失败语义 | `data["reason"] == "Bad credentials"` | 无效凭据被明确拒绝，且没有 Token |
+
+认证接口的测试链可以概括为：
+
+```text
+准备环境凭据
+  → POST /auth
+  → 验证 HTTP 状态和 JSON 结构
+  → 成功路径断言非空 token
+  → 失败路径断言 reason 且不包含 token
+```
+
+### 配置与安全边界
+
+`conftest.py` 适合提供 pytest fixture，不应被测试文件当作普通配置模块直接导入。`api_base_url`、`request_timeout_seconds` 和 `auth_credentials` 通过 fixture 注入，URL、超时和账号可由环境变量覆盖。Token 只用于断言存在性和非空，不打印到日志、测试报告或错误消息中。当前本地演示账号的默认值是测试目标的公开样例凭据；真实环境不应把真实密码写入仓库。
+
+### 常见错误、反例与假通过
+
+1. 只断言 `200`，没有检查 `token` 或 `reason`。
+2. 假设无效凭据一定返回 `401`，忽略具体 API 契约。
+3. 直接 `from conftest import ...`，导致不存在的常量在收集阶段报错。
+4. 重复定义同名测试函数，后一个定义会覆盖前一个定义。
+5. 在日志中打印 Token 或把完整凭据放入失败消息。
+
+### 代码落地
+
+本日新增 `test_auth.py`，使用 pytest 参数化覆盖有效和无效凭据。共享配置通过 `api_base_url`、`request_timeout_seconds` 和 `auth_credentials` fixture 注入，保留了原有 `booking_url` fixture 的行为。有效凭据断言非空 Token；无效凭据断言 `Bad credentials` 且响应不包含 Token。
+
+初版问题是从 `conftest.py` 导入不存在的 `REQUEST_TIMEOUT_SECONDS` 和 `RESTFUL_BOOKER_URL`，并曾重复追加测试函数。改为 fixture 注入并删除重复代码后，目标测试 2 条通过，API 全量回归 9 条通过。
+
+### 知识验收
+
+1. 为什么无效凭据不能只根据 HTTP 状态码判断？
+2. 哪个字段证明有效凭据真正生成了 Token？
+3. 为什么测试代码应使用 fixture 注入，而不是直接导入 `conftest.py`？
+4. 为什么 Token 不能直接打印到日志？
+
+### 关联产出
+
+- 测试配置：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 测试文件：`test-projects/03-restful-booker-api/tests/test_auth.py`
+- 验证命令：`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_auth.py -q`；`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：目标测试 `2 passed in 0.10s`；API 全量 `9 passed in 0.44s`
+- 证据目录：`artifacts/day-041/`
+- 当天记录：`daily-log/day-041.md`
+
+## Day 42：完整更新 PUT
+
+### 核心知识点
+
+PUT（资源替换）用于用一个完整表示替换已有资源。对需要认证的更新接口，测试必须同时验证认证头、完整请求体、PUT 即时响应和后续 GET 查询结果；只看到 `200` 不足以证明资源已正确更新。
+
+### 它解决的问题
+
+如果只断言 PUT 返回 `200` 或只检查响应体，测试可能漏掉服务端未持久化、部分字段被重置、认证头没有真正生效等问题。创建后使用动态 ID，再用 GET 回查，可以把“请求成功”和“状态已保存”分成两条证据链。
+
+### 理论基础
+
+| 检查层 | 代码证据 | 证明什么 |
+| --- | --- | --- |
+| 资源身份 | POST 返回的整数 `bookingid` | 本次测试操作的是自己创建的资源，而不是固定共享数据 |
+| 认证 | `Cookie: token=<token>` | 更新请求携带了接口要求的认证凭据 |
+| 请求完整性 | `json=UPDATE_PAYLOAD` 包含全部 booking 字段 | PUT 发送的是完整替换表示，而不是半截数据 |
+| 即时响应 | PUT 返回 `200` 且响应体等于更新 payload | 服务端接受了更新并返回了预期表示 |
+| 持久化结果 | 同一 ID 的 GET 等于更新 payload | 更新结果可再次读取，形成持久化证据 |
+| 访问控制 | 无 Token 的 PUT 返回 `403` | 未认证调用不能执行受保护的更新 |
+
+典型执行链：
+
+```text
+POST /booking
+  → 读取动态 bookingid
+  → POST /auth 获取 Token
+  → PUT /booking/{id} + Cookie token + 完整 JSON
+  → 验证 PUT 状态和响应体
+  → GET /booking/{id}
+  → 验证持久化资源与更新 payload 一致
+```
+
+### 认证头与请求体
+
+本地 Restful Booker 接受 `Cookie: token=<token>` 作为 PUT 认证方式，也支持 Basic Auth。当前测试使用前一步 `/auth` 返回的动态 Token，避免把认证凭据重新编码或硬编码到更新请求中。`requests.put(..., json=payload)` 负责发送 JSON 请求体；`Accept: application/json` 表示期望 JSON 响应。
+
+### 适用场景与边界
+
+- 适用：资源需要整体替换，且接口契约要求更新对象包含全部字段。
+- 适用：需要验证认证头、更新响应和服务端持久化的 CRUD 回归测试。
+- 边界：如果业务只允许修改部分字段，应使用 PATCH 语义或明确的部分更新契约，不能用 PUT 测试代替。
+- 边界：创建资源后要规划清理策略；本日测试产生的 booking 暂未删除，属于后续数据隔离与清理任务。
+- 边界：不要固定使用 `/booking/1`，共享环境中的固定 ID 可能不存在、被其他测试修改或造成顺序依赖。
+
+### 常见错误、反例与假通过
+
+1. 只断言 PUT 返回 `200`，不比较响应体。
+2. 只比较 PUT 响应，不做二次 GET，无法证明服务端已持久化。
+3. PUT 只发送修改字段，却把它当成 PATCH 使用。
+4. 忘记认证头，或把 Token 错放在 URL、普通请求体中。
+5. 使用固定 booking ID，导致测试数据冲突和顺序依赖。
+6. 把无 Token 的 `403` 误认为环境失败；对于受保护更新接口，这正是访问控制预期。
+7. 测试创建数据后不清理，长期运行会污染环境并影响过滤、列表数量等其他测试。
+
+### 记忆要点
+
+**PUT 测试要证明四件事：ID 对、认证对、替换内容对、再次读取仍然对。**
+
+### 代码落地
+
+本日新增 `test_update_booking.py`。主测试创建 booking 并读取动态 ID，使用 `auth_credentials` 获取 Token，通过 Cookie 认证发送完整更新 payload，验证 PUT 响应后再 GET 回查。可选测试验证无 Token 时返回 `403`。
+
+目标测试 2 条通过，API 全量回归 11 条通过。测试创建的数据尚未清理，已记录为后续 fixture 生命周期和 DELETE 清理策略的风险。
+
+### 知识验收
+
+1. 为什么 PUT 需要发送完整资源表示？
+2. `Cookie: token=<token>` 在本日测试中证明什么？
+3. 为什么二次 GET 是 PUT 测试的重要证据？
+4. 为什么应该使用动态 `bookingid` 而不是固定 ID？
+5. PUT 和 PATCH 的适用边界有什么不同？
+
+### 关联产出
+
+- 测试配置：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 测试文件：`test-projects/03-restful-booker-api/tests/test_update_booking.py`
+- 验证命令：`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_update_booking.py -q`；`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：目标测试 `2 passed in 0.18s`；API 全量 `11 passed in 0.31s`
+- 证据目录：`artifacts/day-042/`
+- 当天记录：`daily-log/day-042.md`
+
+## Day 43：部分更新 PATCH
+
+### 核心知识点
+
+PATCH（部分更新）用于只修改资源中请求指定的字段，未指定字段应保持原值。它与 PUT 的区别不是“请求方法名称不同”这么简单，而是更新语义不同：PUT 通常提交完整资源表示，PATCH 只提交变化部分。
+
+### 它解决的问题
+
+当用户只想修改价格或附加需求时，使用部分更新可以减少请求数据和意外覆盖范围。测试如果只检查目标字段，很可能漏掉服务端把其他字段清空、重置或错误改写的问题，因此必须保留原始快照并比较完整预期。
+
+### 理论基础
+
+| 检查层 | 代码证据 | 证明什么 |
+| --- | --- | --- |
+| 资源身份 | 创建响应中的动态 `bookingid` | PATCH 操作的是本次测试创建的资源 |
+| 部分请求 | `PATCH_PAYLOAD` 只有 `totalprice`、`additionalneeds` | 测试确实表达了部分更新，而不是完整替换 |
+| 认证 | `Cookie: token=<token>` | 调用者有权限修改资源 |
+| 目标字段 | PATCH 响应中的两个字段为新值 | 指定字段被正确修改 |
+| 未修改字段 | 响应中的其他字段等于创建快照 | 部分更新没有破坏未指定字段 |
+| 持久化 | 同一 ID 的 GET 等于合并后的预期 | 修改结果和未修改字段都已保存 |
+
+部分更新的执行链：
+
+```text
+创建资源并保存原始快照
+  → 获取 Token
+  → PATCH /booking/{id}，只发送变化字段
+  → 构造 original + patch 的独立预期
+  → 验证 PATCH 响应的完整资源
+  → GET 同一 ID
+  → 验证指定字段已变、其他字段未变且结果已持久化
+```
+
+### 最小代码骨架
+
+```python
+PATCH_PAYLOAD = {
+    "totalprice": 300,
+    "additionalneeds": "Dinner",
+}
+
+expected_booking = {
+    **CREATE_PAYLOAD,
+    **PATCH_PAYLOAD,
+}
+
+response = requests.patch(
+    booking_url,
+    json=PATCH_PAYLOAD,
+    headers={
+        "Accept": "application/json",
+        "Cookie": f"token={token}",
+    },
+    timeout=timeout,
+)
+assert response.status_code == 200
+assert response.json() == expected_booking
+```
+
+这里的合并只用于构造独立预期，不是把 PATCH 请求改造成完整请求。请求仍然只包含 `PATCH_PAYLOAD` 中的两个字段。
+
+### 适用场景与边界
+
+- 适用：只修改资源部分字段，且接口契约明确未指定字段保持不变。
+- 适用：验证局部修改不会破坏资源其他属性的 API 回归测试。
+- 边界：不要根据方法名猜测语义；以实际 API 契约为准。
+- 边界：如果接口的 PATCH 响应只返回部分字段，应对响应做局部断言，再用 GET 验证完整资源。
+- 边界：创建的测试资源仍需清理；本日产生的数据未自动删除，属于后续生命周期任务。
+
+### 常见错误、反例与假通过
+
+1. PATCH 仍发送完整 `UPDATE_PAYLOAD`，实际测试成了 PUT。
+2. 只断言 `totalprice` 和 `additionalneeds`，没有检查未修改字段。
+3. 只验证 PATCH 响应，不做二次 GET，无法证明持久化结果。
+4. 使用固定 booking ID，导致数据冲突或测试顺序依赖。
+5. 忘记认证头，把 `403` 误判为 PATCH 逻辑失败。
+6. 从页面或响应实际值反向构造 expected，导致服务端错误被测试接受。
+
+### 记忆要点
+
+**PATCH 测试要证明：只改该改的字段，其他字段不受影响，并且变化已经持久化。**
+
+### 代码落地
+
+本日保留 Day 42 的完整 PUT 和无 Token 403 测试，并在 `test_update_booking.py` 中新增 PATCH 用例。用例创建动态 booking，获取 Token，只发送 `totalprice` 和 `additionalneeds`，通过原始 payload 与 PATCH payload 的合并预期验证完整响应，再用 GET 验证持久化结果。
+
+目标测试 3 条通过，API 全量回归 12 条通过。测试创建的数据尚未自动清理，已记录为后续 fixture 生命周期任务。
+
+### 知识验收
+
+1. PATCH 请求为什么只应包含要修改的字段？
+2. 为什么必须断言未指定字段保持原值？
+3. `expected_booking = {**CREATE_PAYLOAD, **PATCH_PAYLOAD}` 在测试中证明什么？
+4. 为什么 PATCH 后仍然要二次 GET？
+5. 什么情况下不能简单假设 PATCH 响应一定包含完整资源？
+
+### 关联产出
+
+- 测试配置：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 测试文件：`test-projects/03-restful-booker-api/tests/test_update_booking.py`
+- 验证命令：`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_update_booking.py -q`；`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：目标测试 `3 passed in 0.11s`；API 全量 `12 passed in 0.48s`
+- 证据目录：`artifacts/day-043/`
+- 当天记录：`daily-log/day-043.md`
+
+## Day 44：删除与清理
+
+### 核心知识点
+
+资源生命周期和清理保证要求接口测试关注资源从创建到销毁的完整状态变化。DELETE 的成功状态只证明删除请求被接口接受；使用同一个动态 ID 进行删除后 GET，才能验证资源已经不可读取。
+
+### 它解决的问题
+
+如果测试只断言 DELETE 返回成功，服务端即使没有真正删除资源，测试也可能通过。测试数据如果不清理，还会污染共享环境，影响后续列表、过滤和数量断言。动态创建并删除自己的资源，可以降低固定数据、测试顺序和误删共享资源的风险。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- 资源生命周期（resource lifecycle）：创建、读取或修改、删除，以及删除后的状态确认。
+- 清理保证（cleanup guarantee）：测试结束时，测试创建的临时资源已被删除，或失败时有明确的补偿清理策略。
+- 动态资源 ID：从本次 POST 响应读取的 `bookingid`，用于后续 DELETE 和 GET，保证操作对象属于当前测试。
+
+#### 心智模型或执行链
+
+```text
+POST /booking
+  → 读取本次响应的 bookingid
+  → POST /auth 获取 Token
+  → DELETE /booking/{bookingid} + Cookie token
+  → 验证 DELETE 状态码 201
+  → GET /booking/{bookingid}
+  → 验证资源不存在，状态码 404
+```
+
+DELETE 响应是即时证据，删除后 GET 是后置证据；两者共同证明“请求成功”和“资源已不可读取”这两个不同事实。
+
+#### 最小代码骨架
+
+```python
+booking_id = create_booking()
+token = get_auth_token()
+booking_url = f"{base_url}/booking/{booking_id}"
+
+delete_response = requests.delete(
+    booking_url,
+    headers={"Cookie": f"token={token}"},
+    timeout=timeout,
+)
+assert delete_response.status_code == 201
+
+get_response = requests.get(booking_url, timeout=timeout)
+assert get_response.status_code == 404
+```
+
+#### 断言、数据或状态的含义
+
+| 检查 | 证明什么 | 不能单独证明什么 |
+| --- | --- | --- |
+| POST 返回动态 `bookingid` | 后续请求有明确的本次资源身份 | 不能证明删除成功 |
+| DELETE 返回 `201` | 本地接口接受并完成了删除操作 | 不能单独证明资源已不可查询 |
+| 删除后 GET 返回 `404` | 同一资源已经不再可读取 | 不能证明其他资源未受影响 |
+| 重复 DELETE 返回 `405` | 本地契约对已不存在资源有明确处理 | 不应泛化为所有 DELETE 接口的通用规则 |
+
+#### 适用场景与边界
+
+- 适用：API CRUD 测试、临时测试数据、共享测试环境和需要回归执行的资源测试。
+- 适用：创建资源后必须由当前测试负责销毁的场景，可用 fixture finalizer 或 `try/finally` 增加失败补偿清理。
+- 边界：删除后的状态码、重复删除状态码必须以当前 API 契约为准；本地 Restful Booker 的观察结果是 DELETE `201`、删除后 GET `404`、重复 DELETE `405`。
+- 边界：如果删除是异步操作，不能立即假设 GET 一定马上返回 `404`，需要轮询、最终一致性等待或接口提供的任务状态。
+- 边界：不要为了“清理”删除共享数据或固定 ID；清理对象必须是本次测试创建并持有的资源。
+
+#### 常见错误、反例与假通过
+
+1. 只断言 DELETE 返回成功，不做删除后 GET，无法证明资源真的消失。
+2. 删除后 GET 使用固定 ID，无法证明查询的是刚刚删除的资源。
+3. 使用固定 booking ID 作为删除对象，可能误删其他测试或共享环境数据。
+4. 创建资源后中途断言失败，没有补偿清理，导致数据泄漏到后续回归。
+5. 把 `404` 或 `405` 当成所有 API 的通用 DELETE 规则，忽略具体接口契约。
+6. 把“测试方法执行完”误认为“测试数据已经清理”；清理必须有请求和后置断言证据。
+
+#### 记忆要点
+
+**删除测试要证明：删的是自己的资源、DELETE 成功、删后确实查不到；清理是测试结果的一部分，不是附加动作。**
+
+### 代码落地
+
+本日新增 `test_delete_booking.py`。主场景先创建 booking 并读取动态 ID，再获取 Token，通过 Cookie 执行 DELETE，验证 `201`，然后用同一个 ID GET 并验证 `404`。可选挑战在同一动态资源上重复 DELETE，验证本地契约返回 `405`。
+
+目标测试 2 条通过，API 全量回归 14 条通过。测试创建的数据在主流程和挑战流程中都被删除，未留下本日测试资源。
+
+### 知识验收
+
+1. 为什么 DELETE 返回成功后仍然要 GET 同一个动态 ID？
+2. 动态 ID 在删除测试中解决了什么数据归属问题？
+3. DELETE 的即时响应和删除后 GET 分别证明什么？
+4. 为什么测试数据清理属于测试结果的一部分？
+5. 如果删除是异步的，为什么不能立即断言 GET 返回 `404`？
+
+### 关联产出
+
+- 测试文件：`test-projects/03-restful-booker-api/tests/test_delete_booking.py`
+- 验证命令：`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_delete_booking.py -q`；`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：目标测试 `2 passed in 0.18s`；API 全量 `14 passed in 0.86s`
+- 证据目录：`artifacts/day-044/`
+- 当天记录：`daily-log/day-044.md`
+
+## Day 45：API Client
+
+### 核心知识点
+
+API Client 是接口测试中的通用传输层（transport layer）边界：集中处理 base URL、timeout、公共 headers、URL 拼接和 HTTP 请求发送，让测试用例专注于业务动作和结果断言。
+
+### 它解决的问题
+
+如果每个测试都重复拼接 URL、设置 timeout 和 headers，配置变化时容易漏改，测试之间也可能出现行为不一致。把这些协议细节集中起来，可以降低维护成本；同时不把业务断言放进 Client，可以避免 Client 用一个固定状态码覆盖成功、鉴权失败、资源不存在等不同场景。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- 通用客户端（API Client）：对 HTTP 库的薄封装，统一请求入口和传输配置。
+- 公共配置：base URL、默认 `Accept`、请求 timeout 等所有接口通常共享的配置。
+- 业务断言：具体测试场景对状态码、响应字段、数据一致性和业务规则的预期。
+- 请求错误上下文：网络异常发生时用于定位的 method、URL、params、timeout 和安全响应摘要。
+
+#### 心智模型或执行链
+
+```text
+测试用例：表达业务动作和预期
+  → api_client fixture：注入统一配置
+  → RestfulBookerClient：拼接 URL、合并 headers、发送请求
+  → requests：执行 HTTP
+  → Response：返回给测试
+  → 测试：断言状态码、响应体和业务结果
+```
+
+Client 负责“怎么请求”，测试负责“结果应该是什么”。二者分离后，同一个 Client 可以服务于预期 `200`、`201`、`403`、`404` 或 `405` 的不同测试。
+
+#### 最小代码骨架
+
+```python
+class RestfulBookerClient:
+    def __init__(self, base_url, timeout):
+        self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+        self.default_headers = {"Accept": "application/json"}
+
+    def get(self, path, *, params=None, headers=None, token=None):
+        return self._request(
+            "GET",
+            path,
+            params=params,
+            headers=headers,
+            token=token,
+        )
+```
+
+`_request()` 统一完成 URL、headers 和 timeout 的处理；HTTP 响应原样返回给测试，不能在这里替测试固定断言状态码。
+
+#### 断言、数据或状态的含义
+
+| 检查 | 证明什么 | 不能单独证明什么 |
+| --- | --- | --- |
+| Client 统一生成 URL | 请求目标和路径拼接规则集中管理 | 不能证明业务资源内容正确 |
+| Client 统一传递 timeout | 请求有一致的阻塞上限 | 不能证明服务端在该时间内返回正确结果 |
+| 默认/覆盖 headers 合并 | 公共协议头可复用，场景头仍可覆盖 | 不能证明认证或业务授权成功 |
+| Client 返回原始 Response | 测试可以按场景断言 `200`、`403`、`404` 等 | 不能替测试决定某个状态码就是正确结果 |
+| 网络异常包含安全上下文 | 能定位方法、URL、params 和 timeout | 不能把网络异常自动归因成产品缺陷 |
+
+#### 适用场景与边界
+
+- 适用：多个接口测试重复使用相同的 base URL、timeout、headers 和 HTTP 发送逻辑。
+- 适用：需要在测试环境之间切换地址，或希望统一网络异常格式的回归测试。
+- 边界：Client 不应包含具体业务断言、固定资源 ID 或某一个测试场景专属的 expected 值。
+- 边界：不要为了统一错误处理而对所有响应调用 `raise_for_status()`；负向测试需要拿到 `403`、`404`、`405` 后自行断言。
+- 边界：错误日志可以记录非敏感请求上下文，但必须对 Token、Cookie、密码和可能包含凭据的响应字段脱敏。
+- 边界：当前 Client 只抽取通用 HTTP 细节；`create_booking()`、`get_booking()` 等 booking 业务语义适合后续领域客户端继续封装。
+
+#### 常见错误、反例与假通过
+
+1. Client 文件放在测试目录或项目根目录，导致目标模块位置不明确或出现重复实现。
+2. 只创建 Client，不让测试通过 Fixture 使用，表面有封装，实际仍重复调用 `requests`。
+3. 在 Client 中写 `assert response.status_code == 200`，导致 `403`、`404`、`405` 场景无法复用。
+4. 每个测试继续声明自己的 BASE_URL、BOOKING_URL 和 timeout，造成配置漂移。
+5. 异常信息只写 `AssertionError`，缺少 method、URL、params 和 timeout，排查成本高。
+6. 为了记录响应而直接打印 headers 或完整响应体，泄露 Token、Cookie 或密码。
+
+#### 记忆要点
+
+**Client 负责统一“怎么请求”，测试负责判断“结果是否正确”；封装重复协议细节，但不要封装具体业务预期。**
+
+### 代码落地
+
+本日将 Client 放入 `src/api_client.py`，通过 `tests/conftest.py` 的 `api_client` fixture 注入 base URL 和 timeout。健康检查、查询、创建、过滤、鉴权、PUT、PATCH 和 DELETE 测试均改为调用 `api_client.get/post/put/patch/delete`，直接调用 `requests` 只保留在 Client 内部。
+
+Client 统一生成相对路径对应的完整 URL，合并默认 `Accept` header 和场景 headers，并通过 `token` 参数生成 Cookie。业务状态码、响应字段和资源生命周期断言继续留在测试中；网络异常则包装为带安全上下文的 `ApiRequestError`。
+
+目标范围内的 API 全量回归为 14 条测试，全部通过。
+
+### 知识验收
+
+1. API Client 和测试用例分别负责什么？
+2. 为什么 Client 不能统一断言 `response.status_code == 200`？
+3. Fixture 在 Client 接入中解决了什么问题？
+4. 哪些请求信息应该进入错误上下文，哪些敏感信息必须脱敏？
+5. 为什么“创建了 Client”但测试仍直接调用 `requests` 不算完成封装？
+
+### 关联产出
+
+- Client：`test-projects/03-restful-booker-api/src/api_client.py`
+- Fixture：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 迁移测试：`test-projects/03-restful-booker-api/tests/`
+- 验证命令：`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：API 全量回归 `14 passed in 0.37s`
+- 证据目录：`artifacts/day-045/`
+- 当天记录：`daily-log/day-045.md`
+
+## Day 46：Booking Client
+
+### 核心知识点
+
+领域客户端（domain client）位于通用 HTTP Client 和测试用例之间，用业务对象和动作封装 endpoint 映射。对本项目而言，`BookingClient` 负责表达 booking 的创建、列表查询、详情查询、整体更新、部分更新和删除；测试继续负责验证 HTTP 状态、响应结构和业务结果。
+
+### 它解决的问题
+
+如果每个测试都知道 `/booking` 路径、HTTP 方法和参数组织方式，接口路径变化时需要批量修改，测试也会被协议细节淹没。领域 Client 可以让测试写出 `booking_client.create_booking(payload)` 这样的业务动作，同时避免把状态码或业务 expected 隐藏在封装内部。
+
+### 理论基础
+
+#### 三层职责模型
+
+| 层次 | 负责什么 | 不负责什么 |
+| --- | --- | --- |
+| `RestfulBookerClient` | base URL、timeout、headers、HTTP 方法、请求发送、网络异常 | 不知道 booking 业务语义，不决定业务状态码 |
+| `BookingClient` | booking endpoint 映射、领域参数组织、Token 传递 | 不断言 `200`、`404` 或响应字段，不吞掉原始响应 |
+| 测试用例 | 场景编排、状态码、响应结构、字段和业务规则断言 | 不重复拼接 booking URL，不直接处理通用 HTTP 细节 |
+
+职责边界可以记成：
+
+```text
+RestfulBookerClient：怎么发送 HTTP
+        ↓
+BookingClient：对 booking 做什么
+        ↓
+测试用例：结果应该是什么
+```
+
+#### 领域方法与 endpoint 映射
+
+| 领域方法 | HTTP 请求 | 测试关注点 |
+| --- | --- | --- |
+| `create_booking(payload)` | `POST /booking` | `200`、bookingid、返回对象和请求字段 |
+| `get_bookings(params)` | `GET /booking` | 列表类型、元素结构和过滤结果 |
+| `get_booking(booking_id)` | `GET /booking/{id}` | 动态 ID 对应的详情和持久化结果 |
+| `update_booking(id, payload, token)` | `PUT /booking/{id}` | 完整替换、认证和响应一致性 |
+| `partial_update_booking(id, payload, token)` | `PATCH /booking/{id}` | 指定字段变化和未指定字段保护 |
+| `delete_booking(id, token)` | `DELETE /booking/{id}` | 删除状态、删除后查询和重复删除契约 |
+
+#### 为什么返回原始 Response
+
+领域方法当前返回原始 `requests.Response`：
+
+```python
+response = booking_client.create_booking(payload)
+
+assert response.status_code == 200
+data = response.json()
+assert isinstance(data["bookingid"], int)
+assert data["booking"] == payload
+```
+
+这样测试仍能同时验证 HTTP 层和业务层。如果领域方法只返回 JSON 或 bookingid，可能丢失状态码、headers、错误响应和原始响应结构；直接读取 `bookingid` 还可能把接口错误变成难定位的 `KeyError`。
+
+以后可以增加 `create_booking_id()` 之类的数据准备辅助方法，但它不能替代核心领域方法的原始 Response 返回。
+
+#### 适用场景与边界
+
+- 适用：同一业务资源有多个 CRUD 场景，测试重复出现 endpoint 和参数组织逻辑时。
+- 适用：希望测试用例表达业务动作，同时保留底层响应供断言的接口回归框架。
+- 边界：不要把所有资源和所有业务规则塞入一个万能 Client；每个领域 Client 应围绕一个资源或有限的业务边界。
+- 边界：不要在领域方法中固定断言状态码，否则成功、鉴权失败、资源不存在等场景无法复用。
+- 边界：本日只封装 Booking Client，Token 获取仍由通用 `api_client` 完成；独立 `AuthClient` 可以作为后续演进。
+
+#### 常见错误、反例与假通过
+
+1. 新建 `BookingClient` 但测试仍直接调用 `api_client`，造成“有封装、未使用”的假完成。
+2. 在 `BookingClient` 中写 `assert response.status_code == 200`，破坏负向测试和不同 endpoint 契约。
+3. 领域方法直接返回 `response.json()["bookingid"]`，隐藏状态码和错误响应。
+4. 领域 Client 继续让测试传入完整 `/booking/{id}` URL，说明 endpoint 边界没有真正封装。
+5. 把鉴权 Token 获取逻辑强行放进 Booking Client，导致 booking 和 auth 两个领域耦合。
+6. 为了简化测试而吞掉原始 Response，使测试无法验证 HTTP 状态和 headers。
+
+#### 记忆要点
+
+**通用 Client 处理 HTTP，领域 Client 表达资源动作，测试保留业务验证；领域封装减少重复，但不能隐藏证据。**
+
+### 代码落地
+
+本日新增 `src/booking_client.py` 和 `booking_client` Fixture。Booking 相关测试已经从 `api_client.post("/booking")` 等底层调用迁移为 `booking_client.create_booking()`、`get_booking()`、`update_booking()`、`partial_update_booking()` 和 `delete_booking()`。
+
+领域方法只负责 endpoint 映射、payload 和 Token 传递，并返回原始 Response。健康检查和认证测试仍使用通用 `api_client`，因此三层边界保持清晰。
+
+目标范围内 API 全量回归为 14 条测试，全部通过。
+
+### 知识验收
+
+1. 通用 Client、领域 Client 和测试分别负责什么？
+2. 为什么 `BookingClient` 不应该直接断言状态码？
+3. 为什么领域方法当前返回原始 Response？
+4. `create_booking()` 与 `create_booking_id()` 的职责有什么不同？
+5. 为什么本日没有把 Token 获取放进 `BookingClient`？
+
+### 关联产出
+
+- 领域 Client：`test-projects/03-restful-booker-api/src/booking_client.py`
+- 通用 Client：`test-projects/03-restful-booker-api/src/api_client.py`
+- Fixture：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 迁移测试：`test-projects/03-restful-booker-api/tests/`
+- 验证命令：`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：API 全量回归 `14 passed in 0.73s`
+- 证据目录：`artifacts/day-046/`
+- 当天记录：`daily-log/day-046.md`
+
+## Day 47：Fixture 生命周期
+
+### 核心知识点
+
+`yield fixture` 用于管理测试资源的完整生命周期：`yield` 前属于 setup，负责获取 Token 和创建 booking；`yield` 后属于 teardown，负责回收测试创建的资源。
+
+### 它解决的问题
+
+如果测试各自创建 booking，却没有统一清理，测试运行会污染共享环境，也可能在断言失败后遗留数据。把创建和清理放进同一个 Fixture，可以让测试只关注业务验证，并使资源回收逻辑集中、可复用。
+
+### 理论基础
+
+#### setup、测试和 teardown
+
+```text
+Fixture setup：获取 Token → 创建 booking → yield 动态 bookingid
+                                      ↓
+                                  测试执行
+                                      ↓
+Fixture teardown：GET 同一 bookingid → 仍存在则 DELETE
+```
+
+`yield` 之后的代码会在测试结束时执行，即使测试中的断言失败或测试抛出异常。通常将清理放在 `try/finally` 中，避免测试主体异常时跳过 teardown。
+
+#### 动态资源和清理契约
+
+- 必须使用创建响应中的动态 `bookingid`，确保清理的是本次测试自己的资源。
+- 清理前可先 GET：返回 `200` 表示资源仍存在，需要 DELETE；返回 `404` 表示测试本身已经删除，视为清理完成。
+- DELETE 成功状态应按接口契约断言；本项目使用 `201`，并将删除竞态下的 `404` 视为幂等清理结果。
+- Token 应在创建前获取，避免资源创建成功后鉴权失败而无法回收。
+
+#### 容错、幂等和失败隔离
+
+清理逻辑应尽量幂等：执行一次或重复执行，最终都应达到“资源不存在”的状态。测试本身已经删除资源时，Fixture 不应再次删除并制造假失败。另一方面，teardown 中的错误信息也要清晰，避免清理失败完全掩盖原始测试失败；网络异常、不可预期状态码等策略可按项目需要继续增强。
+
+#### 常见错误、反例与假通过
+
+1. 只定义 `created_booking` Fixture，却没有任何测试使用它，形成“有封装、未生效”的假完成。
+2. 把删除写在测试主体末尾，测试中途断言失败时清理代码不会执行。
+3. 使用固定 bookingid 清理，可能误删历史数据或删除其他测试的资源。
+4. 测试主动删除后，Fixture 无条件再次 DELETE，把正常的 `404` 误判为失败。
+5. teardown 直接用严格断言处理所有异常，导致清理问题掩盖原始业务断言失败。
+6. 只验证 DELETE 返回成功，不用同一个动态 ID 回查资源是否真的不存在。
+
+#### 记忆要点
+
+**Fixture 管理资源生命周期，`yield` 分隔 setup 和 teardown；清理必须放在 `finally` 思维下设计，并对重复清理保持容错和幂等。**
+
+### 代码落地
+
+本日完善 `tests/conftest.py` 中的 `created_booking` Fixture：统一获取 Token、创建 booking，并将 `booking_id`、Token 和原始 payload 提供给测试；测试结束后通过 `finally` 查询并删除资源。
+
+删除测试和无 Token 更新测试已实际使用该 Fixture。删除测试主动删除资源后，Fixture 收到 `404` 会跳过重复删除；若测试在断言处失败，Fixture 仍会进入 teardown。
+
+### 知识验收
+
+1. 为什么 booking 的创建和删除适合放在同一个 `yield fixture` 中？
+2. 测试断言失败时，为什么 `yield` 后的清理代码仍会执行？
+3. 为什么要使用本次创建响应中的动态 `bookingid`？
+4. 测试本身已删除资源时，Fixture 应如何避免重复删除失败？
+5. 为什么资源清理应尽量设计成幂等？
+
+### 关联产出
+
+- Fixture：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 使用 Fixture 的删除测试：`test-projects/03-restful-booker-api/tests/test_delete_booking.py`
+- 使用 Fixture 的鉴权负向测试：`test-projects/03-restful-booker-api/tests/test_update_booking.py`
+- 验证命令：`.\.venv\Scripts\pytest.exe tests -q`
+- 验证结果：API 全量回归 `14 passed in 0.56s`
+- 证据文件：`artifacts/day-047/verification.md`
+- 当天记录：`daily-log/day-047.md`
+
+## Day 48：数据工厂
+
+### 核心知识点
+
+测试数据工厂（data factory）用一个可复用函数集中生成测试数据。它提供完整、合法的默认基线，通过 `overrides` 允许具体测试只修改当前真正关心的字段，并为每次调用生成可区分的数据。
+
+### 它解决的问题
+
+把 payload 直接散落在测试函数中，会导致重复、固定数据冲突和修改成本高。所有测试共用同一个可变字典，还可能因为一个测试修改嵌套字段而污染另一个测试。数据工厂将数据准备与业务验证分离，使测试主体更短、更清楚。
+
+### 理论基础
+
+#### 三个设计原则
+
+| 设计元素 | 作用 | 本项目实现 |
+| --- | --- | --- |
+| 唯一字段 | 隔离测试数据，减少冲突和相互污染 | 使用 `uuid4` 生成唯一 `firstname` |
+| 默认字段 | 提供合法、完整、可直接发送的基线 | 默认价格、押金状态、日期和附加需求 |
+| `overrides` | 让场景只改变真正关注的条件 | `build_booking_payload(totalprice=999)` |
+
+可以把数据工厂记成：
+
+```text
+合法默认基线 + 唯一标识 + 场景覆盖
+                  ↓
+         独立、可复用的测试 payload
+```
+
+#### 覆盖和嵌套字段
+
+工厂先创建完整默认对象，再应用调用方传入的覆盖值。顶层字段可以直接覆盖；`bookingdates` 等嵌套对象应进行局部合并，避免只覆盖 `checkin` 时丢失默认的 `checkout`。
+
+覆盖操作应使用深拷贝或每次新建对象，不能直接修改共享默认字典。否则测试 A 对 `bookingdates` 的修改可能改变测试 B 后续得到的数据。
+
+#### 唯一性和合法性的边界
+
+唯一不等于随机到不可复现。唯一值应放在不影响业务规则的字段中，并控制长度和格式；日期、价格、布尔字段等仍应遵守 API 合法约束。工厂负责准备数据，不负责发送 HTTP 请求，也不负责断言响应结果。
+
+#### 常见错误、反例与假通过
+
+1. 创建了工厂但没有任何测试调用，形成“有封装、未生效”的假完成。
+2. 使用模块级可变 `DEFAULT_PAYLOAD`，测试修改嵌套字段后污染其他测试。
+3. 只做浅拷贝，导致顶层字典独立但 `bookingdates` 仍然共享。
+4. 只覆盖 `checkin` 却直接替换整个 `bookingdates`，意外丢失 `checkout`。
+5. 唯一值过长、格式不合法或放入有业务语义限制的字段，导致数据生成本身制造失败。
+6. 把 HTTP 请求、状态码断言或业务规则塞进工厂，混淆数据准备和测试验证职责。
+
+#### 记忆要点
+
+**唯一字段负责隔离，默认字段负责合法基线，`overrides` 负责场景差异；每次调用返回独立数据，工厂只准备数据，不执行请求和断言。**
+
+### 代码落地
+
+本日新增 `tests/factories.py` 中的 `build_booking_payload(**overrides)`：使用 `uuid4` 生成唯一 `firstname`，动态生成未来日期，复制覆盖参数，并对 `bookingdates` 做局部合并。
+
+创建测试、创建后查询流程、PUT/PATCH 测试和 booking Fixture 已迁移到数据工厂；新增工厂行为测试，验证唯一性、默认值保留、覆盖能力和嵌套对象隔离。
+
+### 知识验收
+
+1. 数据工厂中的唯一字段、默认字段和 `overrides` 分别解决什么问题？
+2. 为什么每次调用工厂都应返回独立字典？
+3. 为什么 `bookingdates` 适合采用局部合并而不是直接整体替换？
+4. 数据工厂为什么不应该负责发送 HTTP 请求或业务断言？
+5. 如何在保证唯一性的同时维持测试数据的合法性和可维护性？
+
+### 关联产出
+
+- 数据工厂：`test-projects/03-restful-booker-api/tests/factories.py`
+- 工厂行为测试：`test-projects/03-restful-booker-api/tests/test_factories.py`
+- 接入测试：`test-projects/03-restful-booker-api/tests/test_create_booking.py`、`test_booking_flow.py`、`test_update_booking.py`
+- Fixture 接入：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 验证证据：`artifacts/day-048/verification.md`
+- 当天记录：`daily-log/day-048.md`
+
+## Day 49：参数化边界
+
+### 核心知识点
+
+参数化边界测试把“相同的请求步骤和断言逻辑”与“不同的输入数据和预期结果”分离。`pytest.mark.parametrize` 会将每组参数作为独立测试执行和报告，适合系统覆盖价格、日期、姓名等字段的正常边界、极限边界和非法边界。
+
+### 它解决的问题
+
+如果每个边界都复制一个测试函数，代码重复、维护成本高，也容易只修改了其中一个 case 的断言。参数化把测试流程集中到一个函数，把覆盖范围集中到参数表；新增边界通常只需要增加一行数据，并可通过 `id` 让失败报告直接说明是哪种输入。
+
+### 理论基础
+
+#### 边界数据的三类
+
+| 类型 | 含义 | 例子 | 预期处理 |
+| --- | --- | --- | --- |
+| 正常边界 | 合法范围的最小、最大或临界值 | `totalprice=0`、单字符姓名 | 按契约成功，并验证响应字段和持久化 |
+| 极限边界 | 接近长度、数值或时间范围限制的输入 | 大价格、超长姓名、同日入住退房 | 按明确规则接受或拒绝 |
+| 非法边界 | 类型、格式或业务关系不合法 | 负数价格、非法日期、`checkout < checkin` | 通常应返回明确的 4xx，并说明错误 |
+
+设计边界时不能只写“我觉得应该是 400”。状态码、响应体和业务规则要分别记录：接口可能接受请求，但业务上仍然是不应该接受的输入。
+
+#### 参数化的最小结构
+
+```python
+BOUNDARY_CASES = [
+    pytest.param(
+        {"totalprice": 0},
+        200,
+        {("totalprice",): 0},
+        id="price-zero-accepted",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("overrides", "expected_status", "expected_fields"),
+    BOUNDARY_CASES,
+)
+def test_boundary(overrides, expected_status, expected_fields):
+    payload = build_booking_payload(**overrides)
+    response = create_booking(payload)
+
+    assert response.status_code == expected_status
+```
+
+参数表至少应包含：输入值、HTTP 预期、成功时需要核对的业务字段；测试 ID 应体现边界含义，而不是只使用 `case1`、`case2`。
+
+#### 完整验证链
+
+```text
+参数化输入
+    ↓
+构造合法基线并覆盖指定字段
+    ↓
+发送请求并验证 HTTP 状态码
+    ↓
+验证响应字段或错误信息
+    ↓
+成功时使用动态 ID GET 回查持久化
+    ↓
+清理本次创建的资源
+```
+
+`200` 只说明请求被接口处理，不能单独证明业务规则正确。成功场景要继续检查响应体和 GET 结果；非法场景要把业务预期与接口当前行为对照，避免为了让测试变绿而修改正确预期。
+
+#### 使用 `xfail` 记录已确认的接口缺陷
+
+当业务契约明确要求拒绝某个输入，但当前服务实际返回成功时，可以使用严格的 `xfail` 暂时保留预期：
+
+```python
+pytest.param(
+    {"totalprice": -1},
+    400,
+    {},
+    marks=pytest.mark.xfail(
+        strict=True,
+        reason="当前接口接受负数价格，缺少业务校验。",
+    ),
+    id="price-negative-should-reject",
+)
+```
+
+`xfail` 不是把缺陷隐藏起来：当前行为不符合预期时报告为 xfailed；接口修复后如果仍保留标记，`strict=True` 会产生 XPASS 并提醒测试维护者删除该标记、恢复正常断言。
+
+### 常见错误、反例与假通过
+
+1. 只断言所有 case 都返回 `200`，没有验证边界值是否被正确保存或转换。
+2. 看到接口对非法输入返回 `200`，就把预期偷偷改成 `200`，把业务缺陷伪装成测试通过。
+3. 所有参数使用同一个固定 ID，导致边界测试之间互相修改或污染数据。
+4. 测试创建资源后不清理，重复执行或全量回归时让数据环境持续膨胀。
+5. 参数没有 `id`，失败报告只显示 `case0`，定位具体边界需要重新翻代码。
+6. 只覆盖无效值，缺少 0、1、单字符、同日等合法临界值，无法证明接口对合法边界的支持。
+7. 将“HTTP 请求被接受”“字段被保存”和“业务规则满足”混成一个断言，无法准确分类问题。
+
+### 记忆要点
+
+**参数化负责扩大输入覆盖，ID 负责解释失败，状态码负责验证接口处理结果，响应体和回查负责验证数据与持久化，业务契约负责判断输入是否应该被接受。**
+
+### 代码落地
+
+本日新增 `tests/test_boundaries.py`，用一套创建、动态 ID 回查和清理流程覆盖价格、日期、姓名共 12 组参数。6 组合法边界正常通过；6 组业务上应拒绝但当前接口接受的场景使用 `strict=True` 标记为 xfailed，明确保留校验缺陷证据。
+
+受控探测确认当前接口会接受负数价格、字符串价格、空或纯空格姓名、日期倒置和非法日期；其中部分值会被转换后保存。这些现象不能仅凭 `200` 判定为业务正确。
+
+### 知识验收
+
+1. 参数化测试解决了什么重复问题？参数表至少需要包含哪些信息？
+2. 为什么 `200` 不能单独证明边界输入符合业务规则？
+3. 正常边界、极限边界和非法边界如何区分？
+4. 什么时候可以使用严格 `xfail`？接口修复后如何避免遗留标记？
+5. 为什么边界测试成功创建后仍要使用动态 ID 回查并清理？
+
+### 关联产出
+
+- 参数化边界测试：`test-projects/03-restful-booker-api/tests/test_boundaries.py`
+- 数据工厂：`test-projects/03-restful-booker-api/tests/factories.py`
+- 验证命令：`.\.venv\Scripts\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：目标测试 `6 passed, 6 xfailed`；API 全量回归 `22 passed, 6 xfailed`
+- 验证证据：`artifacts/day-049/verification.md`
+- 当天记录：`daily-log/day-049.md`
+
+## Day 50：缺失字段
+
+### 核心知识点
+
+API 负向测试验证接口收到缺失、错误、越界或不符合业务规则的请求时，是否能够正确拒绝、返回可理解的错误，并且不产生错误数据。它不只是验证“请求失败”，还要验证失败的 HTTP 状态、错误信息、数据状态和后续影响。
+
+### 它解决的问题
+
+只覆盖正常请求，只能证明合法输入在一个路径上可用，不能证明接口足够健壮。缺失必填字段可能导致 500、脏数据、异常资源或不明确错误，进而影响后续查询、更新、统计和其他测试。负向测试将这些输入边界固化为可重复回归的契约。
+
+### 理论基础
+
+#### 缺失字段测试矩阵
+
+对于 booking，核心必填字段包括：
+
+```text
+firstname
+lastname
+totalprice
+depositpaid
+bookingdates
+    checkin
+    checkout
+```
+
+`additionalneeds` 更适合作为可选字段。逐个删除字段时，应保留其他字段合法，确保失败原因只来自当前被删除的字段。
+
+| 缺失字段 | 业务预期 | 需要观察的实际行为 |
+| --- | --- | --- |
+| `firstname` | `400`，说明必填 | 是否返回 400、500 或错误创建 |
+| `lastname` | `400`，说明必填 | 是否返回明确错误 |
+| `totalprice` | `400`，说明必填 | 是否发生服务端异常 |
+| `depositpaid` | `400`，说明必填 | 是否被错误设置默认值 |
+| `bookingdates` | `400`，说明必填 | 是否返回结构性错误 |
+| `bookingdates.checkin` | `400`，说明必填 | 是否错误接受不完整嵌套对象 |
+| `bookingdates.checkout` | `400`，说明必填 | 是否错误接受不完整嵌套对象 |
+
+业务预期和当前实现必须分开：如果契约要求 400，而服务实际返回 500，应记录为错误处理缺陷；不能为了让测试通过而把 `expected_status` 改成 500。
+
+#### 负向测试的验证层次
+
+```text
+构造合法完整基线
+    ↓
+只删除一个目标字段
+    ↓
+验证 HTTP 状态码
+    ↓
+验证错误信息或响应结构
+    ↓
+确认没有创建错误资源
+    ↓
+如果错误创建，使用动态 ID 清理
+```
+
+状态码验证接口如何处理请求，响应体验证错误是否可解释，业务契约验证拒绝是否符合要求。三者不能混成一个“不是 200 就算通过”的断言。
+
+#### 断言失败后的资源清理
+
+负向测试本身也要考虑被测服务出错的情况。如果接口本应返回 400，却错误地返回 200 并创建 booking，那么断言必须失败，但测试仍要清理资源：
+
+```python
+booking_id = None
+
+try:
+    response = booking_client.create_booking(invalid_payload)
+    booking_id = extract_booking_id(response)
+
+    assert response.status_code == 400
+finally:
+    cleanup_booking(booking_id, token)
+```
+
+把清理写在断言之后是不安全的，因为断言一旦失败，后续清理语句不会执行。`try/finally` 确保测试结论和资源回收彼此独立。
+
+#### 使用严格 `xfail` 留存已确认缺陷
+
+当合理业务预期已经明确，但当前服务的行为不符合预期时，可以对参数化 case 使用：
+
+```python
+pytest.param(
+    "firstname",
+    400,
+    marks=pytest.mark.xfail(
+        strict=True,
+        reason="当前接口缺少 firstname 时返回 500，应返回 400。",
+    ),
+    id="missing-firstname",
+)
+```
+
+这表示“测试预期仍然是 400，当前服务缺陷已知且可复现”，而不是把 500 认定为正确。`strict=True` 还能在服务修复后产生 XPASS，提醒维护者移除临时标记、恢复正常通过断言。
+
+### 常见错误、反例与假通过
+
+1. 只断言请求没有返回 200，不区分合理的 400、错误的 500 和其他异常状态。
+2. 当前服务返回 500，就把预期改为 500，导致测试失去需求约束。
+3. 一次删除多个字段，无法判断到底是哪一个字段触发了行为。
+4. 只验证状态码，不验证错误信息、响应结构和是否创建了资源。
+5. 把清理放在断言之后，断言失败时留下接口错误创建的 booking。
+6. 复用并原地修改同一个 payload，使后面的缺失字段 case 受到前一个 case 影响。
+7. 把可选字段当成必填字段，造成错误的产品缺陷记录。
+
+### 记忆要点
+
+**负向测试要验证拒绝方式，不是只验证失败；一次只缺失一个字段，预期不能迎合实现，断言失败也必须清理异常资源。**
+
+### 代码落地
+
+本日新增 `tests/test_invalid_payloads.py`，使用 `pytest.mark.parametrize` 覆盖 7 个 booking 必填字段缺失场景。每个 case 从数据工厂生成独立合法基线，再按点号路径删除一个字段，预期统一为 `400 Bad Request`。
+
+本地接口对 7 组场景均返回 `500 Internal Server Error`，因此测试以 `strict=True xfail` 留证。测试还会提取错误返回 `200` 时的动态 `bookingid`，在 `finally` 中清理，避免负向测试污染环境。
+
+### 知识验收
+
+1. API 负向测试除了验证失败，还应验证哪些方面？
+2. 为什么缺失字段必须一次只删除一个？
+3. 业务预期为 400、实际返回 500 时，测试和缺陷应该如何记录？
+4. 为什么异常资源清理必须放进 `finally`？
+5. `strict=True xfail` 在当前接口缺陷被修复后有什么作用？
+
+### 关联产出
+
+- 缺失字段负向测试：`test-projects/03-restful-booker-api/tests/test_invalid_payloads.py`
+- 数据工厂：`test-projects/03-restful-booker-api/tests/factories.py`
+- 领域 Client：`test-projects/03-restful-booker-api/src/booking_client.py`
+- 验证命令：`.\.venv\Scripts\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：目标测试 `7 xfailed`；API 全量回归 `22 passed, 13 xfailed`
+- 验证证据：`artifacts/day-050/verification.md`
+- 当天记录：`daily-log/day-050.md`
+
+## Day 51：类型错误
+
+### 核心知识点
+
+API 输入类型边界（input type boundary）验证请求中的 JSON 值是否使用契约规定的数据类型。一个值看起来能够被转换成正确含义，不代表它符合接口契约；服务端静默转换错误类型会掩盖调用方缺陷，并可能把非规范数据写入系统。
+
+### 它解决的问题
+
+只测试合法 payload，无法证明接口能安全拒绝错误类型。只要服务端恰好能把 `"200"` 转成 `200`，一个只看 200 响应的测试就会假通过。类型负向测试明确区分“请求符合契约”和“实现碰巧容忍请求”，用于发现校验缺失、隐式转换、500 异常以及错误资源持久化风险。
+
+### 理论基础
+
+#### JSON 类型与格式是两层约束
+
+JSON 的 number、string、boolean、object、array 和 null 是不同类型。字段契约通常先约束类型，再对类型内部的内容施加格式或业务规则。
+
+| 字段与输入 | JSON 类型 | 结论 |
+| --- | --- | --- |
+| `totalprice: 200` | number | 类型正确 |
+| `totalprice: "200"` | string | 类型错误，即使可以转换成数字 |
+| `depositpaid: true` | boolean | 类型正确 |
+| `depositpaid: "true"` | string | 类型错误，即使文字含义相似 |
+| `checkin: "not-a-date"` | string | 类型正确、日期格式错误 |
+| `checkin: 12345` | number | 类型错误，尚未进入格式判断 |
+| `checkin: null` | null | 是否允许取决于 nullable 或必填契约，应单独测试 |
+
+因此，类型错误和格式错误不要混成同一个“坏数据”集合。混合后即使测试失败，也难以判断缺失的是 Schema 类型校验还是字段格式校验。
+
+#### 单变量类型错误矩阵
+
+每个负向场景应从完整合法基线出发，一次只替换一个字段：
+
+```text
+合法 payload
+  → 选择一个字段路径
+  → 替换为错误 JSON 类型
+  → POST 请求
+  → 验证 400 和无资源 ID
+  → 若接口错误创建资源，始终清理
+```
+
+嵌套字段可以使用元组路径统一表达：
+
+```python
+def set_field(payload, field_path, value):
+    target = payload
+    for key in field_path[:-1]:
+        target = target[key]
+    target[field_path[-1]] = value
+
+
+cases = [
+    (("totalprice",), "200"),
+    (("depositpaid",), "true"),
+    (("bookingdates", "checkin"), 12345),
+]
+```
+
+这套结构把“测试哪个字段、发送什么错误值”和“如何发请求及断言”分开，既支持顶层字段，也支持任意深度的嵌套字段。
+
+#### 预期、观察和假设必须分开
+
+类型负向测试的业务预期是错误请求返回 400 级响应，并且不创建资源。实际实验可能得到不同结果：
+
+- **预期**：三种错误类型均应返回 `400 Bad Request`。
+- **观察**：本地接口均返回 200；字符串价格被转换成数字，字符串布尔值被转换成布尔值，数字日期被转换成 `"1970-01-01"`。
+- **假设**：数字日期可能经过时间值或时间戳转换，但仅凭响应不能确认具体实现根因。
+
+不能因为实际返回 200 就把测试预期改成 200。也不能把未经源码或日志确认的转换机制写成事实。
+
+#### 错误接受请求时仍要清理
+
+负向请求有可能被接口错误接受并返回动态资源 ID。测试应先安全提取整数 ID，再在 `finally` 中清理，使契约断言失败和环境回收相互独立：
+
+```python
+booking_id = None
+
+try:
+    response = booking_client.create_booking(invalid_payload)
+    booking_id = extract_integer_id(response)
+finally:
+    if booking_id is not None:
+        delete_booking(booking_id)
+
+assert response.status_code == 400
+assert booking_id is None
+```
+
+使用 `is not None` 比真假判断更精确；只把整数 ID 交给清理函数，可以避免错误响应中的任意字符串被误当作资源标识。
+
+#### 严格 xfail 只应容纳已知缺陷
+
+已确认缺陷可以保留 400 断言，并使用严格 xfail：
+
+```python
+pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="接口接受错误类型并返回 200；契约预期为 400。",
+)
+```
+
+`strict=True` 使接口修复后的正常通过变成 XPASS，从而提醒移除缺陷标记。`raises=AssertionError` 将已知失败限制为契约断言；清理失败使用 `RuntimeError`，不会被当作已知产品缺陷吞掉。若已知行为是 200，还应在断言前拒绝 500 等新状态，否则不同缺陷也可能被宽泛的 xfail 掩盖。
+
+### 适用场景与边界
+
+类型边界测试适用于有明确字段契约的 JSON API，尤其是价格、布尔开关、嵌套对象、数组和标识符字段。它不能代替格式、范围、必填、跨字段业务规则或授权测试；这些约束应各自建立能够准确归因的场景。没有明确规格时，可以记录当前行为和风险建议，但不要擅自把个人偏好写成产品规则。
+
+### 常见错误、反例与假通过
+
+1. 把可转换字符串当作合法数字或布尔值，默认接受服务端隐式转换。
+2. 同一个 payload 同时破坏多个字段，导致失败无法归因。
+3. 把类型错误、格式错误、null 和缺失字段混在一个参数集合中。
+4. 接口实际返回 200 或 500 后，修改期望值迎合实现。
+5. 只断言状态码，不检查错误请求是否返回资源 ID 或产生持久化数据。
+6. 把清理放在失败断言之后，使异常资源残留在环境中。
+7. 使用不受限制的 xfail，把清理异常或新的 500 行为也误记为同一个已知缺陷。
+8. 根据一次响应直接断言服务端内部转换机制，没有区分观察事实与根因假设。
+
+### 记忆要点
+
+**先验证 JSON 类型，再验证内容格式；错误类型应被明确拒绝，不能把隐式转换当作契约兼容，契约失败也不能牺牲资源清理。**
+
+### 代码落地
+
+本日新增 `tests/test_invalid_types.py`，使用字段路径参数化覆盖字符串 `totalprice`、字符串 `depositpaid` 和数字 `bookingdates.checkin`。三个场景均保留 400 预期，并以 `strict=True, raises=AssertionError` 的 xfail 记录本地接口返回 200 的已知缺陷。测试还安全提取动态 booking ID，在断言前清理意外资源，并让清理异常或新的状态码真正失败。
+
+### 知识验收
+
+1. 为什么 `200` 和 `"200"` 对 JSON 契约不是相同输入？
+2. `"not-a-date"` 与 `12345` 分别属于哪类日期字段错误？
+3. 服务端自动把错误类型转成正确类型时，为什么测试仍应失败？
+4. 错误请求返回 200 并创建资源时，为什么必须在断言失败后仍能清理？
+5. `strict=True`、`raises=AssertionError` 和清理使用 `RuntimeError` 分别保护什么风险？
+6. 观察到 `12345` 变成 `1970-01-01` 后，哪些是事实，哪些只能写成假设？
+
+### 关联产出
+
+- 类型错误测试：`test-projects/03-restful-booker-api/tests/test_invalid_types.py`
+- 数据工厂：`test-projects/03-restful-booker-api/tests/factories.py`
+- 验证命令：`.\.venv\Scripts\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_invalid_types.py -q`
+- 验证结果：目标测试 `3 xfailed`；API 全量回归 `22 passed, 16 xfailed`
+- 验证证据：`artifacts/day-051/verification.md`
+- 当天记录：`daily-log/day-051.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -4275,6 +5401,17 @@ for summary in response.json():
 | POST 与 JSON 请求体 | Day 38 | 请求序列化、资源 ID、响应字段一致性、持久化回查边界与清理风险 |
 | 创建后查询与动态 ID 关联 | Day 39 | POST 输出驱动 GET、资源可见性、字段一致性和数据链路归因 |
 | 查询参数与过滤语义 | Day 40 | params 编码、列表到详情核对、equals/after 比较和数据环境归因 |
+| Token 鉴权与凭据管理 | Day 41 | HTTP 与业务认证结果分层、fixture 注入、环境变量和敏感信息脱敏 |
+| PUT 完整更新与认证头 | Day 42 | 整体替换、Cookie Token、即时响应、持久化回查、动态 ID 和 403 访问控制 |
+| PATCH 部分更新 | Day 43 | 部分 payload、未修改字段保护、认证头、动态 ID 和持久化回查 |
+| yield Fixture 生命周期与资源清理 | Day 47 | setup/teardown、`yield`、`try/finally`、动态 ID、幂等清理和失败后回收 |
+| 测试数据工厂 | Day 48 | 唯一字段、合法默认值、`overrides`、嵌套字段合并和数据隔离 |
+| 参数化边界测试 | Day 49 | 边界分类、参数化 case ID、状态码与业务结果分层、严格 xfail 和动态回查 |
+| API 负向测试与缺失字段 | Day 50 | 必填字段矩阵、400/500 预期分离、错误资源清理和严格 xfail 缺陷留证 |
+| API 输入类型边界 | Day 51 | JSON 类型与格式分层、单变量错误矩阵、隐式转换风险、安全清理和受限严格 xfail |
+| 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
+| API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
+| Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |
 
 ## 每日完结后的知识落盘流程
 

@@ -1,5 +1,5 @@
 {
-  "current_day": 41,
+  "current_day": 52,
   "completed_days": [
     1,
     2,
@@ -40,7 +40,18 @@
     37,
     38,
     39,
-    40
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
   ],
   "history": [
     {
@@ -282,6 +293,72 @@
       "date": "2026-08-25",
       "result": "完成参数化过滤查询测试：使用 params= 覆盖 firstname、lastname 和 checkin 日期边界，回查动态 bookingid 并按 equals/after 语义验证详情；目标测试 3 passed in 0.28s，API 全量 7 passed in 0.28s，记录空日期数据和 PowerShell Accept 头问题的归因与修正。",
       "next_step": "学习 Token 认证接口，获取 token 并验证有效/无效凭证行为。"
+    },
+    {
+      "day": 41,
+      "date": "2026-08-26",
+      "result": "完成 Token 鉴权测试：使用 fixture 注入 API 地址、超时和凭据，覆盖有效凭据返回 Token 与无效凭据返回 Bad credentials；目标测试 2 passed，API 全量回归 9 passed。",
+      "next_step": "Day 42：学习认证头和资源替换，创建后使用 PUT 完整更新预订并回查一致性。"
+    },
+    {
+      "day": 42,
+      "date": "2026-08-26",
+      "result": "完成完整 PUT 更新测试：创建动态 booking，获取 Token 后通过 Cookie 认证发送完整更新 payload，验证 PUT 响应和二次 GET 结果一致；可选无 Token 分支返回 403。目标测试 2 passed，API 全量回归 11 passed。",
+      "next_step": "Day 43：学习 PUT 与 PATCH 差异，只修改价格和附加需求，并验证其他字段保持不变。"
+    },
+    {
+      "day": 43,
+      "date": "2026-08-26",
+      "result": "完成 PATCH 部分更新测试：创建动态 booking，仅提交 totalprice 和 additionalneeds，验证目标字段变化、未指定字段保持原值，并通过二次 GET 确认持久化；目标测试 3 passed，API 全量回归 12 passed。",
+      "next_step": "Day 44：学习资源生命周期和清理保证，删除预订并确认后续查询返回预期状态。"
+    },
+    {
+      "day": 44,
+      "date": "2026-08-26",
+      "result": "完成删除与清理测试：创建本次测试自己的动态 booking，使用 Token 删除并验证 DELETE 返回 201，再用同一 bookingid GET 验证返回 404；额外覆盖重复删除返回 405。目标测试 2 passed，API 全量回归 14 passed。",
+      "next_step": "Day 45：建立请求封装边界，封装 base URL、超时、headers 和通用请求。"
+    },
+    {
+      "day": 45,
+      "date": "2026-08-26",
+      "result": "完成 API Client 请求封装：新增 src/api_client.py，集中处理 base URL、timeout、公共 headers、URL 拼接、通用 HTTP 请求和网络异常脱敏；通过 api_client fixture 迁移 API 测试，业务断言仍保留在测试中。API 全量回归 14 passed。",
+      "next_step": "Day 46：学习领域客户端，封装 booking CRUD 方法并让测试通过领域方法表达业务动作。"
+    },
+    {
+      "day": 46,
+      "date": "2026-08-26",
+      "result": "完成 Booking 领域客户端：新增 BookingClient 封装 booking 创建、列表查询、详情查询、PUT、PATCH、DELETE 方法，统一返回原始 Response；迁移 booking 测试通过领域方法表达业务动作，鉴权和健康检查继续使用通用 api_client。API 全量回归 14 passed。",
+      "next_step": "Day 47：掌握 yield Fixture 清理，创建 booking fixture 并自动删除，验证测试失败时也执行清理。"
+    },
+    {
+      "day": 47,
+      "date": "2026-08-27",
+      "result": "完成 Day 47：新增并实际使用 created_booking yield fixture，统一管理 Token、动态 booking 创建和 finally teardown；测试主动删除或断言失败后仍能安全清理，API 全量回归 14 passed。",
+      "next_step": "Day 48：学习可复用唯一测试数据，创建 booking data factory。"
+    },
+    {
+      "day": 48,
+      "date": "2026-08-28",
+      "result": "完成 Day 48：新增 build_booking_payload 数据工厂，使用唯一字段、合法默认值和 overrides 统一生成 booking 数据；迁移创建、查询流程、PUT/PATCH 测试与 Fixture，新增工厂行为测试，目标测试 4 passed、API 全量回归 16 passed。",
+      "next_step": "Day 49：学习参数化边界，为价格、日期和姓名增加至少六组有明确预期的测试。"
+    },
+    {
+      "day": 49,
+      "date": "2026-08-28",
+      "result": "完成 Day 49：新增价格、日期和姓名边界参数化测试，共 12 组；合法边界 6 passed，当前接口未满足业务校验预期的 6 组以 strict xfail 留证。目标测试 6 passed、6 xfailed，API 全量回归 22 passed、6 xfailed。",
+      "next_step": "Day 50：逐个删除 booking 必填字段，验证缺失字段的负向响应并记录接口校验缺陷。"
+    },
+    {
+      "day": 50,
+      "date": "2026-08-28",
+      "result": "完成 Day 50：新增 7 组缺失 booking 必填字段的参数化负向测试，预期 400；当前本地接口均返回 500，使用 strict xfail 留证，并在 finally 中保护意外资源清理。目标测试 7 xfailed，API 全量回归 22 passed、13 xfailed。",
+      "next_step": "Day 51：验证字符串价格、非法布尔值和嵌套字段错误的类型边界，并记录可重复的缺陷行为。"
+    },
+    {
+      "day": 51,
+      "date": "2026-08-28",
+      "result": "完成 Day 51：新增 3 组类型错误参数化测试，覆盖字符串价格、字符串布尔值和嵌套日期数字；接口均返回 200 并隐式转换，使用受限 strict xfail 留证并清理意外资源。目标测试 3 xfailed，API 全量回归 22 passed、16 xfailed。",
+      "next_step": "Day 52：提取错误响应断言辅助函数，统一负向场景的状态码和错误体断言。"
     }
   ]
 }
