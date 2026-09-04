@@ -60,6 +60,7 @@
 - [Day 51：类型错误](#day-51类型错误)
 - [Day 52：状态码与错误模型](#day-52状态码与错误模型)
 - [Day 53：JSON Schema](#day-53json-schema)
+- [Day 54：业务断言](#day-54业务断言)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -5647,6 +5648,151 @@ JSON Schema 适合 REST API 响应、配置文档、事件消息和版本化接�
 - 验证证据：`artifacts/day-053/verification.md`
 - 当天记录：`daily-log/day-053.md`
 
+## Day 54：业务断言
+
+### 核心知识点
+
+业务断言验证的是领域规则和状态不变量，而不只是响应是否“长得像一个合法 JSON”。Schema 可以验证字段存在、类型、嵌套结构和日期格式；业务测试还要验证多个字段之间的关系、数值范围和操作后的业务状态。
+
+### 它解决的问题
+
+如果只验证 `checkin` 和 `checkout` 都是合法日期，测试仍可能放过 `checkout` 早于 `checkin` 的预订。类似地，`totalprice` 是 integer 也不代表负数符合价格规则。业务断言把“结构正确”和“业务正确”分开，使失败能准确回答：是响应契约坏了，还是业务规则没有执行。
+
+### 理论基础
+
+#### 结构正确与业务正确
+
+| 验证层 | 典型断言 | 能证明什么 |
+| --- | --- | --- |
+| Schema | `checkin` 是 `string` 且符合 `date` 格式 | 单字段结构和格式正确 |
+| 业务规则 | `checkout >= checkin` | 两个字段之间的日期关系正确 |
+| Schema | `totalprice` 是 `integer` | 数值类型正确 |
+| 业务规则 | `totalprice >= 0` | 价格范围符合当前业务约定 |
+| 状态验证 | 创建后 GET 返回同一 booking | 规则结果已持久化且可回查 |
+
+两层不能互相替代：Schema 通过不代表业务规则通过；业务断言也不应取代通用结构校验。
+
+#### 日期关系要先明确边界
+
+本项目沿用已有边界约定：`checkout` 不得早于 `checkin`，因此合法关系是：
+
+```text
+checkin < checkout  → 合法
+checkin == checkout → 合法边界（同日订单）
+checkin > checkout  → 应拒绝
+```
+
+ISO 日期字符串在格式统一为 `YYYY-MM-DD` 时可以直接比较，但更清晰的业务代码应显式转成日期对象：
+
+```python
+from datetime import date
+
+checkin = date.fromisoformat(payload["bookingdates"]["checkin"])
+checkout = date.fromisoformat(payload["bookingdates"]["checkout"])
+
+assert checkout >= checkin
+```
+
+#### 数值范围要来自契约
+
+`totalprice = 0` 是否允许不能由测试作者凭常识决定。如果业务支持免费订单，边界可以写成：
+
+```text
+totalprice >= 0 → 合法
+totalprice < 0  → 拒绝
+```
+
+如果产品契约要求必须收费，则应改成 `totalprice > 0`，同时更新正向边界和负向预期。测试的职责是执行已定义的规则，而不是偷偷定义产品规则。
+
+#### 业务测试也要控制前置条件
+
+过滤、持久化和跨请求规则不应依赖服务重启后恰好存在的固定数据。可靠的业务测试应：
+
+1. 使用工厂创建本次测试自己的合法或边界 payload；
+2. 通过 POST 获得动态 `bookingid`；
+3. 用 GET 或过滤接口验证业务结果；
+4. 在 `finally` 中删除创建的资源，包括接口错误接受非法输入的情况。
+
+这能把失败范围限制在当前测试，并避免后续测试被残留数据污染。
+
+#### 未知失败与已知缺陷
+
+新发现的非法输入被接受时，测试应直接失败，先确认它是不是产品缺陷、脚本问题或环境问题。只有已经复现并明确记录的缺陷，才可以暂时使用：
+
+```python
+@pytest.mark.xfail(
+    strict=True,
+    reason="已确认当前接口接受负数 totalprice，缺少 totalprice >= 0 校验。",
+)
+def test_negative_totalprice_is_rejected(...):
+    ...
+```
+
+`strict=True` 很重要：接口修复后会出现 XPASS 并使测试失败，提醒团队移除过期缺陷标记，而不是永久隐藏修复状态。
+
+### 最小验证骨架
+
+```python
+def test_checkout_before_checkin_is_rejected(booking_client, ...):
+    payload = build_booking_payload(
+        bookingdates={
+            "checkin": "2026-09-10",
+            "checkout": "2026-09-05",
+        }
+    )
+    response = booking_client.create_booking(payload)
+
+    assert_error_response(response, expected_status=400)
+```
+
+实际测试还应在断言前提取可能返回的 `bookingid`，并在 `finally` 中清理意外创建的资源。合法边界则应创建后 GET 回查，验证规则结果确实被保存。
+
+### 本日规则矩阵
+
+| 场景 | 预期 | 当前结果 | 记录方式 |
+| --- | --- | --- | --- |
+| `checkout > checkin` | 200，创建并可回查 | 通过 | 正向断言 |
+| `checkout == checkin` | 200，作为同日边界 | 通过 | 正向边界断言 |
+| `checkout < checkin` | 400 | 当前接口返回 200 | 已确认缺陷，`strict xfail` |
+| `totalprice = 0` | 200 | 通过 | 正向边界断言 |
+| `totalprice < 0` | 400 | 当前接口返回 200 | 已确认缺陷，`strict xfail` |
+
+### 常见错误、反例与假通过
+
+1. 只断言两个日期都是字符串或合法格式，就声称日期业务正确。
+2. 只写 `status_code != 200`，把 `500` 或错误业务状态当成负向通过。
+3. 未定义 0 是否允许，直接凭个人经验写价格断言。
+4. 为了全绿，把尚未复现的异常马上标成 `xfail`。
+5. 业务测试依赖固定的 `Jim/Brown` 数据，却没有 setup 或 seed。
+6. 非法请求意外创建资源后没有清理，导致后续过滤和数量测试被污染。
+7. 只验证 POST 即时响应，不用动态 ID 回查持久化结果。
+
+### 记忆要点
+
+**Schema 证明结构，业务断言证明规则；先定义边界，再用自己创建的数据验证跨字段关系、数值范围和持久化结果；未知异常让它失败，已确认缺陷才用 strict xfail。**
+
+### 代码落地
+
+本日新增 `tests/test_business_rules.py`，使用 `build_booking_payload()` 生成独立数据，覆盖日期先后、同日日期、零价格和负价格边界。合法场景在创建后通过动态 ID 回查；非法场景用 `assert_error_response()` 精确要求 400，并在 `finally` 中保护资源清理。当前服务对反向日期和负价格仍返回 200，因此两个已确认问题以 `strict xfail` 留证。
+
+### 知识验收
+
+1. Schema 通过后，为什么仍需单独验证 `checkout` 与 `checkin` 的关系？
+2. `totalprice = 0` 的预期应该由谁定义？测试如何避免自行发明规则？
+3. 为什么合法业务边界最好创建后再用 GET 回查？
+4. 为什么负向断言必须精确要求 `400`，而不能写成 `!= 200`？
+5. 未知异常和已确认缺陷分别应该如何处理？
+6. 全量回归因固定数据为空而失败时，如何区分测试前置条件问题和产品缺陷？
+
+### 关联产出
+
+- 业务规则测试：`test-projects/03-restful-booker-api/tests/test_business_rules.py`
+- 错误响应 helper：`test-projects/03-restful-booker-api/tests/assertions.py`
+- 数据工厂：`test-projects/03-restful-booker-api/tests/factories.py`
+- 验证结果：目标 `3 passed, 2 xfailed`；API 全量 `26 passed, 18 xfailed, 2 failed`（既有过滤测试固定数据缺失）
+- 验证证据：`artifacts/day-054/verification.md`
+- 当天记录：`daily-log/day-054.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -5702,6 +5848,7 @@ JSON Schema 适合 REST API 响应、配置文档、事件消息和版本化接�
 | API 输入类型边界 | Day 51 | JSON 类型与格式分层、单变量错误矩阵、隐式转换风险、安全清理和受限严格 xfail |
 | 统一负向场景断言 | Day 52 | 精确错误状态码、非空错误体、可选错误文本、helper 职责边界和数据环境归因 |
 | JSON Schema | Day 53 | 响应结构契约、$defs/$ref、oneOf、FormatChecker、结构与业务边界和故意变更验证 |
+| 业务断言 | Day 54 | 结构与业务分层、日期顺序、价格范围、边界矩阵、strict xfail 和业务数据隔离 |
 | 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
 | API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
 | Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |
