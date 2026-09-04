@@ -61,6 +61,7 @@
 - [Day 52：状态码与错误模型](#day-52状态码与错误模型)
 - [Day 53：JSON Schema](#day-53json-schema)
 - [Day 54：业务断言](#day-54业务断言)
+- [Day 55：接口链路](#day-55接口链路)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -5793,6 +5794,165 @@ def test_checkout_before_checkin_is_rejected(booking_client, ...):
 - 验证证据：`artifacts/day-054/verification.md`
 - 当天记录：`daily-log/day-054.md`
 
+## Day 55：接口链路
+
+### 核心知识点
+
+接口生命周期测试验证的是同一个资源从创建到销毁的状态转换，而不是若干互不相关的 HTTP 请求。典型 booking 链路是：
+
+```text
+POST 创建
+  → GET 查询
+  → PUT/PATCH 更新
+  → GET 回查更新
+  → DELETE 删除
+  → GET 验证 404
+```
+
+每一步都要有局部断言，并使用上一步产生的真实数据驱动下一步。
+
+### 它解决的问题
+
+只测 POST 只能说明服务返回了一个创建响应，只测 DELETE 后的 404 也不能证明创建、查询和更新曾经正确发生。生命周期测试把资源 ID、响应内容和持久化状态串起来，能定位失败发生在创建、读取、更新、删除还是清理阶段。
+
+### 理论基础
+
+#### 动态 ID 是链路关联键
+
+POST 返回的 `bookingid` 是当前测试创建资源的唯一关联线索：
+
+```python
+create_data = create_response.json()
+booking_id = create_data["bookingid"]
+
+get_response = booking_client.get_booking(booking_id)
+update_response = booking_client.update_booking(booking_id, payload, token)
+delete_response = booking_client.delete_booking(booking_id, token)
+```
+
+写死 ID 会依赖环境中某条既有数据；它可能不存在、已被其他测试修改，或者与当前 payload 不一致。动态 ID 让整条链路只围绕本次测试创建的资源运行。
+
+#### 每个状态转换都要有局部断言
+
+| 阶段 | 最小断言 | 证明内容 |
+| --- | --- | --- |
+| POST | `200`、整数 `bookingid`、响应 booking 等于 payload | 资源创建成功且身份可关联 |
+| 首次 GET | `200`、Schema、字段等于创建 payload | 创建结果可读取且已持久化 |
+| PUT/PATCH | `200`、响应等于更新预期 | 更新动作被接受并返回正确结果 |
+| 二次 GET | `200`、字段等于更新 payload | 更新真正持久化，而不是只有即时响应正确 |
+| DELETE | `201` | 删除动作被接受 |
+| 删除后 GET | `404` | 资源确实不可再读取 |
+
+局部断言越靠近产生问题的步骤，失败信息越有诊断价值；最后一个 404 不能替代前面的断言。
+
+#### 清理必须独立于正常流程
+
+资源清理不能只放在正常步骤的最后，因为任何一个中间断言都可能终止测试。可靠模式是：
+
+```python
+booking_id = None
+token = get_token()
+
+try:
+    response = create_booking(payload)
+    data = read_json_object(response)
+    booking_id = data.get("bookingid")
+    assert response.status_code == 200
+    # 继续 GET、PUT、DELETE 和局部断言
+finally:
+    cleanup_booking(booking_id, token)
+```
+
+关键点是先尽量提取 `bookingid`，再执行可能失败的响应断言。否则服务虽然已经创建资源，但测试可能因为响应字段不一致而在 ID 赋值前失败，留下残留 booking。
+
+#### 清理应根据资源状态判断
+
+不应只依赖 `deleted = True/False` 这样的内存标记，因为 DELETE 返回成功后，后续确认 GET 仍可能失败。更稳妥的 teardown 是重新查询：
+
+```text
+GET 当前资源
+  ├─ 404 → 已清理，结束
+  └─ 200 → 使用 Token DELETE，要求 201，再 GET 要求 404
+```
+
+这样即使 PUT 失败、最终 GET 失败或 DELETE 后置条件断言失败，残留资源仍有机会被回收。清理失败本身也必须报告，不能静默吞掉。
+
+#### 生命周期测试与 Schema、业务断言的配合
+
+生命周期测试可以复用 Day 53 的 Schema helper 验证每次创建或查询响应的结构，再由测试主体验证资源身份、字段一致性和状态转换。职责可以这样分层：
+
+```text
+API Client      → 负责 HTTP 传输和 URL/Token 细节
+Schema helper   → 负责响应结构和类型契约
+生命周期测试   → 负责请求顺序、动态 ID、业务状态和局部断言
+finally/fixture → 负责资源清理
+```
+
+不要把完整生命周期的业务断言藏进 Client 或通用 helper，否则测试会失去场景意图。
+
+### 最小验证骨架
+
+```python
+def test_booking_full_lifecycle(booking_client, api_client, auth_credentials):
+    token = get_token(api_client, auth_credentials)
+    booking_id = None
+
+    try:
+        create_response = booking_client.create_booking(create_payload)
+        create_data = read_json_object(create_response)
+        booking_id = create_data.get("bookingid")
+        assert create_response.status_code == 200
+        assert isinstance(booking_id, int)
+
+        assert booking_client.get_booking(booking_id).status_code == 200
+        assert booking_client.update_booking(
+            booking_id, update_payload, token
+        ).status_code == 200
+        assert booking_client.delete_booking(booking_id, token).status_code == 201
+        assert booking_client.get_booking(booking_id).status_code == 404
+    finally:
+        cleanup_booking(booking_client, booking_id, token)
+```
+
+生产测试应在骨架基础上补充响应 Schema、字段一致性、更新后 GET 回查和清理诊断信息。
+
+### 常见错误、反例与假通过
+
+1. 使用固定 booking ID，导致测试依赖环境状态。
+2. 只断言最终 GET 为 404，无法定位中间步骤失败。
+3. 创建响应的字段断言失败后才保存 ID，导致资源无法清理。
+4. 用 `deleted` 标志跳过清理，而没有重新查询资源状态。
+5. DELETE 返回 201 后直接认为资源已经删除，不再用 GET 验证 404。
+6. 把 PUT 失败后的清理写在正常流程末尾，而不是 `finally` 或 fixture teardown。
+7. 复用其他测试创建的 booking，造成跨测试污染和隐式顺序依赖。
+8. 把创建、查询、更新、删除全塞进一个万能 helper，测试报告看不出哪一步失败。
+
+### 记忆要点
+
+**生命周期测试的核心是同一动态 ID 驱动状态转换；每一步都断言，失败也清理，最后用 GET 证明资源真的被删除。**
+
+### 代码落地
+
+本日新增 `tests/test_booking_lifecycle.py`，使用数据工厂生成唯一数据和动态日期，依次验证 POST、GET、Token、PUT、GET、DELETE、GET 404。创建响应解析后立即保存 booking ID；Token 在创建前获取；`finally` 中重新查询资源状态，必要时 DELETE 并再次确认 404。创建和详情响应同时复用 JSON Schema 验证。
+
+### 知识验收
+
+1. 为什么生命周期链路必须使用 POST 返回的动态 `bookingid`？
+2. 每一步局部断言相比只断言最终 404 有什么诊断价值？
+3. 为什么要在创建响应的其他断言前提取 ID？
+4. `finally` 清理如何覆盖 PUT 失败或最终 GET 失败？
+5. 为什么清理前要重新 GET，而不能只依赖 `deleted` 标志？
+6. API Client、Schema helper、生命周期测试和 teardown 各自负责什么？
+
+### 关联产出
+
+- 生命周期测试：`test-projects/03-restful-booker-api/tests/test_booking_lifecycle.py`
+- 数据工厂：`test-projects/03-restful-booker-api/tests/factories.py`
+- Schema helper：`test-projects/03-restful-booker-api/tests/schema_helpers.py`
+- 验证结果：目标 `1 passed`；API 全量 `27 passed, 18 xfailed, 2 failed`（既有过滤测试固定数据缺失）
+- 验证证据：`artifacts/day-055/verification.md`
+- 当天记录：`daily-log/day-055.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -5849,6 +6009,7 @@ def test_checkout_before_checkin_is_rejected(booking_client, ...):
 | 统一负向场景断言 | Day 52 | 精确错误状态码、非空错误体、可选错误文本、helper 职责边界和数据环境归因 |
 | JSON Schema | Day 53 | 响应结构契约、$defs/$ref、oneOf、FormatChecker、结构与业务边界和故意变更验证 |
 | 业务断言 | Day 54 | 结构与业务分层、日期顺序、价格范围、边界矩阵、strict xfail 和业务数据隔离 |
+| 接口生命周期链路 | Day 55 | 动态 booking ID、局部断言、状态转换、异常路径清理和删除后 404 验证 |
 | 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
 | API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
 | Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |
