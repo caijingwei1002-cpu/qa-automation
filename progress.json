@@ -1,5 +1,5 @@
 {
-  "current_day": 53,
+  "current_day": 54,
   "completed_days": [
     1,
     2,
@@ -52,7 +52,8 @@
     49,
     50,
     51,
-    52
+    52,
+    53
   ],
   "history": [
     {
@@ -366,6 +367,12 @@
       "date": "2026-09-04",
       "result": "完成 Day 52：新增统一 assert_error_response()，覆盖错误状态码、非空响应体、可选错误文本和统一失败摘要；迁移无 Token PUT 与重复 DELETE 场景，目标迁移 2 passed。API 全量 20 passed、16 xfailed、2 failed，失败根因为过滤测试依赖重启后不存在的 Jim/Brown 预置数据，已明确记录为数据隔离风险。",
       "next_step": "Day 53：引入 JSON Schema，验证 booking 响应的结构契约。"
+    },
+    {
+      "day": 53,
+      "date": "2026-09-04",
+      "result": "完成 Day 53：新增 booking JSON Schema，使用 $defs/$ref/oneOf 分离创建与查询响应，启用 FormatChecker 验证日期；接入创建和查询测试，并用合法基线、缺失 lastname、totalprice 字符串三组 Schema 测试验证约束。目标测试 5 passed；API 全量 23 passed、16 xfailed、2 failed，失败为既有过滤测试依赖缺失 Jim/Brown 预置数据。",
+      "next_step": "Day 54：区分结构正确和业务正确，增加日期顺序、价格范围等业务规则断言。"
     }
   ]
 }

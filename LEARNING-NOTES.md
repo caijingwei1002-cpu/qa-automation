@@ -59,6 +59,7 @@
 - [Day 50：缺失字段](#day-50缺失字段)
 - [Day 51：类型错误](#day-51类型错误)
 - [Day 52：状态码与错误模型](#day-52状态码与错误模型)
+- [Day 53：JSON Schema](#day-53json-schema)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -5487,6 +5488,165 @@ def test_missing_field_returns_400(field):
 - 验证证据：`artifacts/day-052/verification.md`
 - 当天记录：`daily-log/day-052.md`
 
+## Day 53：JSON Schema
+
+### 核心知识点
+
+JSON Schema 是用声明式 JSON 文档描述 JSON 数据结构的契约语言。它可以统一验证字段是否存在、值的类型、嵌套对象、数组、格式和额外字段，让响应结构变化在接口测试中尽早失败；它不自动表达所有跨字段业务关系。
+
+### 它解决的问题
+
+只靠测试中的 `"field" in body`、`isinstance()` 和多层下标访问，结构规则会散落在多个文件里，字段缺失或类型变化也可能只在某个具体场景中偶然暴露。Schema 把结构约束集中管理，并能在创建、查询等多个接口测试中复用，降低响应契约漂移的风险。
+
+### 理论基础
+
+#### 结构关键字
+
+| 关键字 | 约束层面 | 示例含义 |
+| --- | --- | --- |
+| `type` | 数据类型 | `totalprice` 必须是 integer |
+| `properties` | 字段规则 | 描述 `bookingdates` 的嵌套属性 |
+| `required` | 字段存在性 | `firstname` 和 `bookingdates` 必须出现 |
+| `additionalProperties` | 未声明字段 | `false` 表示严格拒绝额外字段 |
+| `format` | 已知格式 | 日期字符串使用 `date` |
+| `$defs` | 可复用定义 | 集中定义 booking 资源结构 |
+| `$ref` | 引用定义 | 创建响应引用 booking 定义 |
+| `oneOf` | 多种合法形状 | 根 Schema 接受创建 envelope 或详情对象 |
+
+#### 创建响应与详情响应要分层
+
+POST `/booking` 返回的是响应 envelope：
+
+```json
+{
+  "bookingid": 123,
+  "booking": { "firstname": "Alice" }
+}
+```
+
+GET `/booking/{bookingid}` 直接返回 booking 对象。两者的公共部分应复用，但顶层响应不能简单强行共用一个结构。Day 53 的 Schema 通过 `$defs.booking` 复用资源定义，再用 `createBookingResponse` 和 `getBookingResponse` 表达各自形状。
+
+#### `$ref` 的根上下文
+
+如果一个分支内部引用 `#/$defs/booking`，验证器必须保留包含 `$defs` 的根 Schema 上下文。直接把一个带 `$ref` 的片段拿出来创建独立 Validator，可能无法解析引用。一个可靠的验证器可以选择根 Schema，或构造带有相同 `$defs` 和目标 `$ref` 的小根文档。
+
+#### 日期格式需要显式检查器
+
+Schema 中写入：
+
+```json
+{
+  "type": "string",
+  "format": "date"
+}
+```
+
+并不代表所有 Validator 默认都会执行格式检查。Python `jsonschema` 应显式传入：
+
+```python
+from jsonschema import Draft202012Validator, FormatChecker
+
+validator = Draft202012Validator(
+    schema,
+    format_checker=FormatChecker(),
+)
+```
+
+没有 `FormatChecker` 时，字段可能只被验证为 string，而 `not-a-date` 仍然通过。
+
+#### 结构验证与业务验证的边界
+
+Schema 能证明：
+
+- `bookingdates` 是 object；
+- `checkin` 和 `checkout` 存在且是 date 格式 string；
+- `totalprice` 是 integer；
+- `depositpaid` 是 boolean；
+- 创建响应包含整数 `bookingid` 和 `booking`。
+
+Schema 不能单独证明：
+
+- `checkout` 晚于 `checkin`；
+- `totalprice` 在业务允许范围内；
+- 过滤结果一定属于当前创建的 booking；
+- 当前用户具有修改资源的权限。
+
+这些是跨字段、业务状态或访问控制规则，应继续由具体测试断言。
+
+#### 最小验证骨架
+
+```python
+schema = json.loads(schema_path.read_text(encoding="utf-8"))
+Draft202012Validator.check_schema(schema)
+
+validator = Draft202012Validator(
+    schema,
+    format_checker=FormatChecker(),
+)
+
+errors = list(validator.iter_errors(response.json()))
+assert not errors, "\\n".join(error.message for error in errors)
+```
+
+生产测试中应把错误路径加入消息，例如 `booking.lastname: 'lastname' is a required property`，而不是只报告根级“oneOf 不匹配”。
+
+#### 用故意变更证明测试有效
+
+只看到合法响应通过，不足以证明 Schema 真能拦截问题。复制一份合法响应后分别：
+
+```text
+删除 booking.lastname
+  → Schema 验证失败
+
+把 booking.totalprice 改成 "200"
+  → Schema 验证失败
+```
+
+这种合成变更测试不依赖服务端缺陷，能够直接证明缺失字段和类型变化确实受到约束。
+
+### 适用场景与边界
+
+JSON Schema 适合 REST API 响应、配置文档、事件消息和版本化接口契约。严格的 `additionalProperties: false` 适合需要阻止未预期字段的稳定响应，但对于允许向后兼容增加字段的公共接口可能过于严格。Schema 不应承担鉴权、资源清理、跨字段计算或所有业务规则；这些应保留在 fixture、业务断言和专门测试中。
+
+### 常见错误、反例与假通过
+
+1. 用一个过宽 Schema 兼容多个不同响应，导致创建 envelope 和详情对象都失去约束。
+2. 直接验证带 `$ref` 的 `$defs` 片段，丢失根 `$defs` 上下文而无法解析引用。
+3. 声明 `format: date` 却忘记传入 `FormatChecker`。
+4. 把 Schema 通过误认为日期顺序、价格范围或权限规则也正确。
+5. 只测试合法响应，不用缺失字段和类型变化证明 Schema 会失败。
+6. 把 `additionalProperties: false` 当作绝对正确，忽略接口版本演进和兼容策略。
+7. 错误消息只报告根级 `oneOf` 失败，不展开具体字段路径。
+8. 测试依赖服务重启后固定存在的预置数据，把环境问题误判成 Schema 或产品缺陷。
+
+### 记忆要点
+
+**Schema 验证结构，不代替业务；用 `$defs/$ref` 复用资源、用独立顶层模型表达不同响应，并用 FormatChecker 和故意变更证明约束真的有效。**
+
+### 代码落地
+
+本日新增 `schemas/booking.json`，声明 booking 资源、创建 envelope 和详情响应，并使用 `$defs`、`$ref`、`oneOf`、`required`、`type`、`additionalProperties` 和日期 `format`。`schema_helpers.py` 加载根 Schema，执行 `Draft202012Validator.check_schema` 和 `FormatChecker`，创建测试与查询测试分别接入结构验证；`test_schema.py` 增加合法基线、缺失字段和字符串价格的合成变更。
+
+### 知识验收
+
+1. 为什么创建响应和详情响应应有独立顶层 Schema？
+2. `$defs` 和 `$ref` 如何减少重复，又为什么需要根 Schema 上下文？
+3. 为什么日期 `format` 需要显式 `FormatChecker`？
+4. Schema 通过后，为什么仍需单独验证日期顺序和价格范围？
+5. 如何用合成响应证明缺失字段和类型变化会导致 Schema 失败？
+6. `additionalProperties: false` 在接口版本演进中有什么取舍？
+
+### 关联产出
+
+- Schema：`test-projects/03-restful-booker-api/schemas/booking.json`
+- Schema helper：`test-projects/03-restful-booker-api/tests/schema_helpers.py`
+- Schema 行为测试：`test-projects/03-restful-booker-api/tests/test_schema.py`
+- 创建/查询接入：`test-projects/03-restful-booker-api/tests/test_create_booking.py`、`test-projects/03-restful-booker-api/tests/test_booking_flow.py`
+- 依赖：`test-projects/03-restful-booker-api/requirements.txt`
+- 验证结果：Schema 目标 `5 passed`；API 全量 `23 passed, 16 xfailed, 2 failed`（既有过滤预置数据缺失）
+- 验证证据：`artifacts/day-053/verification.md`
+- 当天记录：`daily-log/day-053.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -5541,6 +5701,7 @@ def test_missing_field_returns_400(field):
 | API 负向测试与缺失字段 | Day 50 | 必填字段矩阵、400/500 预期分离、错误资源清理和严格 xfail 缺陷留证 |
 | API 输入类型边界 | Day 51 | JSON 类型与格式分层、单变量错误矩阵、隐式转换风险、安全清理和受限严格 xfail |
 | 统一负向场景断言 | Day 52 | 精确错误状态码、非空错误体、可选错误文本、helper 职责边界和数据环境归因 |
+| JSON Schema | Day 53 | 响应结构契约、$defs/$ref、oneOf、FormatChecker、结构与业务边界和故意变更验证 |
 | 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
 | API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
 | Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |

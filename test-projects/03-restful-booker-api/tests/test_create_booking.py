@@ -1,6 +1,7 @@
 """验证 POST /booking 创建响应契约。"""
 
 from factories import build_booking_payload
+from schema_helpers import assert_schema_valid
 
 
 def test_create_booking(booking_client):
@@ -14,6 +15,11 @@ def test_create_booking(booking_client):
     assert response.status_code == 200
 
     data = response.json()
+    assert_schema_valid(
+        data,
+        context="POST /booking response",
+        schema_key="createBookingResponse",
+    )
 
     assert "bookingid" in data
     assert isinstance(data["bookingid"], int)

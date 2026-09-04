@@ -1,6 +1,7 @@
 """验证新创建的 booking 可以通过响应中的 ID 再次查询。"""
 
 from factories import build_booking_payload
+from schema_helpers import assert_schema_valid
 
 
 def test_create_booking_can_be_retrieved(booking_client):
@@ -27,6 +28,11 @@ def test_create_booking_can_be_retrieved(booking_client):
     assert get_response.status_code == 200
 
     booking = get_response.json()
+    assert_schema_valid(
+        booking,
+        context="GET /booking/{bookingid} response",
+        schema_key="getBookingResponse",
+    )
 
     # 4. 比较查询结果与原始 payload
     assert isinstance(booking, dict)
