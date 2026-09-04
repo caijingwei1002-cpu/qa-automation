@@ -58,6 +58,7 @@
 - [Day 49：参数化边界](#day-49参数化边界)
 - [Day 50：缺失字段](#day-50缺失字段)
 - [Day 51：类型错误](#day-51类型错误)
+- [Day 52：状态码与错误模型](#day-52状态码与错误模型)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -5356,6 +5357,136 @@ pytest.mark.xfail(
 - 验证证据：`artifacts/day-051/verification.md`
 - 当天记录：`daily-log/day-051.md`
 
+## Day 52：状态码与错误模型
+
+### 核心知识点
+
+统一负向场景断言（shared negative-response assertion）把所有错误响应都应满足的公共契约集中起来：精确的预期状态码、非空且可解释的错误体，以及可选的错误文本或通用错误字段。它不取代具体测试对业务原因的判断，而是消除重复断言和失败消息漂移。
+
+### 它解决的问题
+
+`assert response.status_code != 200` 只证明“不是某一个状态码”，无法证明错误方式符合契约。`201` 可能代表错误请求仍创建了资源，`500` 代表服务端异常，`401` 和 `403` 也表达不同的访问控制语义。每个测试各自拼接状态码和响应体断言，还会造成标准不一致、诊断消息缺字段和维护成本上升。
+
+### 理论基础
+
+#### 错误响应的三层契约
+
+一个可读的负向断言通常包含三层：
+
+| 层次 | 示例断言 | 证明什么 |
+| --- | --- | --- |
+| 状态码 | `status_code == 403` | 请求以规定的 HTTP 错误等级返回 |
+| 响应体 | `response.text.strip()` | 错误不是无信息的空响应 |
+| 错误语义 | `"Forbidden" in response.text` | 响应包含可识别的错误文本 |
+
+三层不能压缩为“不是 200”。状态码验证 HTTP 分级，响应体验证可诊断性，具体测试还可以继续验证业务字段、错误码或资源状态。
+
+#### Helper 与具体测试的职责边界
+
+通用 helper 负责稳定重复的机制：
+
+- 验证 `expected_status` 本身是 400–599，防止误用于成功响应；
+- 精确比较实际状态码和预期状态码；
+- 把换行和连续空白压缩成短摘要；
+- 断言错误体非空；
+- 在调用方指定时匹配错误文本；
+- 输出包含 expected、actual 和响应摘要的统一失败消息。
+
+具体测试继续负责场景业务语义：
+
+- 构造缺失字段、错误类型或未授权请求；
+- 选择该场景的预期状态码；
+- 判断错误字段、业务错误码和资源是否被创建；
+- 获取 Token、创建测试数据和清理资源。
+
+可以记成：**helper 判断“错得像不像合格的错误响应”，测试判断“是不是我正在验证的业务规则导致的错误”。**
+
+#### 最小代码骨架
+
+```python
+def assert_error_response(response, expected_status, *, expected_text=None):
+    if not 400 <= expected_status <= 599:
+        raise ValueError("expected_status must be an HTTP error status")
+
+    summary = response_summary(response)
+
+    assert response.status_code == expected_status, (
+        f"Expected HTTP {expected_status}, "
+        f"but got HTTP {response.status_code}. "
+        f"Response body: {summary!r}"
+    )
+    assert response.text.strip(), "Expected a non-empty error response body"
+
+    if expected_text is not None:
+        assert expected_text in response.text
+```
+
+响应摘要应限制长度，避免异常页面或 HTML 错误页淹没测试报告。文本匹配是否大小写敏感、是否需要 JSON 解析，应由实际接口契约决定；没有明确规格时不要擅自把匹配放宽。
+
+#### 失败消息与参数化场景
+
+公共 helper 能提供 expected/actual/body，但场景身份最好由测试名称和参数化 ID 表达：
+
+```python
+@pytest.mark.parametrize(
+    "field",
+    ["firstname", "lastname"],
+    ids=["missing-firstname", "missing-lastname"],
+)
+def test_missing_field_returns_400(field):
+    response = submit_invalid_payload(field)
+    assert_error_response(response, expected_status=400)
+```
+
+这样报告既有 `missing-firstname` 的场景定位，也有统一的 HTTP 差异和响应体证据。业务断言例如 `body["field"] == "firstname"` 不应隐藏在 helper 中。
+
+#### 事实、失败与数据环境要分开
+
+本日两个迁移场景实际通过：无 Token PUT 返回 `403 Forbidden`，重复 DELETE 返回 `405 Method Not Allowed`。全量回归的两个失败来自过滤测试依赖 `Jim` 和 `Brown` 预置记录；这不是 helper 的失败。测试应控制自己的前置条件：创建唯一记录、验证过滤、最后清理，而不是赌服务重启后仍存在固定样本。
+
+这种归因方式把“代码重构是否改变行为”和“环境或既有测试是否稳定”分开，避免为了让全量变绿而修改正确的业务断言或偷偷补共享数据。
+
+### 适用场景与边界
+
+该 helper 适用于 REST/HTTP API 的 4xx 和 5xx 错误响应，尤其适合多个测试共享状态码、错误体和诊断格式时使用。它不应承担成功响应、业务 payload 构造、鉴权、资源清理、JSON Schema 全量校验或跨字段业务规则。若某个端点的错误体是结构化 JSON，应在后续专门的 JSON 错误模型或 Schema helper 中扩展，而不是把所有分支塞入当前函数。
+
+### 常见错误、反例与假通过
+
+1. 使用 `status_code != 200`，把 201、500 或错误的 401 当作合格负向结果。
+2. helper 只断言状态码，不检查空响应体或错误文本，导致诊断信息缺失。
+3. 把具体字段、错误码和业务 payload 规则强塞进万能 helper。
+4. 为了让回归通过，把预期 400 改成服务当前返回的 500，或把环境缺数据当成产品修复。
+5. 对所有响应强制 JSON 解析，而实际端点返回纯文本错误页。
+6. 忽略 `expected_status` 的输入范围，让 helper 被误用来断言 200 成功响应。
+7. 错误消息不包含 expected、actual 和 body 摘要，排查还需重新运行测试。
+8. 过滤测试依赖固定预置数据，服务重启或并行执行后出现不可重复失败。
+
+### 记忆要点
+
+**负向断言要精确验证“如何失败”：状态码、错误体和必要文本；helper 统一机制，具体测试保留业务语义，测试数据必须由测试自己控制。**
+
+### 代码落地
+
+本日新增 `tests/assertions.py`，提供 `assert_error_response()` 和受限响应摘要。helper 会拒绝非错误状态预期，精确校验 4xx/5xx、非空错误体和可选文本，并在失败中展示 expected/actual/body。无 Token PUT 和重复 DELETE 两个测试已迁移到该 helper，分别验证 `403 Forbidden` 和 `405 Method Not Allowed`。
+
+### 知识验收
+
+1. 为什么 `status_code != 200` 不能证明负向契约正确？
+2. 通用错误响应 helper 与具体业务测试的职责边界是什么？
+3. 为什么错误体非空也是有价值的断言？
+4. `expected_status` 为什么应限制在 400–599？
+5. 全量测试因固定 `Jim/Brown` 数据失败时，如何区分产品缺陷、测试缺陷和环境问题？
+6. 什么时候应该新增结构化 JSON 错误 helper，而不是继续扩展当前 helper？
+
+### 关联产出
+
+- 错误响应断言：`test-projects/03-restful-booker-api/tests/assertions.py`
+- 迁移场景：`test-projects/03-restful-booker-api/tests/test_update_booking.py`、`test-projects/03-restful-booker-api/tests/test_delete_booking.py`
+- 验证命令：`.\.venv\Scripts\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
+- 验证结果：目标迁移 `2 passed`；API 全量 `20 passed, 16 xfailed, 2 failed`（过滤测试预置数据缺失）
+- 验证证据：`artifacts/day-052/verification.md`
+- 当天记录：`daily-log/day-052.md`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -5409,6 +5540,7 @@ pytest.mark.xfail(
 | 参数化边界测试 | Day 49 | 边界分类、参数化 case ID、状态码与业务结果分层、严格 xfail 和动态回查 |
 | API 负向测试与缺失字段 | Day 50 | 必填字段矩阵、400/500 预期分离、错误资源清理和严格 xfail 缺陷留证 |
 | API 输入类型边界 | Day 51 | JSON 类型与格式分层、单变量错误矩阵、隐式转换风险、安全清理和受限严格 xfail |
+| 统一负向场景断言 | Day 52 | 精确错误状态码、非空错误体、可选错误文本、helper 职责边界和数据环境归因 |
 | 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
 | API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
 | Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |

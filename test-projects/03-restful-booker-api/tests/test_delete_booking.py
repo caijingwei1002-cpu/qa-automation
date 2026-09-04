@@ -1,5 +1,7 @@
 """验证删除、删除后资源不存在以及重复删除行为。"""
 
+from assertions import assert_error_response
+
 
 def test_delete_booking(
     created_booking,
@@ -38,4 +40,8 @@ def test_delete_booking_twice_returns_405(
     second_delete_response = booking_client.delete_booking(booking_id, token)
 
     # 第二次 DELETE 验证本地接口对已删除资源的处理契约。
-    assert second_delete_response.status_code == 405
+    assert_error_response(
+        second_delete_response,
+        expected_status=405,
+        expected_text="Method Not Allowed",
+    )

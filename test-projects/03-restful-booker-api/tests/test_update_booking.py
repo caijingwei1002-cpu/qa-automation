@@ -1,6 +1,8 @@
 """验证 PUT 整体替换和 PATCH 部分更新行为。"""
 
+from assertions import assert_error_response
 from factories import build_booking_payload
+
 
 UPDATE_PAYLOAD = {
     "firstname": "James",
@@ -108,7 +110,11 @@ def test_update_booking_without_token_returns_403(
         token=None,
     )
 
-    assert response.status_code == 403
+    assert_error_response(
+        response,
+        expected_status=403,
+        expected_text="Forbidden",
+    )
 
 
 def test_patch_booking_partial_update(

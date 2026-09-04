@@ -1,5 +1,5 @@
 {
-  "current_day": 52,
+  "current_day": 53,
   "completed_days": [
     1,
     2,
@@ -51,7 +51,8 @@
     48,
     49,
     50,
-    51
+    51,
+    52
   ],
   "history": [
     {
@@ -359,6 +360,12 @@
       "date": "2026-08-28",
       "result": "完成 Day 51：新增 3 组类型错误参数化测试，覆盖字符串价格、字符串布尔值和嵌套日期数字；接口均返回 200 并隐式转换，使用受限 strict xfail 留证并清理意外资源。目标测试 3 xfailed，API 全量回归 22 passed、16 xfailed。",
       "next_step": "Day 52：提取错误响应断言辅助函数，统一负向场景的状态码和错误体断言。"
+    },
+    {
+      "day": 52,
+      "date": "2026-09-04",
+      "result": "完成 Day 52：新增统一 assert_error_response()，覆盖错误状态码、非空响应体、可选错误文本和统一失败摘要；迁移无 Token PUT 与重复 DELETE 场景，目标迁移 2 passed。API 全量 20 passed、16 xfailed、2 failed，失败根因为过滤测试依赖重启后不存在的 Jim/Brown 预置数据，已明确记录为数据隔离风险。",
+      "next_step": "Day 53：引入 JSON Schema，验证 booking 响应的结构契约。"
     }
   ]
 }
