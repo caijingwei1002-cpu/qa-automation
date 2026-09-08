@@ -10,24 +10,28 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.api_client import RestfulBookerClient
-from src.booking_client import BookingClient
-from factories import build_booking_payload
+from factories import build_booking_payload  # noqa: E402
+from src.api_client import RestfulBookerClient  # noqa: E402
+from src.booking_client import BookingClient  # noqa: E402
+from src.settings import get_settings  # noqa: E402
 
 
 @pytest.fixture
-def api_base_url():
-    # 支持本地、测试和明确授权环境之间切换目标地址。
-    return os.getenv(
-        "RESTFUL_BOOKER_URL",
-        "http://127.0.0.1:3001",
-    ).rstrip("/")
+def settings():
+    # 每次创建 fixture 时读取，支持同一进程中的环境切换并统一校验入口。
+    return get_settings()
 
 
 @pytest.fixture
-def request_timeout_seconds():
-    # 这是传输层超时；业务性能阈值应由具体测试定义。
-    return float(os.getenv("RESTFUL_BOOKER_TIMEOUT_SECONDS", "3"))
+def api_base_url(settings):
+    # fixture 只消费规范化结果，不重复读取或解析环境变量。
+    return settings.restful_booker_url
+
+
+@pytest.fixture
+def request_timeout_seconds(settings):
+    # fixture 只消费已经解析并校验过的配置，不重复读取环境变量。
+    return settings.request_timeout_seconds
 
 
 @pytest.fixture
@@ -41,7 +45,7 @@ def auth_credentials():
 
 @pytest.fixture
 def api_client(api_base_url, request_timeout_seconds):
-    # 测试接收统一配置好的 Client，不再自行重复组装 HTTP 细节。
+    # Client 只接收配置结果，URL 选择与校验不属于传输层职责。
     return RestfulBookerClient(
         base_url=api_base_url,
         timeout=request_timeout_seconds,
@@ -99,7 +103,4 @@ def created_booking(booking_client, api_client, auth_credentials):
             # 测试本身已经删除，视为清理完成
             pass
         else:
-            raise AssertionError(
-                f"Unexpected cleanup status: "
-                f"{current_response.status_code}"
-            )
+            raise AssertionError(f"Unexpected cleanup status: {current_response.status_code}")

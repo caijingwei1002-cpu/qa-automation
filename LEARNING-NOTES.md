@@ -62,6 +62,7 @@
 - [Day 53：JSON Schema](#day-53json-schema)
 - [Day 54：业务断言](#day-54业务断言)
 - [Day 55：接口链路](#day-55接口链路)
+- [Day 56：配置分层与规范导读](#day-56配置分层与规范导读)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -5953,6 +5954,146 @@ def test_booking_full_lifecycle(booking_client, api_client, auth_credentials):
 - 验证证据：`artifacts/day-055/verification.md`
 - 当天记录：`daily-log/day-055.md`
 
+## Day 56：配置分层与规范导读
+
+### 核心知识点
+
+配置分层（configuration layering）把环境变量读取、默认值、清洗、类型转换和合法性校验集中在 `settings.py`。`Settings` 保存已经可信的类型化结果，fixture 负责组合和注入，API Client 负责 HTTP 传输，测试函数保留业务预期和断言。
+
+### 它解决的问题
+
+如果多个 fixture 和测试各自调用 `os.getenv()`、`strip()` 或 `float()`，同一个环境切换可能在不同层得到不同结果，非法配置也可能拖到发送请求时才暴露。集中解析可以避免导入时缓存旧值、静默回退错误环境，以及配置逻辑在测试之间重复漂移。
+
+### 理论基础
+
+#### 定义与关键概念
+
+配置输入和配置结果不是同一种东西。环境变量始终是字符串或缺失状态；配置层把它转换成带明确字段和类型的不可变 `Settings` 对象。未设置与显式无效值也要区分：未设置可以使用约定的默认值，空字符串或非法内容表示配置错误，应抛出统一的 `SettingsError`。
+
+配置职责可以按下面的边界理解：
+
+| 层 | 负责什么 | 不负责什么 |
+| --- | --- | --- |
+| `settings.py` | 读取、清洗、转换、校验、默认值 | 发送 HTTP |
+| `Settings` | 保存可信的 URL 和 timeout | 决定业务断言 |
+| fixture | 组合并注入配置依赖 | 重复解析环境变量 |
+| API Client | URL 拼接、headers、HTTP 传输 | 判断业务结果是否正确 |
+| 测试函数 | 场景、数据和业务断言 | 隐藏配置解析细节 |
+
+#### 心智模型或执行链
+
+```text
+环境变量
+    ↓
+get_settings() 在调用时读取
+    ↓
+strip、默认值、类型转换和合法性校验
+    ↓
+Settings(restful_booker_url, request_timeout_seconds)
+    ↓
+settings fixture
+    ↓
+api_base_url / request_timeout_seconds fixture
+    ↓
+RestfulBookerClient
+```
+
+调用时读取很重要。模块导入阶段不保存环境变量的快照，测试或 CI 在同一进程中切换环境后，下一次 `get_settings()` 仍能获得新值。
+
+#### 最小代码骨架
+
+```python
+@dataclass(frozen=True)
+class Settings:
+    restful_booker_url: str
+    request_timeout_seconds: float
+
+
+def get_settings() -> Settings:
+    raw_url = os.getenv("RESTFUL_BOOKER_URL")
+    raw_timeout = os.getenv("RESTFUL_BOOKER_TIMEOUT_SECONDS")
+
+    # 缺失值使用默认值；显式空值和非法值交给解析器抛出 SettingsError。
+    return Settings(
+        restful_booker_url=parse_url(raw_url or DEFAULT_URL),
+        request_timeout_seconds=parse_timeout(
+            raw_timeout if raw_timeout is not None else DEFAULT_TIMEOUT
+        ),
+    )
+
+
+@pytest.fixture
+def settings():
+    return get_settings()
+
+
+@pytest.fixture
+def request_timeout_seconds(settings):
+    return settings.request_timeout_seconds
+```
+
+骨架中的 `parse_url()` 和 `parse_timeout()` 只代表配置层的边界；实际实现还要区分“缺失”与“空字符串”，并把底层 `ValueError` 转换成项目统一的配置异常。
+
+#### 断言、数据或状态的含义
+
+配置测试应按层次安排，而不是在每一层重复所有边界：
+
+1. `Settings` 单元测试覆盖默认值、空值、格式、类型和数值边界。它证明输入被正确解析，但不证明服务可用。
+2. fixture 链路测试选一个代表值，证明 `Settings` 的字段被正确注入 fixture。它不需要发 HTTP。
+3. Client 链路测试检查 `base_url` 和 `timeout` 属性，证明 Client 收到配置结果。它仍不证明请求已经成功。
+4. 真正的 HTTP 测试才验证服务可用性、响应状态和业务结果，不能把网络问题混进配置单元测试。
+
+例如，`RESTFUL_BOOKER_TIMEOUT_SECONDS="6.25"` 最终断言 `api_client.timeout == 6.25`，证明的是依赖传递；它不能单独证明 fixture 内部没有重新调用 `os.getenv()`，分层实现仍需要代码审查或架构约束共同保证。
+
+#### 适用场景与边界
+
+这种分层适合有多个运行环境、需要 CI 覆盖或会逐步增加配置项的测试项目。URL 应在配置层验证协议、主机和端口；timeout 应转换为有限的正浮点数，拒绝 `nan`、`inf`、零和负数。
+
+配置层不应验证服务是否在线，也不应承担业务规则。当前 timeout 契约允许任意有限正 `float`，包括科学计数法和很大的有限值；如果产品以后要求上限，还要把上限写进契约并新增测试。
+
+#### 常见错误、反例与假通过
+
+1. fixture 直接读取环境变量并自行 `float()`，造成配置规则重复。
+2. 模块导入时读取环境变量，导致测试切换变量后仍使用旧值。
+3. 把空字符串当成“未设置”并静默回退默认地址，掩盖 CI 配置错误。
+4. 只检查 `urlparse().netloc`，放过空主机或非法端口。
+5. 用 HTTP 请求验证配置对象，使服务未启动时配置测试也失败。
+6. 只看测试通过数量来判断分层正确；行为通过不等于职责边界得到保护。
+7. 过滤测试依赖 `Jim`、`Brown` 等预置数据，服务重启后返回空集合就误报或失去覆盖；测试数据应由本测试创建并清理。
+8. 参数化测试函数重名，后定义覆盖前定义，导致部分用例未被收集。
+
+#### 记忆要点
+
+**Settings 决定“去哪”和“用什么配置”，fixture 负责“传过去”，Client 负责“怎么请求”，测试负责“结果对不对”；配置错误在配置层快速失败，边界数据由测试自己隔离。**
+
+### 代码落地
+
+本日为 Restful Booker 增加了不可变 `Settings` 对象和 `get_settings()`。URL 配置集中完成协议、主机、端口和格式校验；timeout 配置支持默认 `3.0`、空白清洗、浮点转换，并要求是有限正数。`conftest.py` 中的 `settings`、`api_base_url` 和 `request_timeout_seconds` fixture 只消费解析后的配置，Client 不再重复解析环境变量。
+
+测试分为配置边界和依赖链路：`test_settings.py` 覆盖 URL 与 timeout 的默认值、合法输入、空值、非法格式、非正数和 `nan/inf`，并检查两次调用能读取新的 timeout。代表值链路测试只构造 Client、检查属性，不发送 HTTP。回归中还把过滤测试的固定 `Jim/Brown` 依赖改为每个场景自建 booking、动态 ID 和 `finally` 清理，避免环境重启造成假失败。
+
+### 知识验收
+
+1. 为什么“未设置环境变量”和“环境变量为空”通常应有不同结果？
+2. 为什么 `request_timeout_seconds` fixture 不应再次读取和转换字符串？
+3. `api_client.timeout == 6.25` 能证明什么，不能证明什么？
+4. 为什么配置测试不应调用 `api_client.get()` 或 `post()`？
+5. `float("nan")` 和 `float("inf")` 为什么还需要额外校验？
+6. 过滤测试依赖固定 `Jim/Brown` 数据时，如何改造成可隔离的测试？
+
+### 关联产出
+
+- 配置实现：`test-projects/03-restful-booker-api/src/settings.py`
+- 配置与 Client fixture：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 配置、timeout 和链路测试：`test-projects/03-restful-booker-api/tests/test_settings.py`
+- 动态过滤数据与清理：`test-projects/03-restful-booker-api/tests/test_filters.py`
+- 验证命令：`.\.venv\Scripts\python.exe tools/run_day_verification.py 56`
+- 验证结果：目标 `32 passed`；API 全量 `61 passed, 18 xfailed`
+- 验证证据：`artifacts/day-056/verification.md`
+- 当天记录：`daily-log/day-056.md`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -6010,6 +6151,7 @@ def test_booking_full_lifecycle(booking_client, api_client, auth_credentials):
 | JSON Schema | Day 53 | 响应结构契约、$defs/$ref、oneOf、FormatChecker、结构与业务边界和故意变更验证 |
 | 业务断言 | Day 54 | 结构与业务分层、日期顺序、价格范围、边界矩阵、strict xfail 和业务数据隔离 |
 | 接口生命周期链路 | Day 55 | 动态 booking ID、局部断言、状态转换、异常路径清理和删除后 404 验证 |
+| 配置分层与环境覆盖 | Day 56 | Settings 读取与校验、类型化配置、fixture 注入、Client 边界、配置测试分层和环境数据隔离 |
 | 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
 | API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
 | Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |

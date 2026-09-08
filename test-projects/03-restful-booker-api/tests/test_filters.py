@@ -1,29 +1,35 @@
 """验证 booking 列表过滤参数与详情字段之间的关联。"""
 
+from datetime import date, timedelta
+from uuid import uuid4
+
 import pytest
+from factories import build_booking_payload
 
-
-# 每组数据覆盖一个查询参数及其预期的比较语义。
+# 每组场景描述查询参数、详情字段和过滤比较语义。
 FILTER_CASES = [
     pytest.param(
-        {"firstname": "Jim"},
-        ("firstname",),
-        "Jim",
-        "equals",
+        {
+            "query_param": "firstname",
+            "payload_path": ("firstname",),
+            "comparison": "equals",
+        },
         id="firstname",
     ),
     pytest.param(
-        {"lastname": "Brown"},
-        ("lastname",),
-        "Brown",
-        "equals",
+        {
+            "query_param": "lastname",
+            "payload_path": ("lastname",),
+            "comparison": "equals",
+        },
         id="lastname",
     ),
     pytest.param(
-        {"checkin": "2015-01-01"},
-        ("bookingdates", "checkin"),
-        "2015-01-01",
-        "after",
+        {
+            "query_param": "checkin",
+            "payload_path": ("bookingdates", "checkin"),
+            "comparison": "after",
+        },
         id="checkin-after",
     ),
 ]
@@ -36,23 +42,95 @@ def read_nested_value(data, path):
     return data
 
 
-@pytest.mark.parametrize(
-    ("params", "detail_path", "expected_value", "comparison"),
-    FILTER_CASES,
-)
-def test_filter_bookings(
-    params,
-    detail_path,
-    expected_value,
-    comparison,
-    booking_client,
-):
+def _build_filter_payload(case):
+    overrides = {}
+
+    if case["query_param"] == "lastname":
+        # lastname 默认值不是唯一的，需要显式生成本测试专属值。
+        overrides["lastname"] = f"Filter{uuid4().hex[:8]}"
+
+    return build_booking_payload(**overrides)
+
+
+def _get_filter_value(payload, case):
+    if case["comparison"] == "after":
+        # 工厂生成的 checkin 是今天之后 7 天，使用更早的动态边界。
+        return (date.today() + timedelta(days=1)).isoformat()
+
+    return read_nested_value(payload, case["payload_path"])
+
+
+@pytest.fixture
+def filter_booking(booking_client, api_client, auth_credentials, request):
+    case = request.param
+    payload = _build_filter_payload(case)
+    filter_value = None
+    booking_id = None
+
+    auth_response = api_client.post(
+        "/auth",
+        json=auth_credentials,
+    )
+    assert auth_response.status_code == 200
+
+    auth_data = auth_response.json()
+    token = auth_data.get("token")
+    assert isinstance(token, str)
+    assert token.strip()
+
+    try:
+        create_response = booking_client.create_booking(payload)
+
+        # 先登记响应中的 ID，再做状态和 payload 断言，保证失败时仍有清理线索。
+        try:
+            create_data = create_response.json()
+        except ValueError:
+            create_data = {}
+
+        if isinstance(create_data, dict):
+            booking_id = create_data.get("bookingid")
+
+        assert create_response.status_code == 200
+        assert isinstance(booking_id, int)
+
+        filter_value = _get_filter_value(payload, case)
+        yield {
+            "booking_id": booking_id,
+            "token": token,
+            "params": {case["query_param"]: filter_value},
+            "detail_path": case["payload_path"],
+            "expected_value": filter_value,
+            "comparison": case["comparison"],
+        }
+    finally:
+        if booking_id is not None:
+            current_response = booking_client.get_booking(booking_id)
+
+            if current_response.status_code == 200:
+                delete_response = booking_client.delete_booking(
+                    booking_id,
+                    token,
+                )
+                assert delete_response.status_code in (201, 404)
+            elif current_response.status_code != 404:
+                raise AssertionError(
+                    f"Unexpected cleanup status: {current_response.status_code}; "
+                    f"booking_id={booking_id}"
+                )
+
+
+@pytest.mark.parametrize("filter_booking", FILTER_CASES, indirect=True)
+def test_filter_bookings(filter_booking, booking_client):
+    params = filter_booking["params"]
+    detail_path = filter_booking["detail_path"]
+    expected_value = filter_booking["expected_value"]
+    comparison = filter_booking["comparison"]
+
     # 先验证过滤后的集合，再查询每个返回 ID 的详情确认过滤准确性。
     response = booking_client.get_bookings(params=params)
 
     assert response.status_code == 200, (
-        f"Expected status code 200, got {response.status_code}; "
-        f"request_url={response.request.url}"
+        f"Expected status code 200, got {response.status_code}; request_url={response.request.url}"
     )
 
     data = response.json()
@@ -62,9 +140,11 @@ def test_filter_bookings(
         f"request_url={response.request.url}"
     )
 
-    # 过滤结果不能为空，否则后面的详情校验没有实际对象可验证。
-    assert data, (
-        f"Expected at least one booking for params={params!r}; "
+    # 自己创建的 booking 必须出现在结果中，避免依赖环境中的预置数据。
+    returned_ids = {item.get("bookingid") for item in data if isinstance(item, dict)}
+    assert filter_booking["booking_id"] in returned_ids, (
+        f"Created booking was not returned for params={params!r}; "
+        f"booking_id={filter_booking['booking_id']}; "
         f"request_url={response.request.url}"
     )
 
