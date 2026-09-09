@@ -3,10 +3,8 @@
 from datetime import date, timedelta
 
 import pytest
-
 from assertions import assert_error_response
 from factories import build_booking_payload
-
 
 # 沿用项目已有的边界约定：checkout 不得早于 checkin，totalprice=0 表示免费订单并且合法。
 # 当前服务对两个非法边界仍会返回 200，因此用 strict xfail 保留已确认的缺陷证据。
@@ -56,23 +54,27 @@ def _cleanup_booking(booking_client, booking_id, token):
     assert delete_response.status_code in (201, 404)
 
 
-def _assert_created_booking(booking_client, response, payload):
+def _assert_created_booking(
+    booking_client,
+    response,
+    payload,
+    booking_id,
+):
     """验证合法业务边界被创建并能通过 GET 回查。"""
     assert response.status_code == 200, (
-        f"Expected HTTP 200, but got HTTP {response.status_code}. "
-        f"Response body: {response.text!r}"
+        f"Expected HTTP 200, but got HTTP {response.status_code}. Response body: {response.text!r}"
     )
 
     body = response.json()
-    booking_id = body.get("bookingid")
-    assert isinstance(booking_id, int)
+
+    assert isinstance(body.get("bookingid"), int)
+    assert body["bookingid"] == booking_id
     assert body.get("booking") == payload
 
     get_response = booking_client.get_booking(booking_id)
+
     assert get_response.status_code == 200
     assert get_response.json() == payload
-
-    return booking_id
 
 
 def _date_payload(checkin, checkout):
@@ -98,7 +100,15 @@ def test_checkout_after_checkin_is_accepted_and_persisted(
 
     try:
         response = booking_client.create_booking(payload)
-        booking_id = _assert_created_booking(booking_client, response, payload)
+
+        booking_id = _extract_booking_id(response)
+
+        _assert_created_booking(
+            booking_client,
+            response,
+            payload,
+            booking_id,
+        )
 
         dates = response.json()["booking"]["bookingdates"]
         assert dates["checkin"] < dates["checkout"]
@@ -119,7 +129,15 @@ def test_same_day_checkout_is_allowed(
 
     try:
         response = booking_client.create_booking(payload)
-        booking_id = _assert_created_booking(booking_client, response, payload)
+
+        booking_id = _extract_booking_id(response)
+
+        _assert_created_booking(
+            booking_client,
+            response,
+            payload,
+            booking_id,
+        )
 
         dates = response.json()["booking"]["bookingdates"]
         assert dates["checkin"] == dates["checkout"]
@@ -145,6 +163,7 @@ def test_checkout_before_checkin_is_rejected(
 
     try:
         response = booking_client.create_booking(payload)
+
         booking_id = _extract_booking_id(response)
 
         assert_error_response(response, expected_status=400)
@@ -165,7 +184,16 @@ def test_zero_totalprice_is_allowed(
 
     try:
         response = booking_client.create_booking(payload)
-        booking_id = _assert_created_booking(booking_client, response, payload)
+
+        booking_id = _extract_booking_id(response)
+
+        _assert_created_booking(
+            booking_client,
+            response,
+            payload,
+            booking_id,
+        )
+
         assert response.json()["booking"]["totalprice"] == 0
     finally:
         _cleanup_booking(booking_client, booking_id, token)
@@ -187,9 +215,52 @@ def test_negative_totalprice_is_rejected(
 
     try:
         response = booking_client.create_booking(payload)
+
         booking_id = _extract_booking_id(response)
 
         assert_error_response(response, expected_status=400)
         assert booking_id is None
     finally:
         _cleanup_booking(booking_client, booking_id, token)
+
+
+def test_created_booking_is_cleaned_up_when_business_assertion_fails(
+    booking_client,
+    api_client,
+    auth_credentials,
+):
+    """业务断言失败后，finally 仍应删除已经创建的 booking。"""
+    payload = build_booking_payload()
+    token = _get_token(api_client, auth_credentials)
+    booking_id = None
+
+    try:
+        response = booking_client.create_booking(payload)
+
+        booking_id = _extract_booking_id(response)
+
+        wrong_expected_payload = {
+            **payload,
+            "firstname": "__controlled_wrong_firstname__",
+        }
+
+        with pytest.raises(AssertionError):
+            _assert_created_booking(
+                booking_client,
+                response,
+                wrong_expected_payload,
+                booking_id,
+            )
+    finally:
+        _cleanup_booking(booking_client, booking_id, token)
+
+    assert booking_id is not None
+
+    get_response = booking_client.get_booking(booking_id)
+
+    assert get_response.status_code == 404, (
+        f"Expected booking {booking_id} to be deleted after "
+        f"the controlled assertion failure, "
+        f"but got HTTP {get_response.status_code}. "
+        f"Response body: {get_response.text!r}"
+    )

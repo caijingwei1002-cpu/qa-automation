@@ -63,6 +63,7 @@
 - [Day 54：业务断言](#day-54业务断言)
 - [Day 55：接口链路](#day-55接口链路)
 - [Day 56：配置分层与规范导读](#day-56配置分层与规范导读)
+- [Day 57：异常路径资源清理](#day-57异常路径资源清理)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -6092,6 +6093,121 @@ def request_timeout_seconds(settings):
 - 验证证据：`artifacts/day-056/verification.md`
 - 当天记录：`daily-log/day-056.md`
 
+## Day 57：异常路径资源清理
+
+### 核心知识点
+
+资源创建成功后，测试必须先登记资源身份，再执行可能失败的业务断言。资源 ID 是后续清理的最小必要信息；一旦保存到外层变量，后续响应、回查或业务断言失败仍可由 `finally` 根据该 ID 执行清理。
+
+### 它解决的问题
+
+如果把 ID 提取和业务校验放在同一个 helper 中，并通过 helper 返回 ID，helper 内部的任意断言失败都会阻止返回值赋给外层变量。测试随后进入清理逻辑时只有 `None`，资源就可能残留，污染后续测试环境。异常路径清理要优先保证“知道要清理谁”，再验证“资源是否符合业务预期”。
+
+### 理论基础
+
+#### 定义与关键概念
+
+资源登记（resource registration）是指创建响应到达后，立即提取并保存本次测试拥有的资源 ID。它和业务断言是两个不同职责：
+
+| 步骤 | 证明什么 | 失败后的责任 |
+| --- | --- | --- |
+| 提取并保存 ID | 测试获得了资源生命周期线索 | 外层变量保留清理目标 |
+| 响应和回查断言 | 创建结果及持久化数据符合契约 | 异常继续向测试报告传播 |
+| `finally` 清理 | 无论业务断言是否失败都尝试回收 | 只操作本测试登记的资源 |
+| 删除后 GET | 资源最终不再存在 | 暴露清理失败或残留 |
+
+#### 心智模型或执行链
+
+```text
+POST 创建资源
+    ↓
+解析响应并登记 booking_id
+    ↓
+外层已经具备清理能力
+    ↓
+状态码、响应体、回查和业务断言
+    ↓                  ↘ 失败
+正常流程继续             AssertionError
+    ↓                      ↓
+finally 根据 booking_id 清理资源
+    ↓
+GET booking_id → 404
+```
+
+关键点是 ID 的赋值发生在断言之前，而不是把 ID 藏在一个只有成功返回才会完成的 helper 调用中。
+
+#### 最小代码骨架
+
+```python
+booking_id = None
+
+try:
+    response = booking_client.create_booking(payload)
+    body = _json_object(response)
+
+    # 先登记资源，再做业务断言。
+    booking_id = body.get("bookingid")
+
+    assert response.status_code == 200
+    assert isinstance(booking_id, int)
+    assert body.get("booking") == payload
+
+    with pytest.raises(AssertionError):
+        assert response.json() == deliberately_wrong_expected_value
+finally:
+    _cleanup_booking(booking_client, booking_id, token)
+```
+
+`extract_created_booking_id()` 或 `_json_object()` 可以负责尽可能读取 ID，但不应把状态码或业务字段断言放在 ID 登记之前。业务断言 helper 如果需要回查，应接收已经登记好的 `booking_id`，不再负责提取或返回它。
+
+#### 断言、数据或状态的含义
+
+`with pytest.raises(AssertionError)` 只证明这里发生了预期的业务断言失败；它不能证明清理成功。清理成功需要额外的证据：`finally` 执行了删除逻辑，且使用同一个 `booking_id` 的 GET 最终返回 `404`。因此控制性失败测试必须把预期异常、清理和删除后状态放在同一条证据链中。
+
+`_cleanup_booking()` 先 GET 再 DELETE，可以区分“资源已经被业务流程删除”和“资源仍存在需要删除”。这样清理逻辑可以幂等地处理已删除资源，同时不会对未知 ID 发起删除。
+
+#### 适用场景与边界
+
+这个模式适合 POST、PUT、PATCH 等会创建或持有外部资源的集成测试，尤其适合响应回查、Schema 校验或业务规则断言较多的场景。它不能挽救创建请求本身没有成功、响应完全没有可识别 ID 或服务不可达的情况；这些情况应明确报告，不能伪造清理成功。
+
+如果资源由 `yield` fixture 统一管理，也应遵守同一顺序：fixture 在创建后立即登记 ID，teardown 再根据登记结果清理。测试函数中的 `try/finally` 更适合教学或单个场景需要显式控制清理的情况。
+
+#### 常见错误、反例与假通过
+
+1. 在 helper 内先断言响应体，再返回 `booking_id`；断言失败时外层变量仍是 `None`。
+2. 只有 `deleted = True` 标志，没有重新查询资源；标志只能描述代码路径，不能证明服务端状态。
+3. 把整个请求放进 `pytest.raises(AssertionError)`；网络异常或请求异常可能被错误地当成预期业务失败。
+4. 在 `finally` 中清理固定 ID；这可能删除其他测试或环境数据，清理必须只使用本测试创建并登记的 ID。
+5. 只看到控制性失败测试“没有报错”就认为清理成功；必须有删除后的 GET `404` 证据。
+
+#### 记忆要点
+
+**先登记资源，再验证业务；`finally` 保证尝试清理，删除后的 GET 才证明资源真的离开了系统。**
+
+### 代码落地
+
+本日重构了 `test_business_rules.py`：将资源 ID 提取与 `_assert_created_booking()` 的业务验证分开，正常场景和负向场景都在创建响应后立即登记 ID。新增控制性失败测试，故意传入错误的期望 booking 数据，在 `pytest.raises(AssertionError)` 中确认业务断言失败，随后由 `finally` 清理并用 GET 验证 `404`。
+
+随后把同一原则迁移到 `test_booking_lifecycle.py` 的更新阶段：PUT 成功后故意使用错误期望值触发断言失败，仍通过 `finally` 清理创建的 booking。迁移测试验证了资源登记原则不依赖具体业务断言位置。
+
+### 知识验收
+
+1. 为什么 helper 内部拿到 `booking_id`，不代表外层已经具备清理能力？
+2. 为什么资源 ID 提取必须先于状态码、响应体和 Schema 断言？
+3. `pytest.raises(AssertionError)` 能证明什么，不能证明什么？
+4. 为什么删除后还要用同一个 ID GET，而不能只记录 DELETE 已发送？
+5. 如果创建响应没有可识别的 ID，测试应该如何报告，而不是伪造清理成功？
+
+### 关联产出
+
+- 业务规则与控制性失败测试：`test-projects/03-restful-booker-api/tests/test_business_rules.py`
+- 独立迁移测试：`test-projects/03-restful-booker-api/tests/test_booking_lifecycle.py`
+- 验证命令：`.\.venv\Scripts\python.exe tools/run_day_verification.py 57`
+- 目标结果：`4 passed, 2 xfailed`
+- API 全量结果：`63 passed, 18 xfailed`
+- 验证证据：`artifacts/day-057/verification.md`
+- 当天记录：`daily-log/day-057.md`
+
 ---
 
 ## 知识主题索引
@@ -6152,6 +6268,7 @@ def request_timeout_seconds(settings):
 | 业务断言 | Day 54 | 结构与业务分层、日期顺序、价格范围、边界矩阵、strict xfail 和业务数据隔离 |
 | 接口生命周期链路 | Day 55 | 动态 booking ID、局部断言、状态转换、异常路径清理和删除后 404 验证 |
 | 配置分层与环境覆盖 | Day 56 | Settings 读取与校验、类型化配置、fixture 注入、Client 边界、配置测试分层和环境数据隔离 |
+| 异常路径资源清理 | Day 57 | 先登记资源 ID 再断言、`finally` 兜底清理、控制性失败和删除后状态证据 |
 | 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
 | API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
 | Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |

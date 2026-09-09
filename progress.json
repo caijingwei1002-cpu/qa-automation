@@ -1,5 +1,5 @@
 {
-  "current_day": 57,
+  "current_day": 58,
   "completed_days": [
     1,
     2,
@@ -56,7 +56,8 @@
     53,
     54,
     55,
-    56
+    56,
+    57
   ],
   "history": [
     {
@@ -394,6 +395,12 @@
       "date": "2026-09-08",
       "result": "完成配置分层与环境覆盖：Settings 统一读取、清洗、校验 URL 和 timeout，fixture 只消费配置结果；目标测试 32 passed，API 全量回归 61 passed、18 xfailed。",
       "next_step": "Day 57：验证创建成功后断言失败时的资源登记与清理保证。"
+    },
+    {
+      "day": 57,
+      "date": "2026-09-09",
+      "result": "完成异常路径资源清理：创建后先登记 booking_id，再执行业务断言；控制性失败和 PUT 更新迁移测试均在断言失败后清理资源并确认 404。目标测试 4 passed、2 xfailed；迁移测试 2 passed；API 全量回归 63 passed、18 xfailed。",
+      "next_step": "Day 58：移除过滤测试对固定 Jim/Brown 预置数据的依赖，验证测试数据隔离。"
     }
   ]
 }

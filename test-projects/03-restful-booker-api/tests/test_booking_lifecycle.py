@@ -2,6 +2,7 @@
 
 from datetime import date, timedelta
 
+import pytest
 from factories import build_booking_payload
 from schema_helpers import assert_schema_valid
 
@@ -44,8 +45,7 @@ def _cleanup_booking(booking_client, booking_id, token):
         return
 
     assert current_response.status_code == 200, (
-        f"Unexpected cleanup lookup status: {current_response.status_code}; "
-        f"booking_id={booking_id}"
+        f"Unexpected cleanup lookup status: {current_response.status_code}; booking_id={booking_id}"
     )
 
     assert isinstance(token, str) and token.strip(), (
@@ -172,3 +172,60 @@ def test_booking_full_lifecycle(
     finally:
         # 正常流程已删除时查询得到 404；中途失败时仍会删除残留资源。
         _cleanup_booking(booking_client, booking_id, token)
+
+
+def test_booking_cleanup_after_update_assertion_failure(
+    booking_client,
+    api_client,
+    auth_credentials,
+):
+    """更新阶段断言失败后，仍应清理创建的 booking。"""
+
+    create_payload = build_booking_payload(
+        lastname="Create",
+        totalprice=111,
+        depositpaid=True,
+        additionalneeds="Breakfast",
+    )
+
+    update_payload = {
+        **create_payload,
+        "lastname": "Updated",
+        "totalprice": 222,
+    }
+
+    wrong_expected_payload = {
+        **update_payload,
+        "lastname": "__wrong_expected_name__",
+    }
+
+    token = _get_token(api_client, auth_credentials)
+    booking_id = None
+
+    try:
+        create_response = booking_client.create_booking(create_payload)
+        create_data = _json_object(create_response)
+
+        # 这里必须放在其他创建断言之前
+        booking_id = create_data.get("bookingid")
+
+        assert create_response.status_code == 200
+        assert isinstance(booking_id, int)
+        assert create_data.get("booking") == create_payload
+
+        update_response = booking_client.update_booking(
+            booking_id,
+            update_payload,
+            token,
+        )
+
+        assert update_response.status_code == 200
+
+        with pytest.raises(AssertionError):
+            assert update_response.json() == wrong_expected_payload
+    finally:
+        _cleanup_booking(booking_client, booking_id, token)
+
+    deleted_response = booking_client.get_booking(booking_id)
+
+    assert deleted_response.status_code == 404
