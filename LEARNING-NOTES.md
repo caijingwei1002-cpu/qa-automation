@@ -66,6 +66,7 @@
 - [Day 57：异常路径资源清理](#day-57异常路径资源清理)
 - [Day 58：过滤测试数据隔离](#day-58过滤测试数据隔离)
 - [Day 59：鉴权与资源管理重构](#day-59鉴权与资源管理重构)
+- [Day 60：预期失败治理](#day-60预期失败治理)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -6451,6 +6452,131 @@ def created_booking(booking_client, auth_token):
 - 受控失败：故意测试 `1 failed`，teardown 成功，删除后 GET `404`
 - 证据目录：`artifacts/day-059/`
 
+## Day 60：预期失败治理
+
+### 核心知识点
+
+预期失败（`xfail`）应该只描述已经确认、可复现、可解释的缺陷。通过 `raises` 限定允许的异常类型，通过 `strict=True` 在缺陷修复后把 `XPASS` 变成失败，提醒测试维护者重新审查标记。
+
+### 它解决的问题
+
+宽泛的 `xfail` 可能把网络中断、认证失败、响应解析错误、测试代码错误或资源清理失败都包装成“预期失败”。这样回归结果看似稳定，实际却隐藏了新的问题。把业务缺陷和基础设施异常分开，才能让失败结果指向正确的责任边界。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **已知业务缺陷**：输入和预期来自已确认的产品契约，实际表现也与登记的缺陷一致。例如 `checkout < checkin` 时接口返回 `200` 并创建 booking。
+- **`KnownBusinessDefect`**：专门表示上述缺陷的异常类型。只有它可以被相关 `xfail` 的 `raises` 接受。
+- **`BookingCleanupError`**：表示资源清理不符合契约，例如 DELETE 没有返回约定的 `201`，或删除后 GET 仍不是 `404`。
+- **`strict=True`**：测试意外通过时报告 `XPASS(strict)` 并让测试失败，避免缺陷修复后留下过期的 `xfail`。
+- **`raises=...`**：限定预期失败的异常类型。未匹配的异常继续按真实错误报告。
+
+#### 心智模型或执行链
+
+```text
+业务输入
+    ↓
+接口响应
+    ↓
+先提取 booking_id
+    ↓
+确认是否是已登记的缺陷表现
+    ├─ 是：raise KnownBusinessDefect → XFAIL
+    └─ 否：继续正常断言或抛出真实异常
+    ↓
+finally 清理资源
+    ├─ 清理成功：DELETE 201 → GET 404
+    └─ 清理失败：BookingCleanupError → FAILED
+```
+
+网络异常走 Client 的异常转换路径，例如 `ConnectionError → ApiRequestError`，不会匹配 `KnownBusinessDefect`。如果服务修复后测试正常通过，`strict=True` 会产生 `XPASS(strict) → FAILED`。
+
+#### 最小代码骨架
+
+```python
+class KnownBusinessDefect(RuntimeError):
+    """已确认、可追踪的产品业务缺陷。"""
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=KnownBusinessDefect,
+    reason="已确认当前接口接受 checkout 早于 checkin 的 booking。",
+)
+def test_invalid_booking(booking_client):
+    booking_id = None
+    try:
+        response = booking_client.create_booking(payload)
+        booking_id = _extract_booking_id(response)
+
+        if response.status_code == 200 and isinstance(booking_id, int):
+            raise KnownBusinessDefect("Invalid booking was accepted.")
+
+        assert response.status_code == 400
+    finally:
+        _cleanup_booking(booking_client, booking_id, token)
+```
+
+清理 helper 应使用独立异常，不要复用业务 `xfail` 的异常类型：
+
+```python
+if delete_response.status_code != 201:
+    raise BookingCleanupError("Unexpected cleanup delete status")
+
+if booking_client.get_booking(booking_id).status_code != 404:
+    raise BookingCleanupError("Booking still exists after cleanup")
+```
+
+#### 断言、数据或状态的含义
+
+`raise KnownBusinessDefect` 证明的是“本次响应精确匹配已登记的缺陷表现”，不是“测试发生了任意错误”。`assert response.status_code == 400` 证明负向业务契约在当前响应上未满足；如果响应是 `500`、非 JSON 或连接失败，应让原始错误暴露，而不是强行转换为已知缺陷。
+
+`--runxfail` 会暂时禁用 `xfail` 标记。若已知缺陷仍存在，显式抛出的 `KnownBusinessDefect` 会显示为真实 `FAILED`，可用来验证测试本身确实有失败证据。这个诊断命令不应作为普通回归入口。
+
+#### 适用场景与边界
+
+当产品缺陷已由稳定输入、响应和复现记录确认时，可以使用严格 `xfail` 保留证据。网络不稳定、服务尚未启动、测试数据不确定或根因尚未确认时，不应添加 `xfail`。清理失败、认证失败和代码错误属于测试基础设施或实现问题，也不应被业务 `xfail` 接受。
+
+`raises=AssertionError` 只适合测试主体中明确且唯一的业务断言，仍可能把其他断言误归类；对资源型负向测试，使用领域专用异常可以进一步收窄边界。
+
+#### 常见错误、反例与假通过
+
+1. 只写 `xfail(strict=True)`：任何异常都可能被归入预期失败，网络问题会被隐藏。
+2. 用 `raises=AssertionError` 覆盖业务和 teardown：清理断言失败可能被误认为业务缺陷。
+3. 在状态码断言后才提取 `booking_id`：接口已创建资源但状态码异常时，资源无法清理。
+4. 复制装饰器却不核对 `reason`：测试函数、输入和缺陷说明不一致，缺陷记录失去可信度。
+5. 把临时 `assert False` 长期留在正式套件：回归永远变红；受控失败应单独验证并移除或隔离。
+
+#### 记忆要点
+
+**`xfail` 只豁免已确认的业务缺陷；`raises` 限定异常类型；`strict=True` 监控修复；网络和清理异常必须继续 FAILED。**
+
+### 代码落地
+
+`test_business_rules.py` 为日期逆序和负数价格缺陷定义 `KnownBusinessDefect`，两个测试均使用 `strict=True` 与 `raises=KnownBusinessDefect`，并将 `reason` 分别写成对应的业务规则。创建响应后先提取 `booking_id`，只有“返回 `200` 且确实创建资源”才抛出已知缺陷异常。
+
+同文件使用 `BookingCleanupError` 区分清理失败。`_cleanup_booking()` 在资源仍存在时要求 DELETE 返回 `201`，随后 GET 必须返回 `404`；网络、认证、解析和清理错误都不会被业务 `xfail` 接受。
+
+错误服务地址验证得到 `ApiRequestError → FAILED`。正常运行得到 `4 passed, 2 xfailed`；全量回归得到 `63 passed, 18 xfailed`。使用 `--runxfail` 后得到 `2 failed, 4 passed`，两个失败均来自显式 `KnownBusinessDefect`，证明标记没有改变真实缺陷证据。
+
+### 知识验收
+
+1. 为什么网络断开不能算作业务 `XFAIL`？
+2. `raises=KnownBusinessDefect` 和 `strict=True` 分别防止哪类问题？
+3. 为什么创建响应返回后必须先登记 `booking_id`？
+4. 如果 DELETE 返回错误状态码，为什么应抛出 `BookingCleanupError`？
+5. `--runxfail` 的用途是什么，为什么不应作为普通回归命令？
+
+### 关联产出
+
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_business_rules.py`
+- 目标命令：`.\.venv\Scripts\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_business_rules.py -q`
+- 目标结果：`4 passed, 2 xfailed`
+- 全量回归：`63 passed, 18 xfailed`
+- 诊断命令：目标测试加 `--runxfail`，结果 `2 failed, 4 passed`
+- 证据目录：`artifacts/day-060/`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -6512,6 +6638,7 @@ def created_booking(booking_client, auth_token):
 | 异常路径资源清理 | Day 57 | 先登记资源 ID 再断言、`finally` 兜底清理、控制性失败和删除后状态证据 |
 | 过滤测试数据隔离 | Day 58 | 自建匹配与干扰数据、资源 ID 追踪、包含/排除断言、重启后语义一致性和分别清理 |
 | 鉴权与资源管理重构 | Day 59 | `auth_token` 与资源 fixture 分离、yield teardown、先登记 ID、DELETE 后 GET 404 和受控失败验证 |
+| 预期失败治理 | Day 60 | `xfail` 的 `raises` 与 `strict`、已知业务缺陷和意外异常分离、`--runxfail` 诊断、资源清理错误边界 |
 | 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
 | API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
 | Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |

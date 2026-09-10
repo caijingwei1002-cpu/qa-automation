@@ -10,6 +10,14 @@ from factories import build_booking_payload
 # 当前服务对两个非法边界仍会返回 200，因此用 strict xfail 保留已确认的缺陷证据。
 
 
+class KnownBusinessDefect(RuntimeError):
+    """已确认、可追踪的产品业务缺陷。"""
+
+
+class BookingCleanupError(RuntimeError):
+    """资源清理失败。"""
+
+
 def _get_token(api_client, auth_credentials):
     """获取清理测试资源所需的 Token，不打印凭据或 Token。"""
     response = api_client.post("/auth", json=auth_credentials)
@@ -48,10 +56,26 @@ def _cleanup_booking(booking_client, booking_id, token):
     if current_response.status_code == 404:
         return
 
-    assert current_response.status_code == 200
+    if current_response.status_code != 200:
+        raise BookingCleanupError(
+            f"Unexpected cleanup lookup status: {current_response.status_code}; "
+            f"booking_id={booking_id}"
+        )
 
     delete_response = booking_client.delete_booking(booking_id, token)
-    assert delete_response.status_code in (201, 404)
+    if delete_response.status_code != 201:
+        raise BookingCleanupError(
+            f"Unexpected cleanup delete status: {delete_response.status_code}; "
+            f"booking_id={booking_id}"
+        )
+
+    deleted_response = booking_client.get_booking(booking_id)
+    if deleted_response.status_code != 404:
+        raise BookingCleanupError(
+            f"Booking still exists after cleanup: "
+            f"booking_id={booking_id}; "
+            f"status={deleted_response.status_code}"
+        )
 
 
 def _assert_created_booking(
@@ -147,7 +171,8 @@ def test_same_day_checkout_is_allowed(
 
 @pytest.mark.xfail(
     strict=True,
-    reason="已确认当前接口接受 checkout 早于 checkin，缺少日期顺序校验。",
+    raises=KnownBusinessDefect,
+    reason="已确认当前接口接受 checkout 早于 checkin 的 booking，缺少日期先后关系校验。",
 )
 def test_checkout_before_checkin_is_rejected(
     booking_client,
@@ -166,7 +191,15 @@ def test_checkout_before_checkin_is_rejected(
 
         booking_id = _extract_booking_id(response)
 
-        assert_error_response(response, expected_status=400)
+        # 只有“返回 200 且真的创建了 booking”才是已确认缺陷。
+        if response.status_code == 200 and isinstance(booking_id, int):
+            raise KnownBusinessDefect("Checkout before checkin was accepted and created a booking.")
+
+        # 其他响应必须继续按正常负向契约检查。
+        assert_error_response(
+            response,
+            expected_status=400,
+        )
         assert booking_id is None
     finally:
         _cleanup_booking(booking_client, booking_id, token)
@@ -201,6 +234,7 @@ def test_zero_totalprice_is_allowed(
 
 @pytest.mark.xfail(
     strict=True,
+    raises=KnownBusinessDefect,
     reason="已确认当前接口接受负数 totalprice，缺少 totalprice >= 0 校验。",
 )
 def test_negative_totalprice_is_rejected(
@@ -216,9 +250,16 @@ def test_negative_totalprice_is_rejected(
     try:
         response = booking_client.create_booking(payload)
 
+        # 先提取 ID，再进行负向断言。
         booking_id = _extract_booking_id(response)
 
-        assert_error_response(response, expected_status=400)
+        if response.status_code == 200 and isinstance(booking_id, int):
+            raise KnownBusinessDefect("Negative totalprice was accepted and created a booking.")
+
+        assert_error_response(
+            response,
+            expected_status=400,
+        )
         assert booking_id is None
     finally:
         _cleanup_booking(booking_client, booking_id, token)
