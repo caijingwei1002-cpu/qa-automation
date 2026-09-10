@@ -1,5 +1,5 @@
 {
-  "current_day": 59,
+  "current_day": 60,
   "completed_days": [
     1,
     2,
@@ -58,7 +58,8 @@
     55,
     56,
     57,
-    58
+    58,
+    59
   ],
   "history": [
     {
@@ -408,6 +409,12 @@
       "date": "2026-09-09",
       "result": "完成过滤测试数据隔离：为 firstname、lastname 和 checkin 自建匹配/干扰 booking，验证包含与排除；迁移无过滤集合测试并验证两个自建资源均被返回，所有资源分别清理并确认 404。目标测试 3 passed；迁移测试 1 passed；服务重启后目标测试 3 passed、API 全量回归 63 passed、18 xfailed。",
       "next_step": "Day 59：统一 Token 获取与资源登记清理机制，检查 fixture 和公共机制的职责边界。"
+    },
+    {
+      "day": 59,
+      "date": "2026-09-10",
+      "result": "完成鉴权与资源管理重构：新增独立 auth_token fixture，created_booking 只返回 booking_id 和 payload，公共 teardown 统一 DELETE 并验证删除后 404；DELETE、PUT、PATCH 相关测试 5 passed，API 全量回归 63 passed、18 xfailed；受控失败测试确认测试主体失败后 teardown 仍完成清理。",
+      "next_step": "Day 60：审查负向用例的预期依据并收紧 xfail，区分已知失败与意外异常。"
     }
   ]
 }

@@ -65,6 +65,7 @@
 - [Day 56：配置分层与规范导读](#day-56配置分层与规范导读)
 - [Day 57：异常路径资源清理](#day-57异常路径资源清理)
 - [Day 58：过滤测试数据隔离](#day-58过滤测试数据隔离)
+- [Day 59：鉴权与资源管理重构](#day-59鉴权与资源管理重构)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -6311,6 +6312,145 @@ finally:
 - 全量命令：`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
 - 证据目录：`artifacts/day-058/`
 
+## Day 59：鉴权与资源管理重构
+
+### 核心知识点
+
+Fixture（测试夹具）应按依赖职责拆分：认证 fixture 只提供认证信息，资源 fixture 只负责资源的创建、登记和清理，测试函数保留场景业务断言。资源 fixture 使用 `yield` 把 setup 和 teardown 连接起来，即使测试主体失败也能执行清理。
+
+### 它解决的问题
+
+当每个测试都自己获取 Token、创建 booking 和删除 booking 时，成功标准容易不一致，资源 ID 可能在断言失败前尚未保存，失败路径会留下脏数据。把认证和资源生命周期集中到公共 fixture，可以减少重复代码，统一清理契约，并让失败归因更清楚。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **认证 fixture（`auth_token`）**：调用 `/auth`，验证认证响应，提取并返回 Token。它不创建或删除 booking。
+- **资源 fixture（`created_booking`）**：生成 payload，创建 booking，尽早登记 `booking_id`，把资源上下文交给测试，并在 teardown 中清理。
+- **测试主体**：描述业务场景，验证创建、更新、删除或查询等业务结果，不承担公共资源清理编排。
+- **teardown**：`yield` 之后的清理阶段。资源清理成功的定义是 DELETE 符合接口契约，并且删除后 GET 返回 `404`。
+
+Token 属于认证上下文；`booking_id` 和原始 `payload` 属于 booking 资源上下文。不要让测试通过 `created_booking["token"]` 间接取得认证信息。
+
+#### 心智模型或执行链
+
+```text
+auth_token
+    ↓
+提供认证能力
+
+created_booking(auth_token)
+    ↓
+生成 payload
+    ↓
+创建资源并立即登记 booking_id
+    ↓
+yield {booking_id, payload}
+    ↓
+测试执行业务断言
+    ↓
+finally / teardown
+    ↓
+DELETE → GET 404
+```
+
+资源 fixture 的完整控制流是：
+
+```text
+booking_id = None
+try:
+    create
+    extract booking_id
+    assert create response
+    yield resource
+finally:
+    cleanup(booking_id)
+```
+
+#### 最小代码骨架
+
+```python
+@pytest.fixture
+def auth_token(api_client, auth_credentials):
+    response = api_client.post("/auth", json=auth_credentials)
+    assert response.status_code == 200
+
+    token = response.json().get("token")
+    assert isinstance(token, str)
+    assert token.strip()
+    return token
+
+
+@pytest.fixture
+def created_booking(booking_client, auth_token):
+    payload = build_booking_payload()
+    booking_id = None
+
+    try:
+        response = booking_client.create_booking(payload)
+        booking_id = _extract_booking_id(response)
+
+        assert response.status_code == 200
+        assert isinstance(booking_id, int)
+
+        yield {"booking_id": booking_id, "payload": payload}
+    finally:
+        _cleanup_booking(booking_client, booking_id, auth_token)
+```
+
+清理 helper 的最小契约是：`booking_id is None` 时不操作；当前 GET 已是 `404` 时视为资源已经不存在；当前资源存在时 DELETE 必须返回约定的 `201`，随后 GET 必须返回 `404`。这样“调用过删除”与“资源确实被删除”有明确区别。
+
+#### 断言、数据或状态的含义
+
+`auth_token` 中的 `status_code == 200` 和 Token 非空断言证明认证前置条件可用；它不能证明任何 booking 已创建。`created_booking` 中的 `booking_id` 类型断言证明资源有可追踪身份；它不能证明业务字段符合每个场景的预期。业务字段、过滤关系和更新结果必须在测试主体中断言。
+
+受控失败测试的预期结果可以是测试主体 `1 failed`，只要失败来自故意的断言，且没有 fixture setup/teardown 错误，删除后资源 GET 为 `404`，就说明 teardown 契约通过。测试报告的整体颜色和基础设施验证结果是两个不同维度。
+
+#### 适用场景与边界
+
+认证 fixture 适合所有需要合法 Token 的测试；不需要认证的负向测试可以不注入它。单资源生命周期 fixture 适合普通创建、查询、更新和删除场景；过滤测试需要匹配/干扰资源对，仍可保留专用 fixture。业务断言复杂或 payload 特殊的场景可以使用专用数据，但仍应遵守创建后先登记 ID 和最终清理原则。
+
+不要把所有 HTTP 操作都塞进一个万能 fixture。fixture 负责稳定的前置条件和资源回收，测试函数负责表达当前场景的行为和预期。
+
+#### 常见错误、反例与假通过
+
+1. `created_booking` 返回 `token`，测试从资源字典中获取认证信息：资源和认证职责重新耦合。
+2. `create` 后先断言状态码、最后才提取 ID：状态码异常时，即使资源已创建也无法清理。
+3. 把 firstname、价格或更新结果断言放入公共 fixture：具体测试意图被隐藏，fixture 无法复用于不同业务场景。
+4. teardown 只发 DELETE、不验证删除后 GET：DELETE 失败或服务行为异常时可能留下资源。
+5. 普通测试中永久保留 `assert False`：主回归会持续变红。受控失败应使用临时测试、子 pytest 或专门的基础设施测试。
+6. 认证失败与资源创建失败共用一段 setup：失败报告无法快速区分认证前置问题和资源生命周期问题。
+
+#### 记忆要点
+
+**Token 单独注入，资源单独管理；先登记 ID，再 yield；业务断言留在测试，teardown 用 DELETE 加 GET 404 证明清理。**
+
+### 代码落地
+
+`tests/conftest.py` 新增 `auth_token` fixture，并把 `_extract_booking_id()`、`_cleanup_booking()` 放入公共配置模块。`created_booking` 依赖 `auth_token`，只返回 `booking_id` 和 `payload`，创建后立即登记 ID，teardown 统一验证删除后的 `404`。
+
+`test_delete_booking.py` 的两个删除场景分别注入 `auth_token`。`test_update_booking.py` 的 PUT 和 PATCH 场景使用 `created_booking` 与 `auth_token`，删除了文件内重复的创建和认证 helper；业务响应和持久化断言仍直接写在测试函数中。
+
+受控失败验证使用临时测试故意触发 `assert False`，测试主体显示 `1 failed`，fixture teardown 没有报错，资源随后 GET 返回 `404`。验证完成后删除临时测试，不污染正式回归。
+
+### 知识验收
+
+1. `auth_token` 和 `created_booking` 分别负责什么？
+2. 为什么资源 fixture 必须在创建响应断言之前登记 `booking_id`？
+3. 为什么 `created_booking` 不应向测试返回 Token？
+4. 如何区分“受控失败测试本身失败”和“fixture teardown 失败”？
+
+### 关联产出
+
+- 公共 fixture：`test-projects/03-restful-booker-api/tests/conftest.py`
+- 使用方：`test-projects/03-restful-booker-api/tests/test_delete_booking.py`、`test-projects/03-restful-booker-api/tests/test_update_booking.py`
+- 目标命令：`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
+- 目标结果：`63 passed, 18 xfailed`
+- 相关测试：DELETE/PUT/PATCH `5 passed`
+- 受控失败：故意测试 `1 failed`，teardown 成功，删除后 GET `404`
+- 证据目录：`artifacts/day-059/`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -6371,6 +6511,7 @@ finally:
 | 配置分层与环境覆盖 | Day 56 | Settings 读取与校验、类型化配置、fixture 注入、Client 边界、配置测试分层和环境数据隔离 |
 | 异常路径资源清理 | Day 57 | 先登记资源 ID 再断言、`finally` 兜底清理、控制性失败和删除后状态证据 |
 | 过滤测试数据隔离 | Day 58 | 自建匹配与干扰数据、资源 ID 追踪、包含/排除断言、重启后语义一致性和分别清理 |
+| 鉴权与资源管理重构 | Day 59 | `auth_token` 与资源 fixture 分离、yield teardown、先登记 ID、DELETE 后 GET 404 和受控失败验证 |
 | 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
 | API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
 | Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |

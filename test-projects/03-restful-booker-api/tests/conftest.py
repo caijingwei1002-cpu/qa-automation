@@ -58,49 +58,108 @@ def booking_client(api_client):
 
 
 @pytest.fixture
-def created_booking(booking_client, api_client, auth_credentials):
-    # 先获取 Token，避免创建成功后鉴权失败导致资源无法清理。
-    auth_response = api_client.post(
+def auth_token(api_client, auth_credentials):
+    """获取认证 token，供需要鉴权的测试和资源 fixture 使用。"""
+    response = api_client.post(
         "/auth",
         json=auth_credentials,
     )
-    assert auth_response.status_code == 200
 
-    auth_data = auth_response.json()
-    assert isinstance(auth_data.get("token"), str)
-    assert auth_data["token"].strip()
-    token = auth_data["token"]
+    assert response.status_code == 200
 
+    data = response.json()
+    token = data.get("token")
+
+    assert isinstance(token, str)
+    assert token.strip()
+
+    return token
+
+
+def _extract_booking_id(response):
+    """从创建响应中尽早提取 booking ID。"""
+    try:
+        data = response.json()
+    except ValueError:
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    booking_id = data.get("bookingid")
+
+    if isinstance(booking_id, int):
+        return booking_id
+
+    return None
+
+
+def _cleanup_booking(booking_client, booking_id, token):
+    """删除 booking，并验证资源最终不存在。"""
+    if booking_id is None:
+        return
+
+    current_response = booking_client.get_booking(booking_id)
+
+    # 测试主体可能已经删除资源，视为清理完成。
+    if current_response.status_code == 404:
+        return
+
+    assert current_response.status_code == 200, (
+        f"Unexpected cleanup status: {current_response.status_code}; booking_id={booking_id}"
+    )
+
+    delete_response = booking_client.delete_booking(
+        booking_id,
+        token,
+    )
+
+    assert delete_response.status_code == 201, (
+        f"Unexpected delete status: {delete_response.status_code}; booking_id={booking_id}"
+    )
+
+    deleted_response = booking_client.get_booking(booking_id)
+
+    assert deleted_response.status_code == 404, (
+        f"Booking still exists after cleanup: "
+        f"booking_id={booking_id}; "
+        f"status={deleted_response.status_code}"
+    )
+
+
+@pytest.fixture
+def created_booking(booking_client, auth_token):
+    # 资源数据属于 booking fixture，认证能力由 auth_token fixture 提供。
     payload = build_booking_payload(
         lastname="Booking",
         totalprice=999,
         additionalneeds="Fixture data",
     )
 
-    create_response = booking_client.create_booking(payload)
-    assert create_response.status_code == 200
-
-    create_data = create_response.json()
-    assert isinstance(create_data.get("bookingid"), int)
-    booking_id = create_data["bookingid"]
+    # 必须在 try 之前初始化，保证异常路径可以访问。
+    booking_id = None
 
     try:
+        create_response = booking_client.create_booking(payload)
+
+        # 先登记 ID，再执行状态码和响应内容断言。
+        booking_id = _extract_booking_id(create_response)
+
+        assert create_response.status_code == 200, (
+            f"Expected status code 200, got {create_response.status_code}"
+        )
+        assert isinstance(booking_id, int), f"Expected integer booking_id, got {booking_id!r}"
+
+        # 只返回 booking 自身相关的信息，不暴露 token。
         yield {
             "booking_id": booking_id,
-            "token": token,
             "payload": payload,
         }
-    finally:
-        current_response = booking_client.get_booking(booking_id)
 
-        if current_response.status_code == 200:
-            delete_response = booking_client.delete_booking(
-                booking_id,
-                token,
-            )
-            assert delete_response.status_code in (201, 404)
-        elif current_response.status_code == 404:
-            # 测试本身已经删除，视为清理完成
-            pass
-        else:
-            raise AssertionError(f"Unexpected cleanup status: {current_response.status_code}")
+    finally:
+        # 测试通过或失败后，都尝试清理资源。
+        _cleanup_booking(
+            booking_client,
+            booking_id,
+            auth_token,
+        )

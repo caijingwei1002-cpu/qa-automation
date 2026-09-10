@@ -6,13 +6,13 @@ from assertions import assert_error_response
 def test_delete_booking(
     created_booking,
     booking_client,
+    auth_token,
 ):
-    # Fixture 已完成创建并提供本次测试专属的动态 ID 和 Token。
+    # Fixture 提供本次测试专属的动态 ID，认证能力由独立 fixture 提供。
     booking_id = created_booking["booking_id"]
-    token = created_booking["token"]
 
     # 测试主动删除资源，Fixture teardown 随后会识别 404，避免重复删除。
-    delete_response = booking_client.delete_booking(booking_id, token)
+    delete_response = booking_client.delete_booking(booking_id, auth_token)
 
     # DELETE 201 是本地 API 的即时成功契约。
     assert delete_response.status_code == 201
@@ -28,16 +28,21 @@ def test_delete_booking(
 def test_delete_booking_twice_returns_405(
     created_booking,
     booking_client,
+    auth_token,
 ):
-    # 可选挑战：重复删除同一资源。
     booking_id = created_booking["booking_id"]
-    token = created_booking["token"]
 
-    first_delete_response = booking_client.delete_booking(booking_id, token)
+    first_delete_response = booking_client.delete_booking(
+        booking_id,
+        auth_token,
+    )
 
     assert first_delete_response.status_code == 201
 
-    second_delete_response = booking_client.delete_booking(booking_id, token)
+    second_delete_response = booking_client.delete_booking(
+        booking_id,
+        auth_token,
+    )
 
     # 第二次 DELETE 验证本地接口对已删除资源的处理契约。
     assert_error_response(
