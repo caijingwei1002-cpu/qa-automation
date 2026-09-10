@@ -1,5 +1,5 @@
 {
-  "current_day": 61,
+  "current_day": 62,
   "completed_days": [
     1,
     2,
@@ -60,7 +60,8 @@
     57,
     58,
     59,
-    60
+    60,
+    61
   ],
   "history": [
     {
@@ -422,6 +423,12 @@
       "date": "2026-09-10",
       "result": "完成预期失败治理：为日期逆序和负数价格缺陷定义 KnownBusinessDefect，使用 strict=True 与 raises 限定 xfail；清理异常使用独立 BookingCleanupError，创建后先登记 ID 并验证删除后 404。目标测试 4 passed、2 xfailed；全量回归 63 passed、18 xfailed；网络故障显示 ApiRequestError FAILED，--runxfail 诊断为 2 failed、4 passed。",
       "next_step": "Day 61：使用 Mock 验证 timeout 是否真正传给请求库，并检查请求头之间是否互相污染。"
+    },
+    {
+      "day": 61,
+      "date": "2026-09-10",
+      "result": "完成 Client 单元测试与 Mock：新增 5 个不依赖服务的测试，验证 requests.request 调用参数和 timeout、网络异常统一转换与安全诊断、请求间和调用方 Header 状态隔离。目标测试 5 passed；服务启动后 API 全量回归 68 passed、18 xfailed；Ruff check 与 format check 均通过。",
+      "next_step": "Day 62：统一响应摘要并验证日志诊断信息不泄露敏感凭据。"
     }
   ]
 }

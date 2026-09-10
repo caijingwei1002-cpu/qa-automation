@@ -67,6 +67,7 @@
 - [Day 58：过滤测试数据隔离](#day-58过滤测试数据隔离)
 - [Day 59：鉴权与资源管理重构](#day-59鉴权与资源管理重构)
 - [Day 60：预期失败治理](#day-60预期失败治理)
+- [Day 61：Client 单元测试与 Mock](#day-61client-单元测试与-mock)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -6577,6 +6578,111 @@ if booking_client.get_booking(booking_id).status_code != 404:
 - 诊断命令：目标测试加 `--runxfail`，结果 `2 failed, 4 passed`
 - 证据目录：`artifacts/day-060/`
 
+## Day 61：Client 单元测试与 Mock
+
+### 核心知识点
+
+Mock（模拟对象）通过替换外部依赖，让测试只观察被测代码与依赖之间的调用契约。对 HTTP Client 来说，测试可以验证方法、URL、请求参数、timeout、Header 和异常转换，而不需要启动真实服务。
+
+### 它解决的问题
+
+如果 Client 单元测试直接访问 Restful Booker，服务状态、网络延迟和数据内容会干扰传输层判断。timeout 可能没有真正传给请求库，URL 可能拼接错误，网络异常也可能在不同测试中产生不一致的处理结果。Mock 把这些依赖控制住，使失败更快、更局部、更容易归因。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **依赖控制**：把测试边界外的对象替换成可编程的替身，并记录调用。
+- **调用契约**：被测代码传给依赖的 method、URL、params、JSON、headers 和 timeout 等参数。
+- **异常边界**：底层 `requests` 异常可以被 Client 统一转换为 `ApiRequestError`；原始异常通过异常链保留，敏感信息不能进入消息。
+- **请求级状态**：一次请求的临时 Header 或 Cookie 只属于这次调用，不能修改默认 Header、调用方字典或下一次请求。
+
+#### 心智模型或执行链
+
+```text
+测试创建 Client
+    ↓
+patch requests.request
+    ↓
+Client 构造 URL、Header、timeout
+    ↓
+Mock 记录调用或抛出指定异常
+    ↓
+测试检查调用参数、返回值或异常边界
+```
+
+成功路径验证“传给依赖什么”；失败路径验证“依赖出错时对外表现什么”。两者都不需要真实 HTTP 服务。
+
+#### 最小代码骨架
+
+```python
+@patch("src.api_client.requests.request")
+def test_client_passes_timeout(mock_request):
+    mock_request.return_value = Mock()
+    client = RestfulBookerClient("http://example.test/api/", timeout=6.25)
+
+    client.get("/booking", params={"firstname": "Alice"})
+
+    mock_request.assert_called_once_with(
+        method="GET",
+        url="http://example.test/api/booking",
+        params={"firstname": "Alice"},
+        json=None,
+        headers={"Accept": "application/json"},
+        timeout=6.25,
+    )
+```
+
+异常测试可以让 Mock 的 `side_effect` 为 `requests.Timeout` 或 `requests.ConnectionError`，再断言外层是 `ApiRequestError`，并检查 `exc_info.value.__cause__` 指向原始异常。
+
+#### 断言、数据或状态的含义
+
+`assert_called_once_with` 证明 Client 对底层库的调用参数完整且准确；它不能证明真实服务器会接受该请求。`result is fake_response` 证明 Client 原样返回依赖的响应对象；它不能证明响应内容符合业务契约。
+
+错误消息中的方法、URL、timeout 和底层异常类型提供诊断上下文；`__cause__` 提供调试链路；不出现 Token 或密码证明日志边界安全。连续两次请求的 Header 比较证明临时状态没有跨请求泄漏；检查 `default_headers` 和调用方原始字典则能进一步证明共享状态没有被修改。
+
+#### 适用场景与边界
+
+Mock 适合验证 Client 的参数组装、依赖调用次数、异常转换、重试分支和状态隔离。它不适合替代真实服务的业务契约、路由可用性、序列化兼容性或端到端认证测试；这些仍需要独立的 API 集成测试。
+
+Patch 必须指向被测模块实际查找依赖的路径，例如 `src.api_client.requests.request`。只 patch 其他模块的同名对象，可能导致测试仍然访问真实网络。
+
+#### 常见错误、反例与假通过
+
+1. 只断言 `client.timeout == 6.25`：无法证明 timeout 真的传到了 `requests.request`。
+2. 只设置 `mock_request.return_value` 却不检查调用参数：Mock 会让错误 URL 和错误方法也通过。
+3. 只断言统一异常类型，不检查消息、异常链或敏感信息：错误可能难以诊断或泄漏凭据。
+4. 使用 `self.default_headers.update(headers)`：第一次请求的临时 Header 会污染后续请求。
+5. 只检查第二次请求，不检查 `default_headers` 和调用方字典：内部共享状态仍可能已经被悄悄修改。
+6. 把依赖 Mock 的单元测试与真实服务测试混在同一结论中：服务未启动时的 setup 错误会被误认为 Client 行为失败。
+
+#### 记忆要点
+
+**Mock 控制依赖，调用断言验证传输契约；异常统一但保留 cause；每次请求复制 Header，单元测试与真实 API 测试分层。**
+
+### 代码落地
+
+`tests/test_api_client.py` 新增 5 个测试，完全 patch `src.api_client.requests.request`：一个测试核对 GET 的完整调用参数和 timeout，一个参数化测试核对 Timeout/ConnectionError 到 `ApiRequestError` 的转换与安全诊断，一个测试核对连续请求的 Header 隔离，另一个独立测试核对调用方 Header 字典不被修改。
+
+目标测试结果为 `5 passed`，全量 API 回归在启动本地服务后为 `68 passed, 18 xfailed`。全量首次执行的 setup 错误来自 3001 服务未启动；这不影响无需服务即可运行的 Mock 单元测试。
+
+### 知识验收
+
+1. 为什么 timeout 的最佳断言位置是 Mock 的调用参数，而不是 Client 属性？
+2. 为什么异常转换测试还要检查 `__cause__` 和敏感信息？
+3. 如何设计两次请求来发现 Header 污染？
+4. 为什么 Mock 单元测试不能替代真实 API 集成测试？
+5. Patch 路径为什么要写成被测模块实际使用依赖的路径？
+
+### 关联产出
+
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_api_client.py`
+- 目标命令：`.\.venv\Scripts\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_api_client.py -q`
+- 目标结果：`5 passed`
+- 全量回归：`68 passed, 18 xfailed`
+- 静态检查：目标文件 Ruff check 和 format check 通过
+- 证据目录：`artifacts/day-061/`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -6639,6 +6745,7 @@ if booking_client.get_booking(booking_id).status_code != 404:
 | 过滤测试数据隔离 | Day 58 | 自建匹配与干扰数据、资源 ID 追踪、包含/排除断言、重启后语义一致性和分别清理 |
 | 鉴权与资源管理重构 | Day 59 | `auth_token` 与资源 fixture 分离、yield teardown、先登记 ID、DELETE 后 GET 404 和受控失败验证 |
 | 预期失败治理 | Day 60 | `xfail` 的 `raises` 与 `strict`、已知业务缺陷和意外异常分离、`--runxfail` 诊断、资源清理错误边界 |
+| Client 单元测试与 Mock | Day 61 | 依赖控制、`requests.request` 调用契约、timeout 传递、异常转换、安全诊断和请求级状态隔离 |
 | 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
 | API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
 | Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |
