@@ -1,5 +1,6 @@
 """验证 booking 列表过滤参数与详情字段之间的关联。"""
 
+from copy import deepcopy
 from datetime import date, timedelta
 from uuid import uuid4
 
@@ -42,14 +43,77 @@ def read_nested_value(data, path):
     return data
 
 
-def _build_filter_payload(case):
-    overrides = {}
+def _build_filter_payloads(case):
+    base_payload = build_booking_payload()
+    matching_payload = deepcopy(base_payload)
+    noise_payload = deepcopy(base_payload)
+    unique_suffix = uuid4().hex[:8]
 
-    if case["query_param"] == "lastname":
-        # lastname 默认值不是唯一的，需要显式生成本测试专属值。
-        overrides["lastname"] = f"Filter{uuid4().hex[:8]}"
+    if case["query_param"] == "firstname":
+        matching_payload["firstname"] = f"FilterMatch{unique_suffix}"
+        noise_payload["firstname"] = f"FilterNoise{unique_suffix}"
 
-    return build_booking_payload(**overrides)
+    elif case["query_param"] == "lastname":
+        matching_payload["lastname"] = f"FilterMatch{unique_suffix}"
+        noise_payload["lastname"] = f"FilterNoise{unique_suffix}"
+
+    elif case["query_param"] == "checkin":
+        boundary = date.today() + timedelta(days=1)
+
+        matching_payload["bookingdates"] = {
+            **base_payload["bookingdates"],
+            "checkin": (boundary + timedelta(days=6)).isoformat(),
+        }
+
+        noise_payload["bookingdates"] = {
+            **base_payload["bookingdates"],
+            "checkin": boundary.isoformat(),
+        }
+
+    return matching_payload, noise_payload
+
+
+def _extract_booking_id(response):
+    try:
+        data = response.json()
+    except ValueError:
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    booking_id = data.get("bookingid")
+    return booking_id if isinstance(booking_id, int) else None
+
+
+def _cleanup_booking(booking_client, booking_id, token):
+    """清理本测试登记的 booking，兼容资源已被删除的情况。"""
+    if booking_id is None:
+        return
+
+    current_response = booking_client.get_booking(booking_id)
+
+    if current_response.status_code == 404:
+        return
+
+    assert current_response.status_code == 200, (
+        f"Unexpected cleanup status: {current_response.status_code}; booking_id={booking_id}"
+    )
+
+    delete_response = booking_client.delete_booking(
+        booking_id,
+        token,
+    )
+
+    assert delete_response.status_code == 201, (
+        f"Unexpected delete status: {delete_response.status_code}; booking_id={booking_id}"
+    )
+
+    deleted_response = booking_client.get_booking(booking_id)
+    assert deleted_response.status_code == 404, (
+        f"Booking still exists after cleanup: "
+        f"booking_id={booking_id}; status={deleted_response.status_code}"
+    )
 
 
 def _get_filter_value(payload, case):
@@ -63,9 +127,10 @@ def _get_filter_value(payload, case):
 @pytest.fixture
 def filter_booking(booking_client, api_client, auth_credentials, request):
     case = request.param
-    payload = _build_filter_payload(case)
+    matching_payload, noise_payload = _build_filter_payloads(case)
     filter_value = None
-    booking_id = None
+    matching_booking_id = None
+    noise_booking_id = None
 
     auth_response = api_client.post(
         "/auth",
@@ -79,23 +144,27 @@ def filter_booking(booking_client, api_client, auth_credentials, request):
     assert token.strip()
 
     try:
-        create_response = booking_client.create_booking(payload)
+        matching_response = booking_client.create_booking(matching_payload)
 
-        # 先登记响应中的 ID，再做状态和 payload 断言，保证失败时仍有清理线索。
-        try:
-            create_data = create_response.json()
-        except ValueError:
-            create_data = {}
+        # 先保存匹配资源 ID，再做状态断言。
+        matching_booking_id = _extract_booking_id(matching_response)
 
-        if isinstance(create_data, dict):
-            booking_id = create_data.get("bookingid")
+        assert matching_response.status_code == 200
+        assert isinstance(matching_booking_id, int)
 
-        assert create_response.status_code == 200
-        assert isinstance(booking_id, int)
+        noise_response = booking_client.create_booking(noise_payload)
 
-        filter_value = _get_filter_value(payload, case)
+        # 先保存干扰资源 ID，再做状态断言。
+        noise_booking_id = _extract_booking_id(noise_response)
+
+        assert noise_response.status_code == 200
+        assert isinstance(noise_booking_id, int)
+
+        filter_value = _get_filter_value(matching_payload, case)
+
         yield {
-            "booking_id": booking_id,
+            "matching_booking_id": matching_booking_id,
+            "noise_booking_id": noise_booking_id,
             "token": token,
             "params": {case["query_param"]: filter_value},
             "detail_path": case["payload_path"],
@@ -103,20 +172,20 @@ def filter_booking(booking_client, api_client, auth_credentials, request):
             "comparison": case["comparison"],
         }
     finally:
-        if booking_id is not None:
-            current_response = booking_client.get_booking(booking_id)
+        cleanup_errors = []
 
-            if current_response.status_code == 200:
-                delete_response = booking_client.delete_booking(
+        for booking_id in (matching_booking_id, noise_booking_id):
+            try:
+                _cleanup_booking(
+                    booking_client,
                     booking_id,
                     token,
                 )
-                assert delete_response.status_code in (201, 404)
-            elif current_response.status_code != 404:
-                raise AssertionError(
-                    f"Unexpected cleanup status: {current_response.status_code}; "
-                    f"booking_id={booking_id}"
-                )
+            except AssertionError as exc:
+                cleanup_errors.append(exc)
+
+        if cleanup_errors:
+            raise cleanup_errors[0]
 
 
 @pytest.mark.parametrize("filter_booking", FILTER_CASES, indirect=True)
@@ -140,11 +209,21 @@ def test_filter_bookings(filter_booking, booking_client):
         f"request_url={response.request.url}"
     )
 
-    # 自己创建的 booking 必须出现在结果中，避免依赖环境中的预置数据。
+    matching_booking_id = filter_booking["matching_booking_id"]
+    noise_booking_id = filter_booking["noise_booking_id"]
+
+    # 自己创建的匹配 booking 必须出现，避免依赖环境中的预置数据。
     returned_ids = {item.get("bookingid") for item in data if isinstance(item, dict)}
-    assert filter_booking["booking_id"] in returned_ids, (
-        f"Created booking was not returned for params={params!r}; "
-        f"booking_id={filter_booking['booking_id']}; "
+    assert matching_booking_id in returned_ids, (
+        f"Matching booking was not returned for params={params!r}; "
+        f"booking_id={matching_booking_id}; "
+        f"request_url={response.request.url}"
+    )
+
+    # 干扰 booking 不应出现在当前过滤结果中。
+    assert noise_booking_id not in returned_ids, (
+        f"Noise booking should not be returned for params={params!r}; "
+        f"booking_id={noise_booking_id}; "
         f"request_url={response.request.url}"
     )
 

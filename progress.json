@@ -1,5 +1,5 @@
 {
-  "current_day": 58,
+  "current_day": 59,
   "completed_days": [
     1,
     2,
@@ -57,7 +57,8 @@
     54,
     55,
     56,
-    57
+    57,
+    58
   ],
   "history": [
     {
@@ -401,6 +402,12 @@
       "date": "2026-09-09",
       "result": "完成异常路径资源清理：创建后先登记 booking_id，再执行业务断言；控制性失败和 PUT 更新迁移测试均在断言失败后清理资源并确认 404。目标测试 4 passed、2 xfailed；迁移测试 2 passed；API 全量回归 63 passed、18 xfailed。",
       "next_step": "Day 58：移除过滤测试对固定 Jim/Brown 预置数据的依赖，验证测试数据隔离。"
+    },
+    {
+      "day": 58,
+      "date": "2026-09-09",
+      "result": "完成过滤测试数据隔离：为 firstname、lastname 和 checkin 自建匹配/干扰 booking，验证包含与排除；迁移无过滤集合测试并验证两个自建资源均被返回，所有资源分别清理并确认 404。目标测试 3 passed；迁移测试 1 passed；服务重启后目标测试 3 passed、API 全量回归 63 passed、18 xfailed。",
+      "next_step": "Day 59：统一 Token 获取与资源登记清理机制，检查 fixture 和公共机制的职责边界。"
     }
   ]
 }

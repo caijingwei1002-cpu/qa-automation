@@ -64,6 +64,7 @@
 - [Day 55：接口链路](#day-55接口链路)
 - [Day 56：配置分层与规范导读](#day-56配置分层与规范导读)
 - [Day 57：异常路径资源清理](#day-57异常路径资源清理)
+- [Day 58：过滤测试数据隔离](#day-58过滤测试数据隔离)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -6210,6 +6211,106 @@ finally:
 
 ---
 
+## Day 58：过滤测试数据隔离
+
+### 核心知识点
+
+过滤测试应自己创建匹配资源和干扰资源，并用创建接口返回的资源 ID 追踪它们。测试验证的是过滤条件的包含与排除关系，而不是环境中恰好存在的固定业务数据。
+
+### 它解决的问题
+
+依赖 `Jim`、`Brown` 等预置数据会让测试隐藏环境假设：服务重启、数据库重置或共享环境数据变化后，测试可能因为找不到固定数据而失败，也可能误把其他资源当成目标资源。自建数据能让测试控制输入、明确身份并减少跨测试污染。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **匹配资源（matching resource）**：在当前过滤字段上满足查询条件的资源。
+- **干扰资源（noise resource）**：除当前过滤字段外尽量保持相同，但在该字段上明确不满足条件的资源。
+- **资源身份**：创建响应返回的 `bookingid`。业务字段用于构造过滤场景，不能替代资源 ID 作为清理和结果追踪依据。
+- **包含与排除断言**：至少同时证明匹配 ID 出现在结果中、干扰 ID 不出现在结果中。
+
+#### 心智模型或执行链
+
+```text
+独立生成匹配数据和干扰数据
+        ↓
+创建资源并立即登记各自 bookingid
+        ↓
+使用当前过滤条件查询集合
+        ↓
+匹配 ID 在结果中，干扰 ID 不在结果中
+        ↓
+finally 分别清理两个资源并验证删除后 404
+```
+
+服务重启前后应重复相同的输入和过滤关系。共享环境中其他 booking 可能变化，因此优先比较本测试追踪的 ID 关系，不盲目比较整个集合。
+
+#### 最小代码骨架
+
+```python
+matching_payload = build_booking_payload(firstname="FilterMatch")
+noise_payload = build_booking_payload(firstname="FilterNoise")
+
+matching_id = None
+noise_id = None
+
+try:
+    matching_response = booking_client.create_booking(matching_payload)
+    matching_id = extract_booking_id(matching_response)
+
+    noise_response = booking_client.create_booking(noise_payload)
+    noise_id = extract_booking_id(noise_response)
+
+    response = booking_client.get_bookings(params={"firstname": "FilterMatch"})
+    returned_ids = {item["bookingid"] for item in response.json()}
+
+    assert matching_id in returned_ids
+    assert noise_id not in returned_ids
+finally:
+    cleanup(matching_id)
+    cleanup(noise_id)
+```
+
+#### 断言、数据或状态的含义
+
+`matching_id in returned_ids` 证明目标资源满足过滤条件并被集合接口返回；它不能证明其他不匹配资源被排除。`noise_id not in returned_ids` 证明当前已知的干扰资源被排除；它不能单独证明所有返回资源的详情字段都正确。因此过滤测试还应回查返回 ID 的详情，验证每个返回资源的过滤字段。
+
+#### 适用场景与边界
+
+这个模式适合过滤、排序、集合包含关系和资源生命周期测试。匹配与干扰数据应只在被测维度上有明确差异，其他字段尽量相同，以便把因果归因到过滤条件。不要为了追求完整集合相等而依赖共享环境中的全部数据；除非测试拥有隔离数据库或明确的全量数据契约。
+
+#### 常见错误、反例与假通过
+
+1. 只创建匹配资源并断言它出现：接口返回全部 booking 时测试也会通过。
+2. 使用固定 `Jim/Brown`：服务重启或数据重置后测试失去输入。
+3. 匹配和干扰资源在多个字段上都不同：过滤字段失效时，其他差异仍可能让结果看起来正确。
+4. 创建成功后等全部断言完成才保存 ID：中途失败会使资源无法清理。
+5. `finally` 只清理第一个资源：第一个 DELETE 失败时第二个资源会残留。
+
+#### 记忆要点
+
+**过滤测试自己造数据，创建后先记 ID，同时验证包含和排除，最后分别清理。**
+
+### 代码落地
+
+`test_filters.py` 为 `firstname`、`lastname` 和 `checkin` 场景分别生成匹配 booking 与干扰 booking，验证匹配 ID 被返回、干扰 ID 被排除，并回查返回详情验证过滤语义。`test_get_bookings.py` 将同一隔离与清理模式迁移到无过滤集合场景，验证两个独立创建的 booking 都出现在集合中。
+
+### 知识验收
+
+1. 为什么过滤测试至少需要一个匹配资源和一个干扰资源？
+2. 为什么应使用创建响应中的 `bookingid`，而不是 firstname 或 lastname 清理资源？
+3. 服务重启前后，为什么优先比较本测试创建资源的包含/排除关系，而不是整个 booking ID 集合？
+4. 如果只断言匹配 ID 出现，接口返回所有资源时为什么仍可能通过？
+
+### 关联产出
+
+- 目标文件：`test-projects/03-restful-booker-api/tests/test_filters.py`
+- 迁移文件：`test-projects/03-restful-booker-api/tests/test_get_bookings.py`
+- 验证命令：`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_filters.py -q`
+- 全量命令：`.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests -q`
+- 证据目录：`artifacts/day-058/`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -6269,6 +6370,7 @@ finally:
 | 接口生命周期链路 | Day 55 | 动态 booking ID、局部断言、状态转换、异常路径清理和删除后 404 验证 |
 | 配置分层与环境覆盖 | Day 56 | Settings 读取与校验、类型化配置、fixture 注入、Client 边界、配置测试分层和环境数据隔离 |
 | 异常路径资源清理 | Day 57 | 先登记资源 ID 再断言、`finally` 兜底清理、控制性失败和删除后状态证据 |
+| 过滤测试数据隔离 | Day 58 | 自建匹配与干扰数据、资源 ID 追踪、包含/排除断言、重启后语义一致性和分别清理 |
 | 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
 | API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
 | Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |
