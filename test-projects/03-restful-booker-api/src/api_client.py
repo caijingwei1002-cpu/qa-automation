@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 import re
+from collections.abc import Mapping
 from typing import Any
 
 import requests
@@ -42,11 +42,30 @@ class RestfulBookerClient:
 
     @staticmethod
     def _redact_sensitive(value: str) -> str:
-        return re.sub(
-            r'''(?i)(["']?(?:token|password|authorization|cookie)["']?\s*[:=]\s*["']?)([^"'\s,}]+)''',
-            r"\1<redacted>",
-            value,
+        pattern = re.compile(
+            r"""(?ix)
+            (?P<prefix>
+                ["']?(?:token|password|authorization|cookie)["']?\s*[:=]\s*
+            )
+            (
+                (?P<double>"(?:\\.|[^"\\])*")
+                |(?P<single>'(?:\\.|[^'\\])*')
+                |(?P<bare>[^,}]+)
+            )
+            """
         )
+
+        def replace(match: re.Match[str]) -> str:
+            if match.group("double") is not None:
+                replacement = '"<redacted>"'
+            elif match.group("single") is not None:
+                replacement = "'<redacted>'"
+            else:
+                replacement = "<redacted>"
+
+            return f"{match.group('prefix')}{replacement}"
+
+        return pattern.sub(replace, value)
 
     @classmethod
     def _response_summary(cls, response: requests.Response | None) -> str:

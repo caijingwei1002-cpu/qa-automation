@@ -68,6 +68,7 @@
 - [Day 59：鉴权与资源管理重构](#day-59鉴权与资源管理重构)
 - [Day 60：预期失败治理](#day-60预期失败治理)
 - [Day 61：Client 单元测试与 Mock](#day-61client-单元测试与-mock)
+- [Day 62：日志与敏感信息诊断](#day-62日志与敏感信息诊断)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -6683,6 +6684,107 @@ Patch 必须指向被测模块实际查找依赖的路径，例如 `src.api_clie
 - 静态检查：目标文件 Ruff check 和 format check 通过
 - 证据目录：`artifacts/day-061/`
 
+## Day 62：日志与敏感信息诊断
+
+### 核心知识点
+
+失败证据要同时满足可诊断性和安全性：保留定位请求阶段所需的最小上下文，隐藏敏感值，并对最终正文长度设定边界。脱敏规则必须根据数据结构识别值的完整边界，不能把空格误当成值的结束位置。
+
+### 它解决的问题
+
+错误摘要过于简短时，开发无法区分 HTTP 拒绝、网络超时和连接失败；摘要直接包含请求或响应正文时，又可能把 Token、密码、Authorization 或 Cookie 写入 CI 日志。只检查完整敏感字符串消失还会产生假通过，因为值的前缀被替换后，主体仍可能残留。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **可诊断性**：摘要保留方法、URL、状态码、timeout、异常类型和非敏感响应证据，使失败阶段可定位。
+- **敏感值边界**：字段名、分隔符和引号共同决定值的范围；带引号值的空格属于值内容，无引号值应在明确结构分隔符处结束。
+- **安全副本**：摘要函数读取原始 Response，生成脱敏后的字符串，不修改 Response 的正文、字节内容或 headers。
+- **截断边界**：当前约定限制脱敏后的正文最多 200 个字符，超出后追加截断标记。
+
+#### 心智模型或执行链
+
+```text
+读取原始 Response 或异常上下文
+    ↓
+规范化可记录的正文文本
+    ↓
+按字段结构整体识别敏感值
+    ↓
+替换为 <redacted>
+    ↓
+对安全文本限制长度
+    ↓
+构造最小失败摘要
+```
+
+普通 `403` 是请求得到 HTTP Response 后的业务或访问结果，Client 仍原样返回 Response；`RequestException` 是传输层异常，Client 转换为 `ApiRequestError`。两条路径的错误分类不同，但可以共享安全的响应摘要逻辑。
+
+#### 最小代码骨架
+
+```python
+def summarize_response(response):
+    if response is None:
+        return "status=<no response>, response=<no response>"
+
+    safe_body = redact_sensitive(normalize_whitespace(response.text))
+    if len(safe_body) > 200:
+        safe_body = f"{safe_body[:200]}..."
+
+    return f"status={response.status_code}, response={safe_body!r}"
+```
+
+结构化脱敏时，带引号值应匹配成一个整体；无引号值应匹配到逗号、右花括号等已定义边界。替换时保留非敏感字段和必要的引号，避免把安全摘要变成无法阅读的残片。
+
+#### 断言、数据或状态的含义
+
+`status=403` 证明客户端收到了明确的 HTTP 状态；`status=<no response>` 证明异常路径没有可用 Response。方法、URL 和 timeout 说明请求阶段；非敏感正文说明服务端返回了什么类型的失败。敏感完整值及其主体片段都不存在，才说明当前建模格式下没有发生部分泄漏。
+
+响应原文、`content` 和 headers 在摘要前后保持一致，证明脱敏是无副作用的转换。200 字符和 201 字符边界分别证明不截断和截断行为；它们不能证明所有编码、嵌套结构或未知字段名都能被识别。
+
+#### 适用场景与边界
+
+这种规则适合已知 JSON 风格响应、Python `repr` 参数文本和明确列出的敏感字段。它可以保护 `token`、`password`、`authorization`、`cookie` 等已登记字段，也能处理带空格的引号值。
+
+它不是通用的秘密扫描器。未登记的 `credential`、`apiKey`，没有字段名上下文的纯文本秘密、复杂非标准序列化、特殊编码和新增日志出口都需要额外契约与测试。字段种类扩大时，应先增加失败用例；如果响应契约稳定且复杂，结构化解析通常比继续堆叠正则更易维护。
+
+#### 常见错误、反例与假通过
+
+1. 只断言完整 Token 不在摘要中：前缀被替换、主体残留时仍会通过。
+2. 先截断再脱敏：敏感字段可能被切断，导致规则无法识别完整值。
+3. 只隐藏请求 Header：异常携带的 Response 正文也可能回显凭据。
+4. 直接清洗原始 Response：后续断言或调试失去原始证据，并引入副作用。
+5. 只保留“请求失败”：无法区分服务端返回 `403` 和根本没有 HTTP 响应。
+6. 只测双引号 JSON：`repr(dict(...))` 的单引号参数路径可能仍然泄漏。
+
+#### 记忆要点
+
+**先按结构识别完整敏感值，再脱敏，再截断；摘要保留最小诊断上下文，原始 Response 保持不变；测试同时证明安全性、可诊断性和证明范围。**
+
+### 代码落地
+
+`src/api_client.py` 将 `_redact_sensitive()` 从单个无空格片段匹配改为区分双引号、单引号和无引号值的结构匹配，并通过替换函数保留原有引号。`tests/test_api_client.py` 覆盖普通 `403`、异常携带 Response、四类敏感字段、200/201 字符边界、无响应、原 Response 不变，以及 `params` 中的多词 Authorization 迁移场景。
+
+目标测试结果为 `17 passed`；API 全量回归为 `80 passed, 18 xfailed`；目标文件 Ruff check、format check 和 `git diff --check` 通过。标准证据保存于 `artifacts/day-062/verification.md`。
+
+### 知识验收
+
+1. 为什么“完整敏感字符串不在摘要中”不足以证明脱敏安全？
+2. 为什么截断必须发生在完整脱敏之后？
+3. `403` Response、无 Response 的超时和异常携带 Response 分别证明什么？
+4. 当前正则脱敏方案覆盖哪些输入，哪些输入需要新增规则或改用结构化解析？
+
+### 关联产出
+
+- 目标文件：`test-projects/03-restful-booker-api/src/api_client.py`
+- 测试文件：`test-projects/03-restful-booker-api/tests/test_api_client.py`
+- 目标命令：`.\.venv\Scripts\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_api_client.py -q`
+- 目标结果：`17 passed`
+- 全量回归：`80 passed, 18 xfailed`
+- 静态检查：Ruff check 和 format check 通过
+- 证据目录：`artifacts/day-062/`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -6746,6 +6848,7 @@ Patch 必须指向被测模块实际查找依赖的路径，例如 `src.api_clie
 | 鉴权与资源管理重构 | Day 59 | `auth_token` 与资源 fixture 分离、yield teardown、先登记 ID、DELETE 后 GET 404 和受控失败验证 |
 | 预期失败治理 | Day 60 | `xfail` 的 `raises` 与 `strict`、已知业务缺陷和意外异常分离、`--runxfail` 诊断、资源清理错误边界 |
 | Client 单元测试与 Mock | Day 61 | 依赖控制、`requests.request` 调用契约、timeout 传递、异常转换、安全诊断和请求级状态隔离 |
+| 日志与敏感信息诊断 | Day 62 | 敏感值边界、先脱敏后截断、响应摘要、异常路径安全、可诊断性与测试证明范围 |
 | 资源生命周期与清理保证 | Day 44 | 动态资源 ID、DELETE 即时结果、删除后 GET 404、重复删除契约和测试数据隔离 |
 | API Client 请求封装边界 | Day 45 | base URL、timeout、公共 headers、通用请求、业务断言分离和敏感信息脱敏 |
 | Booking 领域客户端 | Day 46 | 通用 Client 与领域 Client 分层、booking CRUD 方法、原始 Response 和测试断言边界 |
