@@ -70,6 +70,7 @@
 - [Day 61：Client 单元测试与 Mock](#day-61client-单元测试与-mock)
 - [Day 62：日志与敏感信息诊断](#day-62日志与敏感信息诊断)
 - [Day 63：重试边界](#day-63重试边界)
+- [Day 64：并行隔离](#day-64并行隔离)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -6880,10 +6881,114 @@ test-projects/03-restful-booker-api/src/retry_policy.py 提供最小 retry_reque
 - 全量回归：86 passed、18 xfailed
 - 证据目录：artifacts/day-063/
 
+## Day 64：并行隔离
+
+### 核心知识点
+
+并行测试隔离（parallel test isolation）要求每个测试实例拥有自己的数据、资源 ID 和清理责任，测试结果不能依赖其他实例的执行顺序。pytest-xdist 的 `-n 2` 会让两个独立 worker 进程访问同一个服务，因此测试必须通过唯一数据和资源所有权抵抗交错执行。
+
+### 它解决的问题
+
+两个测试使用相同的 `firstname` 时，过滤结果可能包含彼此创建的 booking；如果 teardown 再根据过滤结果批量删除，还可能清理掉另一个测试的资源。串行运行时，执行顺序经常掩盖这种耦合，并行运行才会暴露数据污染、错误断言和跨测试删除。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **并行独立性**：相同测试在不同调度顺序下仍得到相同业务结果，并且一个实例的副作用不改变另一个实例的预期。
+- **唯一测试数据**：查询字段具有足够小的碰撞概率，同时满足业务字段长度和字符集约束。随机值解决碰撞风险，业务合法性仍需单独考虑。
+- **资源所有权**：创建成功后立即登记返回的资源 ID；测试结束时只清理本实例登记过的 ID。查询结果用于业务断言，不代表清理权限。
+- **xdist 并行**：`pytest -n 2` 提供两个独立 Python worker 访问共享服务的执行条件，但一次运行不能保证 HTTP 请求在同一毫秒重叠。
+
+#### 心智模型或执行链
+
+~~~text
+每个测试实例
+    ↓
+生成唯一业务字段
+    ↓
+创建资源并立即登记 booking_id
+    ↓
+只用自己的字段查询或只用自己的 ID 更新
+    ↓
+断言业务结果和持久化状态
+    ↓
+fixture finally 只清理已登记的自己的 ID
+~~~
+
+#### 最小代码骨架
+
+~~~python
+@pytest.mark.parametrize("case_label", ["case_a", "case_b"])
+def test_isolation(case_label, booking_client, created_booking, auth_token):
+    own_id = created_booking["booking_id"]
+    own_name = created_booking["payload"]["firstname"]
+
+    response = booking_client.get_bookings(params={"firstname": own_name})
+    assert response.status_code == 200
+    returned_ids = {item["bookingid"] for item in response.json()}
+    assert own_id in returned_ids
+
+    updated = {**created_booking["payload"], "firstname": f"{case_label}_{own_id}"}
+    update = booking_client.update_booking(own_id, updated, auth_token)
+    assert update.status_code == 200
+    assert booking_client.get_booking(own_id).json()["firstname"] == updated["firstname"]
+~~~
+
+#### 断言、数据或状态的含义
+
+- 过滤响应为 200 且返回列表，只证明接口响应和基本结构正确。
+- 自己的 `booking_id` 出现在自己的唯一字段查询结果中，证明测试能找到自己的资源。
+- 对返回集合逐个回查详情并核对 `firstname`，证明当前查询没有把其他姓名的资源混入断言。
+- 使用自己的 ID 完成 PUT，再用同一个 ID GET，证明更新结果已经持久化。
+- fixture 的 `finally` 只删除登记过的 ID，证明清理按所有权执行；测试结果本身不能证明请求一定同时发生。
+
+#### 适用场景与边界
+
+当多个测试共享同一个 API 服务、数据库或临时资源时，应使用唯一数据、独立资源登记和按所有权清理。字段长度或字符集有限时，UUID 不能直接塞入业务字段，需要生成符合约束的短唯一值。`-n 2` 能验证多进程下的顺序独立性，但不能替代服务端并发一致性测试，也不能证明所有竞态都被覆盖。不要用 `sleep` 或 retry 人为制造重叠来掩盖隔离设计问题。
+
+#### 常见错误、反例与假通过
+
+1. 只断言 `len(results) == 1`，把环境中的既有数据或其他测试数据误当成失败依据。
+2. 用过滤结果中的全部 ID 做 teardown，导致一个测试删除另一个测试的资源。
+3. 只用 `case_a`、`case_b` 作为业务值，长期或高并发执行时碰撞。
+4. 串行通过就假设并行安全，忽略共享 fixture、全局变量、端口和缓存。
+5. 为了让并行“看起来同时”加入固定等待，测试验证了人工时序而不是隔离不变量。
+
+#### 记忆要点
+
+**唯一字段负责识别数据，登记的资源 ID 负责所有权；串行和并行都必须只观察、只更新、只清理自己的资源。**
+
+### 代码落地
+
+`tests/test_parallel_isolation.py` 使用 `case_a`、`case_b` 两个参数实例，复用 `created_booking` 创建唯一 booking。过滤测试按自己的 `firstname` 查询并回查详情；更新测试用完整 PUT payload 更新自己的 ID，再 GET 验证 `firstname` 持久化。测试正文不自行删除资源，清理由 fixture 按登记 ID 完成。
+
+并行入口依赖项目测试依赖中的 `pytest-xdist>=3,<4`。第一次使用 `-n 2` 时，环境因未安装 xdist 在测试收集前拒绝参数；补充依赖并安装后，串行和两个 worker 的并行运行均通过。这个失败属于运行环境能力缺失，不是业务断言失败。
+
+目标文件、依赖和验证结果：目标测试 4 passed；串行和 `-n 2` 并行均为 4 passed；API 全量回归为 90 passed、18 xfailed；Ruff check、仓库验证和服务预检通过。标准证据保存于 `artifacts/day-064/verification.md`。
+
+### 知识验收
+
+1. 为什么唯一 `firstname` 能减少过滤污染，但不能单独证明资源清理正确？
+2. 为什么 cleanup 必须使用创建后登记的 ID，而不能使用过滤接口返回的全部 ID？
+3. 串行和并行都显示 `4 passed` 时，还应观察哪些业务和副作用证据？
+4. `pytest -n 2` 能证明什么，不能证明什么？为什么不应靠 `sleep` 制造竞态？
+
+### 关联产出
+
+- 测试文件：`test-projects/03-restful-booker-api/tests/test_parallel_isolation.py`
+- 测试依赖：`test-projects/03-restful-booker-api/requirements.txt`
+- 目标命令：`.\.venv\Scripts\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_parallel_isolation.py -q`
+- 并行命令：`.\.venv\Scripts\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_parallel_isolation.py -q -n 2`
+- 目标结果：串行 4 passed；并行 4 passed
+- 全量回归：90 passed、18 xfailed
+- 证据目录：`artifacts/day-064/`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
 | --- | ---: | --- |
+| 并行隔离 | Day 64 | pytest-xdist、多进程 worker、唯一测试数据、资源所有权、顺序独立性和串并行证据 |
 | 重试边界 | Day 63 | 幂等性、超时结果未知、有界重试、临时网络异常、副作用请求和调用次数证明 |
 | pytest、Playwright、expect 执行链 | Day 1 | 测试组织、浏览器操作、最终状态断言 |
 | fixture | Day 1、Day 7 | 页面环境准备、数据准备、作用域与隔离 |
