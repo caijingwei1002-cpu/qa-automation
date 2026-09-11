@@ -139,3 +139,5 @@ qa-automation-learning/
 ```
 
 插件和本地 MCP 的边界见 [PLUGIN-AND-MCP.md](PLUGIN-AND-MCP.md)。
+
+运行验证前，脚本会根据 config/targets.json 对已登记的本地目标执行服务预检：健康端点已可访问时直接复用；未启动时按目标配置启动并等待健康检查通过。服务启动失败会立即写入验证证据并跳过测试，避免长时间等待连接拒绝。需要手动管理服务时可使用 --skip-service。

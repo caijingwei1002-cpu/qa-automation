@@ -51,3 +51,5 @@ git -C D:\qa-automation-targets\swagger-petstore status
 - 性能、压力、峰值、稳定性和容量测试只对本地或明确授权的服务执行。
 - 不提交第三方源码、`.git` 目录、真实账号、Token、密码或本地密钥。
 - 被测项目的版本、启动方式和端口变化应记录在学习日志或测试报告中。
+
+tools/run_day_verification.py 会读取目标登记中的 startup 配置执行服务预检。当前 Restful Booker 使用 npm start、/ping 健康端点和最多 30 秒的启动等待；目标已运行时不会重复启动，也不会终止已有进程。若通过环境变量把 URL 指向远程或非本地地址，预检会自动跳过；需要完全手动启动服务时，在命令后加 --skip-service。

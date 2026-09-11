@@ -4,12 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shlex
 import subprocess
 import sys
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
@@ -22,11 +22,12 @@ from plan_day import (  # noqa: E402
     render_verification,
     verification_path,
 )
-
+from target_service import ServicePreflight, ensure_target_service  # noqa: E402
 
 SENSITIVE_VALUE = re.compile(
-    r'''(?i)(["']?(?:token|password|authorization|cookie)["']?\s*[:=]\s*["']?)([^"'\s,;}]+)'''
+    r"""(?i)(["']?(?:token|password|authorization|cookie)["']?\s*[:=]\s*["']?)([^"'\s,;}]+)"""
 )
+TARGETS_PATH = ROOT / "config" / "targets.json"
 
 
 def project_python() -> Path:
@@ -89,9 +90,9 @@ def existing_notes(path: Path, heading: str) -> str | None:
     start = text.find(heading)
     if start == -1:
         return None
-    next_heading = re.search(r"\n## ", text[start + len(heading):])
+    next_heading = re.search(r"\n## ", text[start + len(heading) :])
     end = start + len(heading) + next_heading.start() if next_heading else len(text)
-    body = text[start + len(heading):end].strip()
+    body = text[start + len(heading) : end].strip()
     if not body or any(marker in body for marker in ("待补充", "待记录", "待填写")):
         return None
     return body
@@ -117,16 +118,70 @@ def run_command(actual: list[str], display: str) -> tuple[str, int]:
         return f"exit_code={completed.returncode} ({status})\n{output}", completed.returncode
     except OSError as exc:
         return (
-            f"exit_code=127 (failed)\ncommand={display}\n"
-            f"error={exc.__class__.__name__}: {exc}",
+            f"exit_code=127 (failed)\ncommand={display}\nerror={exc.__class__.__name__}: {exc}",
             127,
         )
+
+
+def target_for_plan(plan: dict[str, object]) -> tuple[str, dict[str, object]] | None:
+    """Find the registered target associated with a daily test project."""
+    project = str(plan.get("project", "")).rstrip("/")
+    registry = load_json(TARGETS_PATH, {})
+    targets = registry.get("targets", {}) if isinstance(registry, dict) else {}
+    if not isinstance(targets, dict):
+        return None
+    for name, definition in targets.items():
+        if not isinstance(definition, dict):
+            continue
+        asset_directory = str(definition.get("test_asset_directory", "")).rstrip("/")
+        if asset_directory == project:
+            return str(name), definition
+    return None
+
+
+def target_root() -> Path:
+    """Resolve the external target checkout directory without saving personal state in config."""
+    registry = load_json(TARGETS_PATH, {})
+    if not isinstance(registry, dict):
+        return ROOT.parent / "qa-automation-targets"
+    env_name = str(registry.get("target_root_env", "TARGET_ROOT"))
+    configured = os.getenv(env_name)
+    root = Path(configured) if configured else ROOT.parent / "qa-automation-targets"
+    return root if root.is_absolute() else ROOT / root
+
+
+def prepare_service(plan: dict[str, object], enabled: bool) -> ServicePreflight:
+    """Run the opt-outable local service preflight for the plan's registered target."""
+    matched = target_for_plan(plan)
+    if not enabled:
+        target_name = matched[0] if matched else "none"
+        return ServicePreflight(target_name, "skipped", "命令行参数要求跳过服务预检")
+    if matched is None:
+        return ServicePreflight("none", "skipped", "当前计划没有匹配的目标登记")
+    target_name, definition = matched
+    return ensure_target_service(
+        target_name,
+        definition,
+        target_root=target_root(),
+    )
+
+
+def update_service_note(environment_notes: str, service: ServicePreflight) -> str:
+    """Add or replace the runner-owned service note without overwriting learner notes."""
+    note = f"- 服务预检：{service.evidence_line()}"
+    lines = environment_notes.splitlines()
+    for index, line in enumerate(lines):
+        if line.startswith("- 服务预检："):
+            lines[index] = note
+            return "\n".join(lines)
+    return "\n".join([*lines, note])
 
 
 def run_day(
     day: int,
     target_command: str | None = None,
     full_command: str | None = None,
+    ensure_service: bool = True,
 ) -> int:
     curriculum = load_json(CURRICULUM_PATH, {})
     plan = plan_for_day(curriculum, day)
@@ -143,13 +198,21 @@ def run_day(
         python_path,
     )
 
-    if target_actual == full_actual:
-        target_result, return_code = run_command(target_actual, target_display)
-        full_result = target_result
-        full_return_code = return_code
+    service = prepare_service(plan, ensure_service)
+    if service.ok:
+        if target_actual == full_actual:
+            target_result, return_code = run_command(target_actual, target_display)
+            full_result = target_result
+            full_return_code = return_code
+        else:
+            target_result, return_code = run_command(target_actual, target_display)
+            full_result, full_return_code = run_command(full_actual, full_display)
     else:
-        target_result, return_code = run_command(target_actual, target_display)
-        full_result, full_return_code = run_command(full_actual, full_display)
+        preflight_result = f"exit_code=125 (failed)\nservice_preflight={service.evidence_line()}"
+        target_result = preflight_result
+        full_result = preflight_result
+        return_code = 125
+        full_return_code = 125
 
     evidence = verification_path(day)
     evidence.parent.mkdir(parents=True, exist_ok=True)
@@ -167,6 +230,7 @@ def run_day(
             "- 结论：结果已由命令真实执行并写入本文件；如有失败，应先记录根因再完成当天学习。",
         ]
     )
+    environment_notes = update_service_note(environment_notes, service)
     evidence.write_text(
         render_verification(
             plan,
@@ -181,6 +245,7 @@ def run_day(
     )
 
     print(f"已写入：{evidence}")
+    print(f"服务预检：{service.evidence_line()}")
     print(f"目标测试：exit_code={return_code}")
     print(f"全量回归：exit_code={full_return_code}")
     return 0 if return_code == 0 and full_return_code == 0 else 1
@@ -197,8 +262,18 @@ def main() -> int:
         "--full-command",
         help="覆盖计划中的全量回归命令",
     )
+    parser.add_argument(
+        "--skip-service",
+        action="store_true",
+        help="跳过已登记本地目标的服务预检和按需启动",
+    )
     args = parser.parse_args()
-    return run_day(args.day, args.target_command, args.full_command)
+    return run_day(
+        args.day,
+        args.target_command,
+        args.full_command,
+        ensure_service=not args.skip_service,
+    )
 
 
 if __name__ == "__main__":

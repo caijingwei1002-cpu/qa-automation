@@ -23,7 +23,15 @@
       "url_env": "RESTFUL_BOOKER_URL",
       "default_url": "http://127.0.0.1:3001",
       "test_asset_directory": "test-projects/03-restful-booker-api",
-      "startup_reference": "Read the cloned project's current README; npm or Docker may be used."
+      "startup_reference": "Read the cloned project's current README; npm or Docker may be used.",
+      "startup": {
+        "command": ["npm", "start"],
+        "working_directory": "restful-booker",
+        "health_path": "/ping",
+        "health_timeout_seconds": 1,
+        "startup_timeout_seconds": 30,
+        "poll_interval_seconds": 0.5
+      }
     },
     "swagger-petstore": {
       "kind": "git",

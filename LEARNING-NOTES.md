@@ -69,6 +69,7 @@
 - [Day 60：预期失败治理](#day-60预期失败治理)
 - [Day 61：Client 单元测试与 Mock](#day-61client-单元测试与-mock)
 - [Day 62：日志与敏感信息诊断](#day-62日志与敏感信息诊断)
+- [Day 63：重试边界](#day-63重试边界)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -6785,10 +6786,105 @@ def summarize_response(response):
 - 静态检查：Ruff check 和 format check 通过
 - 证据目录：`artifacts/day-062/`
 
+## Day 63：重试边界
+
+### 核心知识点
+
+重试策略必须同时判断故障是否可能暂时恢复，以及重复执行是否会产生额外副作用。超时只表示客户端在期限内没有收到响应，不能证明 POST 没有创建资源；服务端可能已经执行成功，只是响应没有返回。因此，重试的安全性取决于操作的幂等性、服务端去重能力和明确的尝试上限。
+
+### 它解决的问题
+
+网络抖动、连接失败和暂时过载可能让 GET 第一次失败，但盲目重试所有请求会把 POST 创建预订、扣款或提交订单执行多次。没有上限的重试还会放大服务压力，并让失败测试长时间阻塞。把重试判断集中在策略层，可以单独证明调用次数、等待位置和副作用请求的拒绝条件。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **幂等性**：同一操作执行一次或多次，服务端最终资源状态相同。GET、相同内容的 PUT 和删除后的 DELETE 通常具备这一性质；POST 默认不具备。
+- **结果未知**：POST 超时后不能从客户端异常推出服务端状态，后续应考虑查询、业务幂等键或人工补偿。
+- **有界重试**：max_attempts 表示总调用次数上限，而不是失败后的额外次数；只有在后面确实还有一次尝试时才等待。
+- **可重试故障**：当前最小策略只把 requests.Timeout 和 requests.ConnectionError 作为可重试异常，状态码重试和带幂等键的 POST 暂不属于本日范围。
+
+#### 心智模型或执行链
+
+~~~text
+请求动作 + HTTP 方法 + 最大尝试次数
+                 ↓
+             执行一次
+                 ↓
+        成功 → 立即返回
+        失败 → 判断异常与方法
+                 ↓
+     GET 且仍有次数 → sleep → 下一次
+     POST 或达到上限 → 原始异常直接抛出
+~~~
+
+#### 最小代码骨架
+
+~~~python
+def retry_request(request_action, method, max_attempts, sleep_func):
+    if max_attempts < 1:
+        raise ValueError("max_attempts must be at least 1")
+
+    attempts = max_attempts if method.upper() == "GET" else 1
+    for attempt in range(1, attempts + 1):
+        try:
+            return request_action()
+        except (requests.Timeout, requests.ConnectionError):
+            if attempt == attempts:
+                raise
+            sleep_func(1.0)
+~~~
+
+#### 断言、数据或状态的含义
+
+GET 第一次超时、第二次成功时，调用次数为 2 且只等待 1 次，证明成功会提前停止。连续三次失败时，调用次数为 3、等待次数为 2，证明最后一次失败后不再等待。普通 POST 遇到 Timeout 或 ConnectionError 时只调用 1 次并直接抛出，证明策略本身不会制造第二次副作用。max_attempts 为 0 或负数时在调用动作前拒绝，证明边界参数不会绕过上限。
+
+### 适用场景与边界
+
+当前实现适合把重试控制逻辑与真实 HTTP Client 分离，并通过依赖注入的 sleep_func 快速验证控制流。它没有证明真实等待时长、429/502/503/504 等状态码重试、幂等键 POST 的去重效果，也没有证明服务端在第一次超时后的最终状态。把非 GET 方法统一限制为一次尝试是本日的保守策略，若未来支持 PUT、DELETE 或幂等键 POST，应为它们建立独立契约。
+
+### 常见错误、反例与假通过
+
+1. 把客户端超时当成服务端一定失败，立即重复提交 POST。
+2. 只断言最终返回成功，不检查请求动作实际调用次数，无法发现重复副作用。
+3. 对所有异常或所有 5xx 无条件重试，掩盖认证、参数和业务错误。
+4. 把 max_attempts 理解为额外重试次数，导致实际调用超过上限。
+5. 最后一次失败后仍调用 sleep，拖慢失败反馈并制造无意义等待。
+
+### 记忆要点
+
+**超时后的 POST 结果未知；先判断幂等性，再限制总尝试次数；只重试明确的临时故障，成功立即停止，最后一次失败不等待。**
+
+### 代码落地
+
+test-projects/03-restful-booker-api/src/retry_policy.py 提供最小 retry_request 策略：GET 对 Timeout 和 ConnectionError 按 max_attempts 有界重试，其他方法只执行一次；sleep_func 可替换为 Mock。tests/test_retry_policy.py 覆盖 GET 成功后停止、连续失败达到上限、POST 两类网络异常不重试和非法 max_attempts。
+
+本日还为标准验证 runner 增加了本地目标服务预检：运行验证时先检查 Restful Booker 的 /ping，未启动才按登记命令启动，并把状态写入 verification.md；它解决测试环境准备问题，不改变重试策略对请求动作的证明范围。
+
+目标测试为 6 passed；API 全量回归为 86 passed、18 xfailed；服务预检工具测试为 3 passed；仓库结构校验、Ruff check、Ruff format check 和 git diff --check 均通过。标准证据保存于 artifacts/day-063/verification.md。
+
+### 知识验收
+
+1. 为什么 POST 超时只能说明结果未知，不能直接说明创建失败？
+2. GET 重试测试中，为什么成功后调用次数和 sleep 次数都必须断言？
+3. 为什么 max_attempts=3 时连续失败只能 sleep 2 次？
+4. 当前测试没有证明哪些状态码重试、幂等键和真实时间行为？
+
+### 关联产出
+
+- 目标文件：test-projects/03-restful-booker-api/src/retry_policy.py
+- 测试文件：test-projects/03-restful-booker-api/tests/test_retry_policy.py
+- 服务预检工具：tools/target_service.py、tools/run_day_verification.py
+- 目标结果：6 passed
+- 全量回归：86 passed、18 xfailed
+- 证据目录：artifacts/day-063/
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
 | --- | ---: | --- |
+| 重试边界 | Day 63 | 幂等性、超时结果未知、有界重试、临时网络异常、副作用请求和调用次数证明 |
 | pytest、Playwright、expect 执行链 | Day 1 | 测试组织、浏览器操作、最终状态断言 |
 | fixture | Day 1、Day 7 | 页面环境准备、数据准备、作用域与隔离 |
 | 状态断言 | Day 2 | checkbox、completed 类、未完成计数 |
