@@ -1,5 +1,4 @@
 import pytest
-
 from factories import build_booking_payload
 from schema_helpers import assert_schema_valid
 

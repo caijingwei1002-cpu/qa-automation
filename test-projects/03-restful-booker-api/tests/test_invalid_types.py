@@ -1,9 +1,7 @@
 """验证 booking 字段类型错误时的拒绝行为和异常资源清理。"""
 
 import pytest
-
 from factories import build_booking_payload
-
 
 INVALID_TYPE_CASES = [
     pytest.param(
@@ -13,10 +11,7 @@ INVALID_TYPE_CASES = [
         marks=pytest.mark.xfail(
             strict=True,
             raises=AssertionError,
-            reason=(
-                "当前接口接受字符串 totalprice，返回 200，"
-                "并将其转换为数字；契约预期为 400。"
-            ),
+            reason=("当前接口接受字符串 totalprice，返回 200，并将其转换为数字；契约预期为 400。"),
         ),
         id="totalprice-as-string",
     ),
@@ -28,8 +23,7 @@ INVALID_TYPE_CASES = [
             strict=True,
             raises=AssertionError,
             reason=(
-                "当前接口接受字符串 depositpaid，返回 200，"
-                "并将其转换为布尔值；契约预期为 400。"
+                "当前接口接受字符串 depositpaid，返回 200，并将其转换为布尔值；契约预期为 400。"
             ),
         ),
         id="depositpaid-as-string",

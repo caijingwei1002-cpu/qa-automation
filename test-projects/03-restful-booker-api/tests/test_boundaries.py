@@ -1,9 +1,7 @@
 """验证 booking 核心字段边界及当前接口的校验风险。"""
 
 import pytest
-
 from factories import build_booking_payload
-
 
 # 每组参数都包含输入、预期状态码和成功时需要核对的字段。
 # xfail 用于保留业务预期：如果接口修复了校验，strict=True 会提醒我们移除该标记。

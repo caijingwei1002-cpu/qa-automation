@@ -21,10 +21,7 @@ def assert_error_response(
     expected_text=None,
 ):
     if not 400 <= expected_status <= 599:
-        raise ValueError(
-            f"expected_status must be between 400 and 599, "
-            f"but got {expected_status}"
-        )
+        raise ValueError(f"expected_status must be between 400 and 599, but got {expected_status}")
 
     summary = _response_summary(response)
 

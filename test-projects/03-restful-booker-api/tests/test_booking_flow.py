@@ -41,14 +41,7 @@ def test_create_booking_can_be_retrieved(booking_client):
     assert booking["totalprice"] == payload["totalprice"]
     assert booking["depositpaid"] == payload["depositpaid"]
 
-
-    assert (
-        booking["bookingdates"]["checkin"]
-        == payload["bookingdates"]["checkin"]
-    )
-    assert (
-        booking["bookingdates"]["checkout"]
-        == payload["bookingdates"]["checkout"]
-    )
+    assert booking["bookingdates"]["checkin"] == payload["bookingdates"]["checkin"]
+    assert booking["bookingdates"]["checkout"] == payload["bookingdates"]["checkout"]
 
     assert booking["additionalneeds"] == payload["additionalneeds"]

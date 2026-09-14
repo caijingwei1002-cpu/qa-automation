@@ -71,6 +71,7 @@
 - [Day 62：日志与敏感信息诊断](#day-62日志与敏感信息诊断)
 - [Day 63：重试边界](#day-63重试边界)
 - [Day 64：并行隔离](#day-64并行隔离)
+- [Day 65：测试套件与质量检查](#day-65测试套件与质量检查)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -6984,10 +6985,127 @@ def test_isolation(case_label, booking_client, created_booking, auth_token):
 - 全量回归：90 passed、18 xfailed
 - 证据目录：`artifacts/day-064/`
 
+## Day 65：测试套件与质量检查
+
+### 核心知识点
+
+测试套件分层（test suite stratification）按风险和反馈时效选择执行范围：smoke 是少量关键可用性测试，完整 regression 是默认收集到的全部测试。静态检查（lint 与 formatter）验证代码形态，不能替代运行时行为验证；marker 必须注册并使用严格模式，才能让子集入口可信。
+
+### 它解决的问题
+
+每次提交都运行完整套件会拖慢反馈，而只运行少量测试又可能漏掉边界、异常和清理回归。没有明确 marker 注册时，拼写错误可能让关键测试从 smoke 集合中悄悄消失；没有固定 formatter 入口时，代码风格问题会持续积累，后续 diff 难以审查。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **Smoke**：验证服务可访问、鉴权和核心业务链等阻断性风险的快速子集。它按业务重要性选择，不按执行时间选择。
+- **Regression**：验证已有行为是否保持正确的完整测试集。当前采用默认 `pytest` 表达 regression，不给每个测试重复添加 `regression` marker。
+- **Marker 注册**：在 `pytest.ini` 的 `markers` 中声明可用标记，并用 `--strict-markers` 把未知或拼写错误的标记变成失败。
+- **Lint 与 format**：`ruff check` 检查启用规则下的代码问题；`ruff format --check` 检查格式是否符合 formatter。两者都不执行 HTTP 请求或业务断言。
+
+#### 心智模型或执行链
+
+~~~text
+代码修改
+   ↓
+Ruff lint + format
+   ↓
+pytest --collect-only -m smoke
+   ↓
+smoke：服务、鉴权、核心链路
+   ↓
+pytest：完整 regression
+   ↓
+按失败层次区分代码、测试、产品和环境问题
+~~~
+
+#### 最小代码与配置骨架
+
+~~~ini
+[pytest]
+testpaths = tests
+addopts = --strict-markers
+
+markers =
+    smoke: critical tests verifying API availability and core business flows
+~~~
+
+~~~python
+import pytest
+
+
+@pytest.mark.smoke
+def test_health_check(api_client):
+    ...
+~~~
+
+~~~text
+ruff check test-projects/03-restful-booker-api
+ruff format --check test-projects/03-restful-booker-api
+pytest test-projects/03-restful-booker-api/tests -m smoke -q
+pytest test-projects/03-restful-booker-api/tests -q
+~~~
+
+#### 断言、数据或状态的含义
+
+- `pytest --markers` 能看到 `smoke`，证明配置注册了该 marker，但不能证明目标测试已被标记。
+- `--collect-only -m smoke` 显示 4 个 test item，证明筛选集合包含 health、authentication 的两个参数实例和 lifecycle；它不执行服务请求。
+- smoke 的 4 passed 只证明关键子集通过，不能推出边界、异常、并行和所有回归行为都正确。
+- 完整回归的 90 passed、18 xfailed 证明当前已收集测试的结果分类；它仍不证明未被测试建模的风险。
+- Ruff 通过证明代码符合当前静态规则，不证明 API 返回正确状态码或资源状态正确。
+
+#### 适用场景与边界
+
+提交前时间很短时，先运行项目范围内 Ruff 和 smoke；合并或 CI 阶段再运行完整 regression。Smoke 应保持小而关键，回归集合则随测试发现自然扩展。Ruff 命令应与当前项目责任范围一致，例如只检查 `test-projects/03-restful-booker-api`，避免其他项目的历史问题污染本项目质量门。服务依赖仍需由预检或环境编排保证，pytest marker 本身不会启动服务。
+
+#### 常见错误、反例与假通过
+
+1. 把“执行很快”当成 smoke 定义，漏掉慢但关键的核心链路。
+2. 给所有测试都添加 `regression` marker，新增测试忘记标记后反而从回归命令中消失。
+3. 不注册 marker 或关闭 strict 模式，导致 `somke` 拼写错误只产生 warning。
+4. 只看 `pytest -m smoke` 的绿色结果，就声称整个系统没有回归。
+5. 直接用 `ruff check .` 扫描包含多个项目的仓库，把无关目录的问题混入当前项目结果。
+6. 把 `ruff format` 当成业务重构；格式化后仍需运行 smoke 和完整回归。
+
+#### 记忆要点
+
+**Ruff 管代码形态，smoke 管关键可用性，pytest 管完整回归；smoke 是回归子集，marker 必须注册并严格收集。**
+
+### 代码落地
+
+在 `test-projects/03-restful-booker-api/pytest.ini` 中设置 `testpaths = tests`、`addopts = --strict-markers` 并注册 `smoke`。为 health、authentication 和 full lifecycle 三个核心节点添加 smoke 标记；authentication 的两个参数实例因此都进入 smoke，异常清理专项仍留在完整回归。没有添加 `regression` marker，默认 `pytest` 保持完整集合语义。
+
+第一次项目范围 Ruff 检查发现 7 个导入排序问题；限定 `--select I --fix` 后，再用 formatter 整理 9 个文件的历史格式差异。复核 diff 确认变化集中在导入、空行、换行和长表达式排版，没有改变业务逻辑。
+
+smoke 首次执行时因本地 3001 服务未启动而在连接层失败，`WinError 10061` 和 `<no response>` 证明没有收到 HTTP 响应。启动 Restful Booker 并通过 `/ping` 健康检查后，smoke 通过；这次故障属于服务 readiness，不属于 marker 或业务断言问题。
+
+最终验证：Ruff check 通过，Ruff format check 显示 29 files already formatted；smoke 为 4 passed、104 deselected；完整 regression 为 90 passed、18 xfailed。证据保存于 `artifacts/day-065/verification.md`。
+
+### 知识验收
+
+1. 为什么 smoke 应按关键风险选择，而不能按执行速度选择？
+2. 为什么默认完整 `pytest` 比给所有测试添加 `regression` marker 更不容易漏测？
+3. `--strict-markers` 和 `--collect-only -m smoke` 分别证明什么？
+4. Ruff check、smoke 和完整 regression 各自不能证明什么？
+5. 如果 smoke 四个测试都因 `WinError 10061` 失败，为什么应先检查服务 readiness？
+
+### 关联产出
+
+- pytest 配置：`test-projects/03-restful-booker-api/pytest.ini`
+- smoke 标记：`test-projects/03-restful-booker-api/tests/test_health.py`、`test_auth.py`、`test_booking_lifecycle.py`
+- 目标命令：`python -m pytest test-projects/03-restful-booker-api/tests -m smoke -q`
+- 完整命令：`python -m pytest test-projects/03-restful-booker-api/tests -q`
+- 静态命令：`python -m ruff check test-projects/03-restful-booker-api`、`python -m ruff format --check test-projects/03-restful-booker-api`
+- 目标结果：4 passed、104 deselected
+- 全量回归：90 passed、18 xfailed
+- 证据目录：`artifacts/day-065/`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
 | --- | ---: | --- |
+| 测试套件与质量检查 | Day 65 | 风险驱动 smoke、默认 regression、严格 marker、Ruff lint/format 和服务 readiness 分层 |
 | 并行隔离 | Day 64 | pytest-xdist、多进程 worker、唯一测试数据、资源所有权、顺序独立性和串并行证据 |
 | 重试边界 | Day 63 | 幂等性、超时结果未知、有界重试、临时网络异常、副作用请求和调用次数证明 |
 | pytest、Playwright、expect 执行链 | Day 1 | 测试组织、浏览器操作、最终状态断言 |

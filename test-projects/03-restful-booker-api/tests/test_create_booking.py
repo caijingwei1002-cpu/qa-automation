@@ -31,6 +31,5 @@ def test_create_booking(booking_client):
     # 逐字段比较请求数据和响应数据，证明创建资源与请求一致。
     for field, expected in payload.items():
         assert created_booking.get(field) == expected, (
-            f"Field {field!r} mismatch: "
-            f"expected {expected!r}, got {created_booking.get(field)!r}"
+            f"Field {field!r} mismatch: expected {expected!r}, got {created_booking.get(field)!r}"
         )

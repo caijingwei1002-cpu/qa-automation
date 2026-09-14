@@ -72,6 +72,7 @@ def _cleanup_booking(booking_client, booking_id, token):
     )
 
 
+@pytest.mark.smoke
 def test_booking_full_lifecycle(
     booking_client,
     api_client,

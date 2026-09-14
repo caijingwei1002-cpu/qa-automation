@@ -1,5 +1,7 @@
 import time
 
+import pytest
+
 # 目标 URL 和请求超时由共享 api_client Fixture 提供。
 # RESTFUL_BOOKER_URL 仍可通过该 Fixture 覆盖默认本地目标。
 
@@ -11,6 +13,7 @@ EXPECTED_RESPONSE_BODY = "Created"
 MAX_RESPONSE_TIME_SECONDS = 1.0
 
 
+@pytest.mark.smoke
 def test_health_check(api_client):
     """验证 /ping 契约和项目定义的响应时间阈值。"""
     start_time = time.perf_counter()

@@ -3,9 +3,7 @@
 from copy import deepcopy
 
 import pytest
-
 from factories import build_booking_payload
-
 
 # 业务预期是缺失必填字段返回 400，而不是让服务抛出 500。
 # 当前本地接口对这些场景均返回 500，因此先用严格 xfail 留存缺陷证据。

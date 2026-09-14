@@ -19,23 +19,20 @@ def test_filter_booking_is_isolated_between_parallel_tests(
     )
 
     assert response.status_code == 200, (
-        f"{case_label}: expected filter status 200, "
-        f"got {response.status_code}"
+        f"{case_label}: expected filter status 200, got {response.status_code}"
     )
 
     results = response.json()
 
     assert isinstance(results, list), (
-        f"{case_label}: expected filter response to be a list, "
-        f"got {type(results).__name__}"
+        f"{case_label}: expected filter response to be a list, got {type(results).__name__}"
     )
 
     returned_ids = set()
 
     for index, item in enumerate(results):
         assert isinstance(item, dict), (
-            f"{case_label}: expected result item {index} to be a dict, "
-            f"got {type(item).__name__}"
+            f"{case_label}: expected result item {index} to be a dict, got {type(item).__name__}"
         )
 
         booking_id = item.get("bookingid")
@@ -77,7 +74,6 @@ def test_filter_booking_is_isolated_between_parallel_tests(
             f"expected firstname={own_firstname!r}, "
             f"got {actual_firstname!r}"
         )
-
 
 
 @pytest.mark.parametrize(

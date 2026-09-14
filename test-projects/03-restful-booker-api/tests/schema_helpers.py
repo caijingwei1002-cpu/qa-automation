@@ -5,12 +5,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-
-SCHEMA_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "schemas"
-    / "booking.json"
-)
+SCHEMA_PATH = Path(__file__).resolve().parents[1] / "schemas" / "booking.json"
 
 with SCHEMA_PATH.open(encoding="utf-8") as schema_file:
     BOOKING_SCHEMA = json.load(schema_file)
@@ -58,11 +53,6 @@ def assert_schema_valid(instance, context, *, schema_key=None):
     details = []
     for error in errors:
         path = ".".join(str(part) for part in error.absolute_path)
-        details.append(
-            f"{path or '<root>'}: {error.message}"
-        )
+        details.append(f"{path or '<root>'}: {error.message}")
 
-    raise AssertionError(
-        f"{context} failed JSON Schema validation:\n"
-        + "\n".join(details)
-    )
+    raise AssertionError(f"{context} failed JSON Schema validation:\n" + "\n".join(details))

@@ -3,6 +3,7 @@
 import pytest
 
 
+@pytest.mark.smoke
 @pytest.mark.parametrize(
     "credential_type",
     ["valid", "invalid"],
