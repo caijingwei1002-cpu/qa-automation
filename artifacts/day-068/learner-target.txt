@@ -1,0 +1,13 @@
+来源：学习者在 PowerShell 中提供的原始执行摘要；不是教练重新执行的输出。
+
+命令：
+
+```text
+.\.venv\Scripts\python.exe -m pytest -vv -s test-projects/03-restful-booker-api/tests/test_independent_scenario.py::test_create_booking_without_optional_additionalneeds
+```
+
+环境摘要：Python 3.11.0rc2，pytest 9.1.1，运行目录为 `D:\qa-automation-learning`。
+
+收集：`collected 1 item`
+
+结果：目标测试 `PASSED`，最终为 `1 passed in 0.05s`。

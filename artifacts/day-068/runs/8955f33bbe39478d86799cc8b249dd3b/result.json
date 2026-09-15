@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "run_id": "8955f33bbe39478d86799cc8b249dd3b",
+  "day": 68,
+  "source": "runner",
+  "test_project": "test-projects/03-restful-booker-api",
+  "python": "D:\\qa-automation-learning\\.venv\\Scripts\\python.exe",
+  "finished_at": "2026-09-15T09:25:51.766980+00:00",
+  "duration_seconds": 3.62,
+  "project_fingerprint": "1bf103432675ad7454dea51ef88716a71a897460c6d75d3abd057ecd860c2b4f",
+  "service": "target=restful-booker, state=already-running, health=http://127.0.0.1:3001/ping, http=201",
+  "target": {
+    "planned_command": "pytest test-projects/03-restful-booker-api/tests/test_independent_scenario.py -q",
+    "command": ".\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests/test_independent_scenario.py -q",
+    "exit_code": 0,
+    "output": "exit_code=0 (passed)\n.                                                                        [100%]\n1 passed in 0.02s"
+  },
+  "regression": {
+    "planned_command": "pytest test-projects/03-restful-booker-api/tests -q",
+    "command": ".\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests -q",
+    "exit_code": 0,
+    "output": "exit_code=0 (passed)\n............................xxxxxx..x.x............xxxxxxxxxx........... [ 66%]\n.....................................                                    [100%]\n91 passed, 18 xfailed in 1.89s"
+  }
+}

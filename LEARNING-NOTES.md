@@ -74,6 +74,7 @@
 - [Day 65：测试套件与质量检查](#day-65测试套件与质量检查)
 - [Day 66：UI 重构迁移](#day-66ui-重构迁移)
 - [Day 67：缺陷案例与报告](#day-67缺陷案例与报告)
+- [Day 68：独立测试设计与编码](#day-68独立测试设计与编码)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -7271,12 +7272,69 @@ def test_complete_checkout_order(logged_in_page: Page):
 - 目标诊断：`--runxfail ...::test_create_booking_rejects_missing_required_field[missing-firstname]`，实际得到 `1 failed`
 - 全量回归：`python -m pytest test-projects/03-restful-booker-api/tests -q`，实际得到 `90 passed, 18 xfailed`
 
+## Day 68：独立测试设计与编码
+
+### 核心知识点
+
+陌生 API 场景的测试设计可以沿用稳定的方法，但不能照抄已有用例：先把业务规则翻译成外部可观察行为，选择能证明该行为的 API 集成层，再控制单变量、登记资源、分别验证响应和持久化，并把清理作为资源生命周期的一部分。独立性体现在能解释每个数据、断言和清理决定，而不只是把测试跑绿。
+
+### 它解决的问题
+
+面对没有参考答案的新场景，容易把可选字段误当必填、把字段缺失和 `null`/空字符串混为一谈，只验证 POST 成功而漏掉 GET 持久化，或让清理异常覆盖主测试失败。本日方法把业务规则、输入边界、响应契约、最终状态和失败诊断连接起来，同时保留学习者与教练各自的产出边界。
+
+### 理论基础
+
+#### 从业务规则到测试层
+
+如果规则描述 `POST /booking` 的创建和资源最终状态，API 功能/集成测试是合适层级：真实调用领域 client，验证 HTTP 响应和随后 GET 的资源状态。单元测试可以补充 helper 或 client 行为，但不能替代真实接口对契约和持久化的证明；UI 也不是这个规则的必要载体。
+
+#### 单变量与字段边界
+
+以 `build_booking_payload()` 生成的合法数据为基线，只省略 `additionalneeds` key，不能用 `None`、空字符串或同时修改其他字段来代替。省略可选字段的场景不应强行断言某一种序列化形式，除非契约明确规定；应验证已提交字段保持一致，并禁止响应或持久化结果凭空出现未提交的实际需求值。
+
+#### 响应和持久化是两条证据
+
+POST 的 `200`、JSON 对象和整数 `bookingid` 只能证明创建响应满足断言；必须用同一个 ID GET 回查，才能证明已提交字段确实持久化。迁移到显式提交 `additionalneeds="Late checkout"` 时，断言应改为 POST 和 GET 均精确等于该值，不能只断言字段存在、非空或包含关键词。
+
+#### 资源所有权与清理异常
+
+创建响应一到就尽早登记本测试拥有的 `bookingid`，再执行可能失败的业务断言。`finally` 负责尽力删除并验证最终 404；如果主测试已有异常，清理异常应通过 `add_note()` 附加诊断而不覆盖主异常；如果没有主异常，清理失败必须显式暴露。捕获范围应限于预期的断言和 HTTP 请求异常，不能静默使用 catch-all。
+
+#### 通过结果和证据范围
+
+学习者提供的目标 node id 输出与教练统一验证器的输出应分开标注来源。`1 passed` 证明本次测试断言通过；`91 passed, 18 xfailed` 证明本次回归集合结果，不等于所有场景或所有原始请求响应都已单独记录。服务预检 `/ping=201` 是环境可用性证据，不能替代业务断言。
+
+### 代码落地
+
+目标文件为 `test-projects/03-restful-booker-api/tests/test_independent_scenario.py`。最终测试使用动态 factory 生成 payload，删除 `additionalneeds`，调用现有 `auth_token` fixture，POST 后先提取 ID，再核对已提交字段和可选字段缺省/空值；GET 回查相同 ID，最后在 `finally` 清理并确认 404。清理 helper 经过审查后限定异常捕获范围，并区分主异常与清理诊断。
+
+学习者先在对话中提交实现草稿；因文件当时仍为空且学习者明确请求，教练负责落盘并做上述必要工程整理。这一归属与独立完成的场景分析、迁移回答和审查判断分开记录。
+
+### 知识验收
+
+1. 为什么“可选字段省略”不能直接改写成 `null` 或空字符串？
+2. 为什么 POST 返回 200 和 bookingid 后仍要 GET 回查？
+3. 什么时候允许响应中的可选字段缺失、为空或存在？哪些情况必须精确断言？
+4. 清理函数如何避免覆盖主测试异常，同时不静默隐藏清理失败？
+5. 为什么 `1 passed` 和全量 `91 passed, 18 xfailed` 的证据范围不同？
+6. 如何把同一方法迁移到“显式提交 `Late checkout`”的相反边界？
+
+### 关联产出
+
+- 独立测试：`test-projects/03-restful-booker-api/tests/test_independent_scenario.py`
+- 学习者目标结果：`artifacts/day-068/learner-target.txt`（`1 passed in 0.05s`）
+- 正式验证：`artifacts/day-068/verification.md`
+- 结构化运行记录：`artifacts/day-068/run-record.json`
+- 七步记录：`daily-log/day-068.session.json`
+- 目标验证：`1 passed`；最终全量回归：`91 passed, 18 xfailed`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
 | --- | ---: | --- |
 | UI 测试职责分层与登录前置 | Day 66 | fixture 前置、Page Object 动作、测试断言、Context 隔离、setup/call 失败证据和 ARIA 定位 |
 | 缺陷证据链与报告边界 | Day 67 | 契约预期、单变量输入、原始响应、--runxfail、回归范围、未知项和资源清理 |
+| 陌生场景中的 API 测试设计与迁移 | Day 68 | 业务规则到测试层、可选字段边界、POST/GET 双证据、资源清理和独立迁移 |
 | 测试套件与质量检查 | Day 65 | 风险驱动 smoke、默认 regression、严格 marker、Ruff lint/format 和服务 readiness 分层 |
 | 并行隔离 | Day 64 | pytest-xdist、多进程 worker、唯一测试数据、资源所有权、顺序独立性和串并行证据 |
 | 重试边界 | Day 63 | 幂等性、超时结果未知、有界重试、临时网络异常、副作用请求和调用次数证明 |
