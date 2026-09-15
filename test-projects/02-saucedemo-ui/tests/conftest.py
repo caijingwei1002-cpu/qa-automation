@@ -1,18 +1,21 @@
 import base64
 import logging
 import os
+import re
 
 import pytest
+from pages.login_page import LoginPage
 from playwright.sync_api import (
     Browser,
     BrowserContext,
     Page,
+    expect,
     sync_playwright,
 )
 from pytest_html import extras as html_extras
+from test_data import DEFAULT_PASSWORD, STANDARD_USER
 
 from config import resolve_base_url
-from test_data import DEFAULT_PASSWORD, STANDARD_USER
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +57,7 @@ def pytest_addoption(parser):
 
 @pytest.fixture
 def saucedemo_base_url(pytestconfig):
-    return resolve_base_url(
-        pytestconfig.getoption("--base-url")
-    )
+    return resolve_base_url(pytestconfig.getoption("--base-url"))
 
 
 @pytest.fixture(scope="session")
@@ -113,25 +114,36 @@ def standard_user_credentials():
     }
 
 
+@pytest.fixture
+def logged_in_page(
+    saucedemo_page: Page,
+    standard_user_credentials: dict[str, str],
+) -> Page:
+    login_page = LoginPage(saucedemo_page)
+    login_page.login(
+        standard_user_credentials["username"],
+        standard_user_credentials["password"],
+    )
+
+    expect(saucedemo_page).to_have_url(re.compile(r"/inventory\.html$"))
+    return saucedemo_page
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
 
-    # 只处理测试主体 call 阶段的失败
-    if report.when != "call" or not report.failed:
+    if report.when not in ("setup", "call") or not report.failed:
         return
 
-    # 从当前测试使用的 fixture 中获取 saucedemo_page。
     extras = list(getattr(report, "extras", []))
 
-    page = item.funcargs.get("saucedemo_page")
+    page = item.funcargs.get("saucedemo_page") or item.funcargs.get("page")
     if page is not None:
         try:
             screenshot_bytes = page.screenshot(full_page=True)
-            screenshot_base64 = base64.b64encode(
-                screenshot_bytes
-            ).decode("ascii")
+            screenshot_base64 = base64.b64encode(screenshot_bytes).decode("ascii")
 
             extras.append(
                 html_extras.png(
@@ -150,10 +162,7 @@ def pytest_runtest_makereport(item, call):
 
     if category is not None:
         category_label = FAILURE_CATEGORY_LABELS[category]
-        classification = (
-            f"分类：{category_label}\n"
-            f"理由：{reason or '未提供'}"
-        )
+        classification = f"分类：{category_label}\n理由：{reason or '未提供'}"
         extras.append(
             html_extras.text(
                 classification,

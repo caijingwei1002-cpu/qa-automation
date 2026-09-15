@@ -72,6 +72,7 @@
 - [Day 63：重试边界](#day-63重试边界)
 - [Day 64：并行隔离](#day-64并行隔离)
 - [Day 65：测试套件与质量检查](#day-65测试套件与质量检查)
+- [Day 66：UI 重构迁移](#day-66ui-重构迁移)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -7101,10 +7102,120 @@ smoke 首次执行时因本地 3001 服务未启动而在连接层失败，`WinE
 - 全量回归：90 passed、18 xfailed
 - 证据目录：`artifacts/day-065/`
 
+## Day 66：UI 重构迁移
+
+### 核心知识点
+
+UI 测试也应把前置准备、页面动作和业务断言分开：fixture 建立稳定的登录前置，Page Object 提供可复用的页面动作，测试主体保留当前场景的业务步骤和结果断言。这样可以减少重复登录代码，同时让测试仍然清楚地表达它要证明的业务结果。
+
+### 它解决的问题
+
+当每个结账测试都自行输入账号密码时，登录细节会散落在多个测试中，登录页面改动会扩大维护范围；如果把加购、结账或订单断言也塞进登录 fixture，测试名称和主体就无法说明真正验证了什么。职责分层让共享机制集中维护，让业务意图和失败位置保持可见。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **登录前置 fixture**：完成登录并确认进入商品页，向依赖它的业务测试提供“已登录且商品页就绪”的起点。
+- **Page Object**：封装页面定位和动作，例如 `LoginPage.login()`、`InventoryPage.add_item()`；它不替测试决定业务预期。
+- **测试主体**：编排当前场景的动作，并断言商品、购物车、结账和订单结果。
+- **独立 context**：每条测试默认创建新的 BrowserContext，隔离 Cookie、localStorage 和页面状态；它不自动隔离服务器端账号数据。
+- **setup 与 call**：fixture 初始化或前置断言失败属于 setup；测试函数中的业务断言失败属于 call。失败证据钩子需要覆盖这两个阶段。
+
+#### 心智模型或执行链
+
+~~~text
+独立 BrowserContext / Page
+          ↓
+saucedemo_page：打开站点
+          ↓
+logged_in_page：登录并确认 inventory.html
+          ↓
+测试主体：加购、进入结账、提交订单
+          ↓
+测试主体断言：页面、金额、订单完成和后置状态
+~~~
+
+fixture 只承诺它的前置条件。`logged_in_page` 不承诺购物车为空，也不执行结账；测试需要自己建立它拥有的购物车状态并证明自己的业务结果。
+
+#### 最小代码骨架
+
+~~~python
+@pytest.fixture
+def logged_in_page(
+    saucedemo_page: Page,
+    standard_user_credentials: dict[str, str],
+) -> Page:
+    LoginPage(saucedemo_page).login(
+        standard_user_credentials["username"],
+        standard_user_credentials["password"],
+    )
+    expect(saucedemo_page).to_have_url(re.compile(r"/inventory\.html$"))
+    return saucedemo_page
+
+
+def test_complete_checkout_order(logged_in_page: Page):
+    inventory_page = InventoryPage(logged_in_page)
+    inventory_page.add_item(BACKPACK["name"])
+    # 结账和订单断言仍属于当前测试。
+~~~
+
+登录成功测试不能使用 `logged_in_page`，因为那会先替测试完成它要验证的登录动作。错误密码测试同样必须从未登录页面开始。
+
+#### 断言、数据或状态的含义
+
+- fixture 中的 `to_have_url("/inventory.html")` 证明登录前置完成；它不能证明订单成功。
+- 测试中的商品标题、购物车数量、结账页面标题和完成文案分别证明业务状态已经经过关键转换；单独 URL 不能证明页面内容和业务结果正确。
+- 完成订单后购物车徽标和实际条目为空，证明当前 UI 后置状态已清空；它不能证明其他账号或服务器端数据完全隔离。
+- `expect(locator).to_be_visible()` 等条件断言会等待页面状态；它适合等待菜单完成展开，不应被固定 `sleep` 替代。
+- 定位器的 ARIA 角色必须以实际页面契约为准。验证时 Logout 的实际角色是 `button`，不是假设中的 `link`。
+
+#### 适用场景与边界
+
+适合把登录、导航到固定业务起点和稳定环境准备抽成 fixture，再让多个业务测试复用。登录专项、鉴权异常和需要不同账号或未登录状态的测试应继续使用基础页面 fixture。若购物车、订单或其他数据保存在服务端，同一个账号的新 BrowserContext 仍可能看到旧数据，必须由测试数据策略或独立账号解决。
+
+#### 常见错误、反例与假通过
+
+1. 在 `logged_in_page` 中加商品、打开购物车或提交订单，导致 fixture 隐藏业务动作。
+2. 让登录成功和错误密码测试依赖已登录 fixture，测试因此失去目标行为。
+3. 只创建新 Page 却复用同一个 Context，Cookie 和 localStorage 仍可能污染后续测试。
+4. 看到 `Logout` 文本就假设它是链接；应根据可访问性树和页面契约选择 `button` 或 `link`。
+5. 截图钩子只处理 `call`，遗漏登录前置、导航和 fixture setup 失败；处理 setup 时应从已经成功创建的依赖页面取截图。
+
+#### 记忆要点
+
+**Fixture 给起点，Page Object 给动作，测试主体给业务断言；登录前置可复用，登录行为本身必须独立验证。**
+
+### 代码落地
+
+在 `test-projects/02-saucedemo-ui/tests/conftest.py` 新增 `logged_in_page`，复用现有 `saucedemo_page`、凭据 fixture 和 `LoginPage`，登录后等待商品页 URL。`test_checkout_e2e.py` 删除重复登录代码，保留商品、购物车、结账和订单完成断言；登录专项仍从基础页面开始。失败截图钩子扩展到 setup 和 call，并优先从已成功的 `saucedemo_page` 或 `page` 获取页面。
+
+完整回归中登出测试第一次使用 `get_by_role("link", name="Logout")` 超时。Aria snapshot 显示实际元素是 `button "Logout"`，因此改为按钮定位并等待可见；这说明定位器应依据实际可访问性契约，而不是元素文本的主观标签。
+
+### 知识验收
+
+1. 为什么结账测试可以使用 `logged_in_page`，而正常登录和错误密码测试不能使用它？
+2. 登录 fixture 中的 URL 断言证明了什么，不能证明什么？
+3. 新 BrowserContext 能隔离哪些状态，不能自动隔离哪类状态？
+4. 为什么失败截图钩子需要处理 setup 和 call 两个阶段？
+5. 当页面文本是 Logout 但 ARIA 角色是 button 时，应根据什么选择定位器？
+
+### 关联产出
+
+- 登录前置 fixture：`test-projects/02-saucedemo-ui/tests/conftest.py`
+- 结账场景：`test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py`
+- 登出定位修复：`test-projects/02-saucedemo-ui/tests/test_session.py`
+- 目标命令：`python -m pytest test-projects/02-saucedemo-ui/tests/test_checkout_e2e.py -q`
+- 完整命令：`python -m pytest test-projects/02-saucedemo-ui/tests -q`
+- 目标结果：`1 passed`
+- 全量回归：`22 passed`
+- 证据目录：`artifacts/day-066/`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
 | --- | ---: | --- |
+| UI 测试职责分层与登录前置 | Day 66 | fixture 前置、Page Object 动作、测试断言、Context 隔离、setup/call 失败证据和 ARIA 定位 |
 | 测试套件与质量检查 | Day 65 | 风险驱动 smoke、默认 regression、严格 marker、Ruff lint/format 和服务 readiness 分层 |
 | 并行隔离 | Day 64 | pytest-xdist、多进程 worker、唯一测试数据、资源所有权、顺序独立性和串并行证据 |
 | 重试边界 | Day 63 | 幂等性、超时结果未知、有界重试、临时网络异常、副作用请求和调用次数证明 |

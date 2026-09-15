@@ -3,7 +3,6 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
-
 pytestmark = pytest.mark.regression
 
 LOGIN_URL = re.compile(r"/\/?$")
@@ -31,7 +30,9 @@ def test_logout_returns_to_login_page(
     login_as_standard_user(page, standard_user_credentials)
 
     page.get_by_role("button", name="Open Menu").click()
-    page.get_by_role("link", name="Logout").click()
+    logout_button = page.get_by_role("button", name="Logout")
+    expect(logout_button).to_be_visible()
+    logout_button.click()
 
     expect(page).to_have_url(LOGIN_URL)
     expect(page.get_by_placeholder("Username")).to_be_visible()
