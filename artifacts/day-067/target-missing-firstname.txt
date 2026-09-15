@@ -1,0 +1,13 @@
+Command:
+.\\.venv\\Scripts\\python.exe -m pytest -vv -s 'test-projects/03-restful-booker-api/tests/test_invalid_payloads.py::test_create_booking_rejects_missing_required_field[missing-firstname]'
+
+Result:
+============================= test session starts =============================
+platform win32 -- Python 3.11.0rc2, pytest-9.1.1, pluggy-1.6.0
+rootdir: D:\\qa-automation-learning\\test-projects\\03-restful-booker-api
+configfile: pytest.ini
+collected 1 item
+
+test-projects\\03-restful-booker-api\\tests\\test_invalid_payloads.py::test_create_booking_rejects_missing_required_field[missing-firstname] XFAIL
+
+============================= 1 xfailed in 2.30s ==============================

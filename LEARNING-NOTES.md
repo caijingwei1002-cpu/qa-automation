@@ -73,6 +73,7 @@
 - [Day 64：并行隔离](#day-64并行隔离)
 - [Day 65：测试套件与质量检查](#day-65测试套件与质量检查)
 - [Day 66：UI 重构迁移](#day-66ui-重构迁移)
+- [Day 67：缺陷案例与报告](#day-67缺陷案例与报告)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -7211,11 +7212,71 @@ def test_complete_checkout_order(logged_in_page: Page):
 - 全量回归：`22 passed`
 - 证据目录：`artifacts/day-066/`
 
+## Day 67：缺陷案例与报告
+
+### 核心知识点
+
+缺陷结论必须沿着可复核的证据链建立：先确定契约预期，再从已知合法基线只改变一个变量，保存实际请求和原始响应，必要时检查持久化副作用，最后区分目标诊断、全量回归、环境问题和未知项。测试断言写成 400，不等于产品契约已经证明要求 400；报告应把“预期依据”“输入条件”“观察结果”和“结论范围”分开。
+
+### 它解决的问题
+
+这套方法避免把当前实现、开发口头判断或一次 pytest 结果误写成需求事实。它能让读者复现“合法 booking 仅删除 `firstname` 后返回什么”，判断失败到底是服务未就绪还是接口行为，发现错误状态码之外的持久化副作用，并知道哪些结论还需要契约、日志或跨环境证据支持。
+
+### 理论基础
+
+#### 预期与实际的来源
+
+预期依据优先级是明确的 API 契约/需求，其次是团队约定，再其次才是 HTTP 通用语义；当前代码行为只能作为被验证的实际结果，不能反推预期。如果没有找到 OpenAPI、Swagger 或明确需求规定缺失字段返回 400，应把“Expected 400 的正式依据”保留为未知；若契约规定 422，就应以 422 为预期。
+
+#### 单变量与边界
+
+以一份已验证成功的完整 payload 为基线，只删除 `firstname` 这个 key。不能把缺失字段替换成空字符串或 `null`，也不能同时改变其他字段、认证条件、URL 或请求头。这样请求前后的差异只有一个，实际变化才有可归因性。
+
+#### 失败状态与执行范围
+
+带有 `xfail` 的测试可能只显示 `xfailed`，隐藏真实断言差异；使用 `--runxfail` 才能让已知失败显式执行并记录 `Expected 400 / Actual 500`。一次目标诊断只说明这一场景；全量回归另行记录。`90 passed, 18 xfailed` 说明本次收集并执行的回归集结果，不代表所有未覆盖行为都正确。
+
+#### 观察事实与根因
+
+本次可写入报告的事实是：服务预检 `/ping` 返回 201；缺失 `firstname` 的请求实际返回 HTTP 500，响应体为 `Internal Server Error`；`--runxfail` 得到 `1 failed`，断言差异为 500 对 400。不能仅凭这些内容断言具体内部异常、代码路径或根因。
+
+#### 副作用、所有权与清理
+
+负向请求也可能错误创建资源。应在断言前尝试解析响应中的 `bookingid`，保存本测试能证明归属的 ID，再在 `finally` 中清理；不能先断言失败后才提取 ID。没有解析到 ID 只能说明本次证据中没有可登记的 ID，不能证明绝无副作用。响应状态和数据是否持久化是两条独立断言，必要时应 GET 回查。
+
+#### 环境与未知项
+
+`WinError 10061` 发生在服务未监听时，属于 readiness 前置问题，不能混入接口 Actual Result；服务启动并通过 `/ping` 后仍稳定得到 500，才构成此次行为证据。其他必填字段、空值和类型错误、跨版本稳定性、意外资源创建以及最终 Severity/Priority，若没有直接证据都继续列为未知。
+
+### 代码落地
+
+缺陷报告保存在 `test-projects/03-restful-booker-api/reports/defect-001.md`，包含前置条件、单变量复现步骤、预期依据、实际状态码和响应体、影响及未知项，并引用实际 `--runxfail` node id。正式证据保存在 `artifacts/day-067/verification.md` 和 `artifacts/day-067/run-record.json`；学习者提供的整套回归摘要另存于 `artifacts/day-067/learner-full-regression.txt`，与教练通过统一验证器得到的结果分开标明来源。
+
+### 知识验收
+
+1. 为什么 `assert response.status_code == 400` 不能单独证明 400 是产品契约？
+2. 缺失 `firstname` 的请求为什么必须从合法基线只删除一个 key？
+3. `xfail` 与 `--runxfail` 对诊断证据有什么不同？
+4. 为什么应在断言前提取意外的 `bookingid`，并在 `finally` 清理？
+5. `HTTP 500 + Internal Server Error` 可以确认什么，不能确认什么？
+6. 如何区分服务未启动造成的连接拒绝、目标场景失败和全量回归结果？
+
+### 关联产出
+
+- 缺陷报告：`test-projects/03-restful-booker-api/reports/defect-001.md`
+- 正式验证：`artifacts/day-067/verification.md`
+- 结构化运行记录：`artifacts/day-067/run-record.json`
+- 学习者回归原始摘要：`artifacts/day-067/learner-full-regression.txt`
+- 步骤记录：`daily-log/day-067.session.json`
+- 目标诊断：`--runxfail ...::test_create_booking_rejects_missing_required_field[missing-firstname]`，实际得到 `1 failed`
+- 全量回归：`python -m pytest test-projects/03-restful-booker-api/tests -q`，实际得到 `90 passed, 18 xfailed`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
 | --- | ---: | --- |
 | UI 测试职责分层与登录前置 | Day 66 | fixture 前置、Page Object 动作、测试断言、Context 隔离、setup/call 失败证据和 ARIA 定位 |
+| 缺陷证据链与报告边界 | Day 67 | 契约预期、单变量输入、原始响应、--runxfail、回归范围、未知项和资源清理 |
 | 测试套件与质量检查 | Day 65 | 风险驱动 smoke、默认 regression、严格 marker、Ruff lint/format 和服务 readiness 分层 |
 | 并行隔离 | Day 64 | pytest-xdist、多进程 worker、唯一测试数据、资源所有权、顺序独立性和串并行证据 |
 | 重试边界 | Day 63 | 幂等性、超时结果未知、有界重试、临时网络异常、副作用请求和调用次数证明 |

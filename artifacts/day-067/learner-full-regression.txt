@@ -1,0 +1,7 @@
+来源：学习者在 PowerShell 中提供的原始执行摘要
+
+命令：
+\.\\.venv\\Scripts\\python.exe -m pytest test-projects/03-restful-booker-api/tests -q
+
+结果：
+90 passed, 18 xfailed in 2.15s
