@@ -1,0 +1,11 @@
+来源：学习者于 2026-09-16 提供的终端输出（原始附件包含完整 traceback）。
+
+命令：
+
+```text
+.\.venv\Scripts\python.exe -m pytest test-projects/03-restful-booker-api/tests -m smoke -q
+```
+
+首次结果：`4 failed, 105 deselected`。
+
+失败摘要：4 条 smoke 用例访问 `http://127.0.0.1:3001` 时均出现 `WinError 10061 / connection refused`，随后由 `ApiRequestError` 报告无响应。该结果证明当时本地被测服务未启动；它不是业务断言失败，也不作为最终回归结果。

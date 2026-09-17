@@ -75,6 +75,7 @@
 - [Day 66：UI 重构迁移](#day-66ui-重构迁移)
 - [Day 67：缺陷案例与报告](#day-67缺陷案例与报告)
 - [Day 68：独立测试设计与编码](#day-68独立测试设计与编码)
+- [Day 69：API 阶段验收](#day-69api-阶段验收)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -7328,6 +7329,95 @@ POST 的 `200`、JSON 对象和整数 `bookingid` 只能证明创建响应满足
 - 七步记录：`daily-log/day-068.session.json`
 - 目标验证：`1 passed`；最终全量回归：`91 passed, 18 xfailed`
 
+## Day 69：API 阶段验收
+
+### 核心知识点
+
+阶段验收（acceptance）不是把一次 `pytest` 输出解释成“系统没有问题”，而是用相互独立的证据证明当前项目在声明范围内可交付：变更归属可追溯、静态质量门禁通过、目标与完整回归通过、已知 `xfail` 受控、环境失败与产品失败分开，最终结论不越过覆盖范围。
+
+### 它解决的问题
+
+单个目标测试通过只能说明一个行为；单看 `91 passed, 18 xfailed` 也可能漏掉错误的收集范围、无理由的 `xfail`、意外 `XPASS`、服务未启动或工作区归属混淆。验收证据链把“代码质量、测试集合、环境可用性、已知失败和结论边界”放在一起，避免把绿色数字当成无条件质量证明。
+
+### 理论基础
+
+#### 验收证据的分层
+
+可以把证据分成四层：
+
+1. **变更归属**：`git status --short` 和文件差异说明本日实际改了什么；它不能证明其他工作区改动已经被审查。
+2. **静态质量**：Ruff lint 与格式检查发现代码风格、导入和可维护性问题；它不能替代运行时行为验证。
+3. **运行时行为**：smoke、完整回归和必要的 marker 收集证明实际执行了哪些测试；它们不能证明未覆盖场景。
+4. **解释与边界**：逐项审查 `xfail`、`XPASS`、服务 readiness 和已知未知项，决定结论能写到哪里。
+
+#### `xfail` 不是成功的同义词
+
+预期失败只有在原因明确、失败形态符合预期并且没有意外通过时才是受控证据。`strict=True` 能让本应失败却通过的用例变成 `XPASS` 失败，从而触发重新调查；`raises=` 可以限制预期异常类型，避免连接拒绝、fixture 崩溃等无关异常被吞掉。`xfail` 只能登记已经理解的已知行为，不能用来遮盖新回归。
+
+#### 环境 readiness 与产品回归
+
+`WinError 10061 / connection refused` 发生在目标服务未监听时，首先是环境前置失败。应先按目标登记的启动命令启动服务，用健康检查（本项目为 `/ping`，返回 201）证明服务可用，再复跑 smoke 和完整回归。服务未就绪时不能据此创建产品缺陷；服务就绪后仍稳定失败，才进入业务证据分析。
+
+#### 最小验收执行链
+
+```text
+确认变更范围
+    ↓
+Ruff check + format --check
+    ↓
+smoke 执行与 marker collect-only
+    ↓
+完整 regression
+    ↓
+逐项核对 xfail / XPASS / 失败原因
+    ↓
+记录已验证范围和未知边界
+    ↓
+给出限定范围的验收结论
+```
+
+#### 适用场景与边界
+
+这种方法适合项目阶段收尾、提交前质量门和需要审计证据的 API 测试套件。它不等于生产发布审批，也不能替代跨浏览器、跨环境、性能、安全或尚未设计的业务场景；这些范围必须单独声明。
+
+#### 常见错误与假通过
+
+- 只保留 `91 passed, 18 xfailed`，不检查实际收集范围和 `xfail` 原因；
+- 服务未启动就把连接拒绝写成接口缺陷；
+- 用 `xfail` 包住 catch-all 异常，导致网络和 fixture 错误被隐藏；
+- 把整个工作区的既有改动和本日 README 变更混成一个产出；
+- 把静态检查通过扩大成所有运行时行为正确；
+- 把当前测试集通过扩大成整个 RESTful Booker API 没有缺陷。
+
+#### 记忆要点
+
+**验收不是看数字，而是确认谁被验证、怎么验证、失败是否受控，以及结论有没有越界。**
+
+### 代码落地
+
+Day 69 在 `test-projects/03-restful-booker-api/README.md` 增加“验收对象与边界”和“变更归属与证据范围”，明确测试项目只通过 `RESTFUL_BOOKER_URL` 连接独立启动的被测服务，并把本日 README 变更与既有测试代码产生的回归证据分开。`artifacts/day-069/additional-checks.md` 汇总了 Ruff、smoke、marker 收集、服务启动和 `xfail` 审查；`run-record.json` 记录统一验证器的机器结果。
+
+本次实际结果包括：Ruff `All checks passed!`；格式检查 `31 files already formatted`；服务启动后 smoke 为 `4 passed, 105 deselected`；marker 收集为 `4/109 tests collected`；完整回归为 `91 passed, 18 xfailed`，没有 `failed`、`error` 或 `XPASS`。初次 smoke 的连接拒绝被记录为服务未启动，不能与业务失败混淆。
+
+### 知识验收
+
+1. 为什么目标测试通过不能替代完整 API 阶段验收？
+2. 面对 `91 passed, 18 xfailed`，逐项审查 `xfail` 时要检查哪些条件？
+3. 如何区分服务未启动造成的连接拒绝和产品回归失败？
+4. `git status --short` 能证明什么，不能证明什么？
+5. 为什么 smoke 的 `collect-only` 结果也是验收证据？
+6. 现有证据为什么不能推出整个 API 在所有环境和未覆盖场景下都没有问题？
+
+### 关联产出
+
+- 项目说明：`test-projects/03-restful-booker-api/README.md`
+- 统一运行记录：`artifacts/day-069/run-record.json`
+- 验证总结：`artifacts/day-069/verification.md`
+- 附加验收检查：`artifacts/day-069/additional-checks.md`
+- 学习者初次 smoke 结果：`artifacts/day-069/learner-smoke.txt`
+- 七步记录：`daily-log/day-069.session.json`
+- 完整回归命令：`pytest test-projects/03-restful-booker-api/tests -q`，实际 `91 passed, 18 xfailed`
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -7335,6 +7425,7 @@ POST 的 `200`、JSON 对象和整数 `bookingid` 只能证明创建响应满足
 | UI 测试职责分层与登录前置 | Day 66 | fixture 前置、Page Object 动作、测试断言、Context 隔离、setup/call 失败证据和 ARIA 定位 |
 | 缺陷证据链与报告边界 | Day 67 | 契约预期、单变量输入、原始响应、--runxfail、回归范围、未知项和资源清理 |
 | 陌生场景中的 API 测试设计与迁移 | Day 68 | 业务规则到测试层、可选字段边界、POST/GET 双证据、资源清理和独立迁移 |
+| API 阶段验收与证据边界 | Day 69 | 静态门禁、smoke/回归分层、服务 readiness、xfail/XPASS 审查、变更归属和限定范围结论 |
 | 测试套件与质量检查 | Day 65 | 风险驱动 smoke、默认 regression、严格 marker、Ruff lint/format 和服务 readiness 分层 |
 | 并行隔离 | Day 64 | pytest-xdist、多进程 worker、唯一测试数据、资源所有权、顺序独立性和串并行证据 |
 | 重试边界 | Day 63 | 幂等性、超时结果未知、有界重试、临时网络异常、副作用请求和调用次数证明 |
