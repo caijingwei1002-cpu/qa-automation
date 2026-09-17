@@ -31,28 +31,33 @@ def save(path, value):
 def build_plan():
     plan = read("docs/archive/daily-plan-v1.json")["days"][:55]
     phase = read("config/project-lessons.json")
-    for index, task in enumerate(phase["tasks"], 1):
-        day = 55 + index
-        plan.append(
-            {
-                "day": day,
-                "phase_id": phase["id"],
-                "phase": phase["name"],
-                "project": phase["project"],
-                "objective": phase["objective"],
-                "phase_day": index,
-                "phase_total_days": len(phase["tasks"]),
-                "week": (index - 1) // 7 + 1,
-                "timebox": dict(DAILY_METHOD),
-                "evidence": f"artifacts/day-{day:03d}/",
-                **task,
-                "study": f"通过需求讨论和行为预测理解：{task['learn']}。先由学习者回答，教练逐级提示。",
-                "practice": f"学习者先设计并编码：{task['deliverable']}。执行后定位问题，接受审查并亲自修改。",
-                "knowledge_check": f"不看参考答案解释“{task['learn']}”，并独立完成相似场景；记录提示程度和证据。",
-                "stretch": "改变一个业务或故障条件，独立解释结果并完成迁移",
-                "learning_output_link": f"知识：{task['learn']} → 产出：{task['deliverable']} → 验证：{task['done']}",
-            }
-        )
+    phases = [phase]
+    phases.extend(phase.get("next_projects", []))
+    day = 55
+    for phase_item in phases:
+        tasks = phase_item["tasks"]
+        for index, task in enumerate(tasks, 1):
+            day += 1
+            plan.append(
+                {
+                    "day": day,
+                    "phase_id": phase_item["id"],
+                    "phase": phase_item["name"],
+                    "project": phase_item["project"],
+                    "objective": phase_item["objective"],
+                    "phase_day": index,
+                    "phase_total_days": len(tasks),
+                    "week": (day - 56) // 7 + 1,
+                    "timebox": dict(DAILY_METHOD),
+                    "evidence": f"artifacts/day-{day:03d}/",
+                    **task,
+                    "study": f"通过需求讨论和行为预测理解：{task['learn']}。先由学习者回答，教练逐级提示。",
+                    "practice": f"学习者先设计并编码：{task['deliverable']}。执行后定位问题，接受审查并亲自修改。",
+                    "knowledge_check": f"不看参考答案解释“{task['learn']}”，并独立完成相似场景；记录提示程度和证据。",
+                    "stretch": "改变一个业务或故障条件，独立解释结果并完成迁移",
+                    "learning_output_link": f"知识：{task['learn']} → 产出：{task['deliverable']} → 验证：{task['done']}",
+                }
+            )
     return plan
 
 
@@ -71,9 +76,11 @@ def write_outputs(plan):
     phases = read("docs/archive/curriculum-v1.json")["phases"][:3]
     phases[2]["days"] = 20
     phase = read("config/project-lessons.json")
-    phases.append(
-        {k: phase[k] for k in ("id", "name", "project", "objective")}
-        | {"days": len(phase["tasks"])}
+    phase_configs = [phase, *phase.get("next_projects", [])]
+    phases.extend(
+        {k: phase_item[k] for k in ("id", "name", "project", "objective")}
+        | {"days": len(phase_item["tasks"])}
+        for phase_item in phase_configs
     )
     save(
         "curriculum.json",

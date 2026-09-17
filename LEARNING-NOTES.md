@@ -76,6 +76,8 @@
 - [Day 67：缺陷案例与报告](#day-67缺陷案例与报告)
 - [Day 68：独立测试设计与编码](#day-68独立测试设计与编码)
 - [Day 69：API 阶段验收](#day-69api-阶段验收)
+- [Day 70：部署勘察与 API 最小闭环](#day-70部署勘察与-api-最小闭环)
+- [Day 71：默认端口基线与服务身份](#day-71默认端口基线与服务身份)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -7418,6 +7420,241 @@ Day 69 在 `test-projects/03-restful-booker-api/README.md` 增加“验收对象
 - 七步记录：`daily-log/day-069.session.json`
 - 完整回归命令：`pytest test-projects/03-restful-booker-api/tests -q`，实际 `91 passed, 18 xfailed`
 
+## Day 70：部署勘察与 API 最小闭环
+
+### 核心知识点
+
+新项目的 API 测试必须先建立可运行基线，再把源码契约转换成断言，最后用真实 HTTP 请求形成业务闭环。失败结论要按连接、认证、契约/输入和产品实现分层，不能看到状态码就直接归因。
+
+### 它解决的问题
+
+它避免把错误端口、错误版本、未启动服务、错误 Cookie、错误请求体或外部进程响应误判为产品缺陷，也避免把一次成功的 POST 响应误当成资源已经持久化并正确关联。没有基线时，失败结果无法回答“到底测到了什么”。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **测试基线（test baseline）**：被测源码版本、依赖运行时、启动命令、端口/context path、服务健康和已知凭据等事实集合。
+- **契约证据（contract evidence）**：来自 Controller、Service、Model、配置、README 或 Swagger 的 endpoint、输入字段、认证方式、状态码、响应结构和资源关系。
+- **分层归因（layered diagnosis）**：根据失败发生在 TCP、HTTP 认证、业务契约还是实现路径来缩小调查范围。
+
+#### 心智模型或执行链
+
+```text
+源码版本与契约
+        ↓
+运行时、依赖、端口和启动命令
+        ↓
+health 与基础 HTTP 可达
+        ↓
+认证独立成立：login → token validate
+        ↓
+业务链：create room → create booking → query → association
+        ↓
+finally：booking → room 清理，并验证删除后的状态
+```
+
+每一层只证明自己的范围：health 证明服务能响应，不证明业务正确；login 证明凭据和认证端点成立，不证明 Room 权限传递；创建响应证明服务接受请求，不单独证明后续查询可见。
+
+#### 最小代码骨架
+
+```python
+token = None
+room_id = None
+booking_id = None
+
+try:
+    token = login_and_validate_admin()
+    room = create_unique_room(token)
+    room_id = room["roomid"]
+
+    booking = create_booking_without_guest_auth(room_id)
+    booking_id = booking["bookingid"]
+
+    assert get_room(room_id)["roomid"] == room_id
+    queried_booking = get_booking(booking_id, token)
+    assert queried_booking["roomid"] == room_id
+finally:
+    if booking_id and token:
+        delete_booking(booking_id, token)
+    if room_id and token:
+        delete_room(room_id, token)
+```
+
+这段骨架表达的是生命周期和证据顺序，不规定具体客户端、字段名称或状态码；这些必须由当前版本契约填入。
+
+#### 断言、数据或状态的含义
+
+| 检查 | 能证明什么 | 不能单独证明什么 |
+| --- | --- | --- |
+| health `200` 且 `UP` | 目标服务在该地址可响应 | endpoint、认证和业务逻辑正确 |
+| login `200` + `token` Cookie | 管理员认证建立 | Cookie 已被后续服务接收 |
+| create Room `201` + `roomid` | Room 创建接口接受合法输入并返回标识 | 数据一定能被后续查询到 |
+| create Booking `201` + `bookingid` | Booking 创建并返回标识 | Booking 属于本次 Room |
+| 查询结果 `booking.roomid == created_room.roomid` | 本次 Room 与 Booking 的关联成立 | 其他日期冲突或并发规则已覆盖 |
+| DELETE 成功 + 删除后查询 | 生命周期清理行为有证据 | 不存在资源的状态码一定符合设计，除非契约已确认 |
+
+#### 适用场景与边界
+
+这套顺序适合陌生的多服务 API 项目、首条集成链和环境不稳定的本地部署。它不替代完整回归、权限矩阵、并发、性能或 UI 测试；首轮只应覆盖能形成最小闭环的服务。外部服务或占用端口存在时，可以在明确记录偏差的临时端口上做探索，但正式基线仍应恢复默认配置后复核。
+
+#### 常见错误、反例与假通过
+
+1. 只检查 `localhost:3001` 有响应，就把任何监听进程当成目标 Room 服务；端口可达不等于服务身份正确。
+2. 还没有确认登录和 Cookie 传递，就把 Room 的 `403` 归因于业务权限实现。
+3. 只断言 POST 返回成功，不做持久化回查和 Room—Booking 关联断言。
+4. 用固定日期、预置房间或列表第一项继续测试，导致数据冲突或关联假通过。
+5. 把删除后 `500` 写成正常“不存在”契约；应同时查看预期分支和底层空结果处理，并区分已观察事实与尚未直接观察的异常类型。
+
+#### 记忆要点
+
+**先证明测到的是正确系统，再证明认证成立；先保存资源 ID，再用查询和关联证明业务闭环；失败按发生层级归因。**
+
+### 代码落地
+
+本日将源码固定在 `d36bd3f`，确认了 Auth `3004`、Booking `3000`、Room 默认 `3001` 的配置和 Controller/Service/Model 契约。默认 `3001` 被旧项目 Node 服务占用时没有误杀或冒充该服务，而是将 Platform Room 临时绑定 `3011` 并明确记录环境偏差。随后执行 health、login、validate、创建 Room、创建 Booking、查询 Room/Booking/按 Room 查询、按依赖顺序清理，并验证 `roomid=4` 的关联。
+
+验证还发现：删除 Room 后查询实际为 `500`；`RoomService` 写有不存在时返回 `404` 的意图，但 `RoomDB.query()` 对空 ResultSet 无条件调用 `next()`。这是实现与预期分支不一致的缺陷候选，尚未修改产品代码。
+
+### 知识验收
+
+1. 为什么端口可达不能证明请求命中了目标版本服务？
+2. 为什么要把 login/token validate 与 Room/Booking 业务步骤分开验证？
+3. `connection refused`、`403` 和符合契约仍返回 `5xx` 时，调查顺序分别是什么？
+4. 创建 Booking 后，哪条关联断言才能证明它属于本次创建的 Room？
+5. 如何在没有直接异常堆栈时，准确描述删除后 Room `500` 的根因证据边界？
+
+### 关联产出
+
+- 测试资产说明：`test-projects/05-booker-platform/README.md`
+- 被测源码：`D:\qa-automation-targets\restful-booker-platform\`
+- 运行证据：`artifacts/day-070/verification.md`
+- 原始闭环摘要：`artifacts/day-070/api-happy-path.json`
+- 课程配置：`config/project-lessons.json`、`config/project-roadmap.json`
+- 验证命令：`git diff --check`
+
+---
+
+## Day 71：默认端口基线与服务身份
+
+### 核心知识点
+
+服务身份确认（service identity verification）是 API 业务断言的前置条件。端口处于监听状态或返回 HTTP 响应，只能证明某个进程可以接收请求，不能证明请求到达了目标产品、目标模块或目标版本。
+
+本日的核心执行链是：
+
+```text
+端口监听
+→ PID
+→ 进程类型
+→ 命令行 / 父进程 / 项目来源
+→ HTTP 响应特征
+→ health / 基础 API
+→ 业务行为
+→ 缺陷判断
+```
+
+### 它解决的问题
+
+如果跳过服务身份，`connection refused`、`404`、`403` 或 `500` 都可能被错误归因：请求可能没有连接到服务、连接到了其他项目、使用了错误版本，或者命中了错误的 context path。这样得到的测试失败无法区分环境问题、认证问题、契约问题和产品缺陷。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **端口可达（port reachability）**：本机某个地址和端口有进程监听，属于网络/进程层事实。
+- **服务身份（service identity）**：监听者的进程类型、启动命令、项目路径、版本和 HTTP 行为共同证明它是目标服务。
+- **运行基线（runtime baseline）**：目标版本、默认端口、context path、健康检查和低风险基础 API 都满足预期的可运行状态。
+- **环境阻塞（environment blocker）**：前置环境无法安全满足时，测试应记录阻塞，不把后续业务结果升级为产品结论。
+
+#### 心智模型或执行链
+
+用“谁在回答”替代“返回了什么”作为第一问：
+
+```text
+3001 有响应
+    ↓ 只能证明
+某个进程可处理 HTTP
+    ↓ 还要确认
+PID、可执行文件、命令行、父进程、项目路径
+    ↓ 再确认
+版本、context path、health、基础 API
+    ↓ 最后才允许
+解释业务状态码和复现缺陷
+```
+
+#### 最小代码骨架
+
+以下 PowerShell 片段只做只读检查；它不结束进程、不改端口，也不发送状态变更请求：
+
+```powershell
+$port = 3001
+netstat -ano | Select-String ":$port"
+
+$pidValue = 29528
+Get-Process -Id $pidValue |
+    Select-Object Id, ProcessName, Path, StartTime
+
+Get-CimInstance Win32_Process -Filter "ProcessId = $pidValue" |
+    Select-Object ProcessId, Name, ExecutablePath, CommandLine, ParentProcessId
+
+curl.exe --silent --show-error --include `
+    http://localhost:3001/room/actuator/health
+```
+
+实际项目中还要把 PID、命令行、父进程、项目路径、响应头和响应体写入证据文件，并记录检查时间。
+
+#### 断言、数据或状态的含义
+
+| 观察结果 | 能证明什么 | 不能证明什么 |
+| --- | --- | --- |
+| `3001 LISTENING` | 有进程监听端口 | 不是目标服务身份 |
+| HTTP `404` | 某个 HTTP 服务拒绝了该路径 | 不是目标服务已启动但接口错误 |
+| `X-Powered-By: Express` | 响应具有 Express 特征 | 不是 Platform Room 的 Spring Boot 行为 |
+| health `200/UP` | 目标服务健康检查成功 | 不自动证明全部业务接口正确 |
+| 基础 Room GET 成功 | Room API 基线可达 | 不证明删除、认证或 Booking 规则 |
+
+#### 适用场景与边界
+
+适用于端口复用、多个本地项目并存、容器/宿主机网络混用、服务重启后 PID 变化、版本切换和缺陷回归前置检查。
+
+不适用于用身份检查替代业务测试，也不意味着任何外部进程都可以被自动结束。停止或迁移其他项目之前，必须确认项目归属、使用者、恢复方式和操作授权；无法确认时应保留环境阻塞。
+
+#### 常见错误、反例与假通过
+
+1. 看到 `3001` 有响应就把任何监听进程当成目标 Room 服务。
+2. 看到 `404` 就断言目标接口缺失，忽略了响应头显示它来自 Express。
+3. PID 变化后沿用旧进程的身份或安全停止结论。
+4. 为了绕开端口冲突临时修改产品默认端口，却仍把结果当成默认基线证据。
+5. 在服务身份未确认时复现 DELETE 后 `500`，导致错误进程的结果污染缺陷报告。
+
+#### 记忆要点
+
+> 先归因，再断言；先证明服务身份，再解释 HTTP 行为。
+
+### 代码落地
+
+本日按照只读设计检查了 Platform 默认端口：`3001` 映射到 PID `29528`，进程为 `node.exe`，命令行和父进程指向 `D:\qa-automation-targets\restful-booker`，而不是 Platform Room。两个只读请求都返回 Express `404 Not Found`，因此确认当前端口不是目标 Room 服务。
+
+目标 Platform 源码仍固定在 `d36bd3f8647a`，Room 默认配置为 `3001` 和 `/room`。由于没有确认停止外部 Node 项目的安全依据，本日没有结束进程、修改端口、启动 Room 或发送 POST/PUT/DELETE 请求；默认基线和 DELETE→GET `500` 回归保留为后续工作。
+
+### 知识验收
+
+1. 为什么 `3001` 返回 HTTP `404` 仍不能证明 Platform Room 已启动？
+2. PID 变化后，为什么必须重新检查命令行、父进程和项目来源？
+3. 在什么条件下，环境问题可以被记录为 known failure，但不能被写成产品缺陷？
+4. 为什么 health 成功后仍需要基础业务 API 检查？
+
+### 关联产出
+
+- 只读身份检查：[artifacts/day-071/room-3001-preflight.md](artifacts/day-071/room-3001-preflight.md)
+- 验证记录：[artifacts/day-071/verification.md](artifacts/day-071/verification.md)
+- 执行记录：[artifacts/day-071/run-record.json](artifacts/day-071/run-record.json)
+- 运行命令：`python tools/run_day_verification.py 71 --skip-service`
+- 仓库校验：`python tools/validate_repo.py`
+
+---
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -7426,6 +7663,8 @@ Day 69 在 `test-projects/03-restful-booker-api/README.md` 增加“验收对象
 | 缺陷证据链与报告边界 | Day 67 | 契约预期、单变量输入、原始响应、--runxfail、回归范围、未知项和资源清理 |
 | 陌生场景中的 API 测试设计与迁移 | Day 68 | 业务规则到测试层、可选字段边界、POST/GET 双证据、资源清理和独立迁移 |
 | API 阶段验收与证据边界 | Day 69 | 静态门禁、smoke/回归分层、服务 readiness、xfail/XPASS 审查、变更归属和限定范围结论 |
+| 测试基线、契约证据与分层故障归因 | Day 70 | 新项目事实确认、服务身份、认证分层、最小 API 闭环、资源关联和环境/实现问题边界 |
+| 默认端口基线与服务身份 | Day 71 | 端口到 PID 映射、进程来源、HTTP 身份、只读 preflight、环境阻塞与缺陷归因门槛 |
 | 测试套件与质量检查 | Day 65 | 风险驱动 smoke、默认 regression、严格 marker、Ruff lint/format 和服务 readiness 分层 |
 | 并行隔离 | Day 64 | pytest-xdist、多进程 worker、唯一测试数据、资源所有权、顺序独立性和串并行证据 |
 | 重试边界 | Day 63 | 幂等性、超时结果未知、有界重试、临时网络异常、副作用请求和调用次数证明 |

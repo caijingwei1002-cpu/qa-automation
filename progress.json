@@ -1,5 +1,5 @@
 {
-  "current_day": 70,
+  "current_day": 72,
   "completed_days": [
     1,
     2,
@@ -69,7 +69,9 @@
     66,
     67,
     68,
-    69
+    69,
+    70,
+    71
   ],
   "history": [
     {
@@ -485,6 +487,18 @@
       "date": "2026-09-17",
       "result": "完成 Day 69：补充 API 阶段验收边界与变更归属说明；定位服务未启动前置失败；Ruff、smoke、marker 收集和完整回归均有证据，最终 91 passed、18 xfailed 且无 failed/error/XPASS；完成 xfail 审查和独立迁移。",
       "next_step": "进入 Restful Booker Platform 项目：先完成源码、依赖、端口、版本、业务契约和运行命令勘察。"
+    },
+    {
+      "day": 70,
+      "date": "2026-09-17",
+      "result": "完成 Restful Booker Platform Day 70：固定源码 commit，补齐依赖/端口/运行命令与业务契约基线；验证 auth → room → booking → 查询关联 → 清理 API 闭环；记录默认 3001 外部占用和 Room 删除后 500 的证据边界；完成独立迁移与复盘。",
+      "next_step": "Day 71：释放或迁移旧项目的 3001 占用，按 Platform 默认配置启动 Room，并复核默认端口 health、Room 基础查询和删除后不存在资源行为。"
+    },
+    {
+      "day": 71,
+      "date": "2026-09-17",
+      "result": "完成默认端口服务身份只读 preflight：确认 3001 由外部 restful-booker Node/Express 项目占用，记录 PID/命令行/父进程/HTTP 证据；默认 Platform Room 基线因未确认安全处置而保留阻塞，未将其误判为产品缺陷。",
+      "next_step": "获得安全处置依据后恢复 Platform Room 默认 3001，再验证 health、基础 GET 和 DELETE 后 GET 回归。"
     }
   ]
 }

@@ -19,6 +19,7 @@ EXPECTED_ASSETS = {
     "test-projects/02-saucedemo-ui",
     "test-projects/03-restful-booker-api",
     "test-projects/04-petstore-performance",
+    "test-projects/05-booker-platform",
 }
 EXPECTED_TIMEBOX = DAILY_METHOD
 REQUIRED_DAILY_FIELDS = (
