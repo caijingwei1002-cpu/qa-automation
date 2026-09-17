@@ -8,12 +8,11 @@ import re
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from build_daily_plan import DAILY_METHOD, build_plan  # noqa: E402
+from build_daily_plan import DAILY_METHOD, LEGACY_METHOD, build_plan  # noqa: E402
+from learning_workflow import load_workflow, read_session, record_errors  # noqa: E402
 from plan_day import EVIDENCE_STANDARD_START_DAY, validate_verification  # noqa: E402
-
 
 EXPECTED_ASSETS = {
     "test-projects/01-todomvc-ui",
@@ -69,10 +68,20 @@ def main() -> int:
         "daily-plan.json",
         "DAILY-PLAN.md",
         "curriculum.json",
+        "config/project-lessons.json",
+        "config/project-roadmap.json",
         "progress.json",
         "LEARNING-NOTES.md",
+        "ROADMAP.md",
+        "docs/INTERACTIVE-LEARNING.md",
+        "docs/TEST-CODING-STANDARD.md",
         "templates/daily-log.md",
+        "templates/code-review.md",
         "templates/verification.md",
+        "pyproject.toml",
+        "requirements-dev.txt",
+        "config/learning-workflow.json",
+        "AGENTS.md",
         ".github/workflows/repository-validation.yml",
     ]:
         if not (ROOT / relative).is_file():
@@ -97,17 +106,26 @@ def main() -> int:
 
     daily_plan = load_json("daily-plan.json")
     days = daily_plan.get("days", [])
-    if daily_plan.get("core_days") != 182 or len(days) != 182:
-        fail(errors, f"daily plan must contain 182 days, got {len(days)}")
-    if daily_plan.get("session_minutes") != 90:
-        fail(errors, f"daily plan session must be 90 minutes, got {daily_plan.get('session_minutes')}")
+    if daily_plan.get("core_days") != len(days):
+        fail(errors, "detailed day count is inconsistent")
+    if daily_plan.get("session_minutes") != sum(DAILY_METHOD.values()):
+        fail(errors, "daily plan session duration is inconsistent")
     if daily_plan.get("daily_method") != EXPECTED_TIMEBOX:
-        fail(errors, "daily plan daily_method does not match the 20/50/15/5 learning loop")
+        fail(errors, "daily plan daily_method does not match the current interactive learning loop")
 
     curriculum = load_json("curriculum.json")
+    workflow = load_workflow(ROOT)
+    stage_ids = [stage["id"] for stage in workflow["stages"]]
+    if len(stage_ids) != 7 or len(set(stage_ids)) != 7:
+        fail(errors, "learning workflow must contain seven distinct stages")
     daily_output = curriculum.get("daily_output", {})
-    if daily_output.get("time_box_minutes") != 90 or daily_output.get("timebox") != EXPECTED_TIMEBOX:
-        fail(errors, "curriculum daily_output does not match the 20/50/15/5 learning loop")
+    if daily_output.get("daily_loop") != stage_ids:
+        fail(errors, "curriculum daily_loop differs from the canonical workflow")
+    if (
+        daily_output.get("time_box_minutes") != sum(DAILY_METHOD.values())
+        or daily_output.get("timebox") != EXPECTED_TIMEBOX
+    ):
+        fail(errors, "curriculum daily_output does not match the current interactive learning loop")
     expected_days = build_plan()
     if days != expected_days:
         fail(errors, "daily-plan.json is out of sync with tools/build_daily_plan.py; regenerate it")
@@ -118,24 +136,52 @@ def main() -> int:
         if len(phase_days) != phase.get("days", 0):
             fail(errors, f"curriculum phase has an invalid day count: {phase.get('id')}")
             continue
-        for plan_field, curriculum_field in (("phase", "name"), ("project", "project"), ("objective", "objective")):
+        for plan_field, curriculum_field in (
+            ("phase", "name"),
+            ("project", "project"),
+            ("objective", "objective"),
+        ):
             if any(item.get(plan_field) != phase.get(curriculum_field) for item in phase_days):
-                fail(errors, f"curriculum phase {phase.get('id')} is out of sync for {curriculum_field}")
+                fail(
+                    errors,
+                    f"curriculum phase {phase.get('id')} is out of sync for {curriculum_field}",
+                )
         cursor += phase.get("days", 0)
     if cursor != len(days):
         fail(errors, f"curriculum phase totals {cursor} days, expected {len(days)}")
     ongoing = curriculum.get("ongoing", {})
     for track in ongoing.get("tracks", []):
         for index, task in enumerate(track.get("tasks", []), start=1):
-            if not isinstance(task, dict) or not all(task.get(field) for field in ("task", "learn", "deliverable", "file", "run")):
-                fail(errors, f"ongoing track {track.get('name')} task {index} must define task, learn, deliverable, file, and run")
+            if not isinstance(task, dict) or not all(
+                task.get(field) for field in ("task", "learn", "deliverable", "file", "run")
+            ):
+                fail(
+                    errors,
+                    f"ongoing track {track.get('name')} task {index} must define task, learn, deliverable, file, and run",
+                )
             elif "daily-log/" in task["file"] or "artifacts/" in task["file"]:
-                fail(errors, f"ongoing track {track.get('name')} task {index} must point to a real output file")
+                fail(
+                    errors,
+                    f"ongoing track {track.get('name')} task {index} must point to a real output file",
+                )
 
     for expected_day, item in enumerate(days, start=1):
+        project = item.get("test_project", item.get("project"))
+        if project not in registered_assets:
+            fail(errors, f"Day {expected_day} has an unregistered execution project")
+        if item.get("file", "").startswith("test-projects/") and not item["file"].startswith(
+            project + "/"
+        ):
+            fail(errors, f"Day {expected_day} output differs from its execution project")
+        command_projects = re.findall(r"test-projects/[^/\s]+", item.get("run", ""))
+        if any(value != project for value in command_projects):
+            fail(errors, f"Day {expected_day} command differs from its execution project")
         missing = [field for field in REQUIRED_DAILY_FIELDS if field not in item]
         if missing:
-            fail(errors, f"day {item.get('day', expected_day)} missing daily fields: {', '.join(missing)}")
+            fail(
+                errors,
+                f"day {item.get('day', expected_day)} missing daily fields: {', '.join(missing)}",
+            )
             continue
         if item.get("day") != expected_day:
             fail(errors, f"daily plan day sequence mismatch at position {expected_day}")
@@ -144,7 +190,7 @@ def main() -> int:
                 continue
             if not isinstance(item[field], str) or not item[field].strip():
                 fail(errors, f"day {item.get('day')} field is empty: {field}")
-        if item.get("timebox") != EXPECTED_TIMEBOX:
+        if item.get("timebox") != (LEGACY_METHOD if expected_day <= 55 else EXPECTED_TIMEBOX):
             fail(errors, f"day {item.get('day')} has an invalid timebox")
         if item["learn"] not in item["study"]:
             fail(errors, f"day {item.get('day')} study does not explain learn")
@@ -172,7 +218,12 @@ def main() -> int:
         except ValueError:
             fail(errors, f"invalid daily log filename: {log_path.name}")
             continue
-        if not 1 <= log_day <= len(days):
+        if log_day > len(days):
+            log_text = log_path.read_text(encoding="utf-8")
+            if "旧版计划生成的未来占位日志，未完成" not in log_text:
+                fail(errors, f"future legacy log must be clearly marked inactive: {log_path.name}")
+            continue
+        if log_day < 1:
             continue
         log_text = log_path.read_text(encoding="utf-8")
         expected_evidence = f"artifacts/day-{log_day:03d}/"
@@ -180,6 +231,17 @@ def main() -> int:
             fail(errors, f"daily log {log_path.name} does not reference {expected_evidence}")
         if "## 今日学习与产出" not in log_text:
             fail(errors, f"daily log {log_path.name} does not use the learning/output template")
+
+    workbench_index = ROOT / "workbench" / "static" / "index.html"
+    workbench_app = ROOT / "workbench" / "static" / "app.js"
+    if workbench_index.is_file() and workbench_app.is_file():
+        index_text = workbench_index.read_text(encoding="utf-8")
+        app_text = workbench_app.read_text(encoding="utf-8")
+        for obsolete in ("182 DAYS", "0 / 182 天", "90 min"):
+            if obsolete in index_text:
+                fail(errors, f"workbench still contains obsolete fixed-plan label: {obsolete}")
+        if "renderLearningSteps" not in app_text or "learning_session" not in app_text:
+            fail(errors, "workbench must render the canonical workflow and persisted session")
 
     progress = load_json("progress.json")
     completed_days = progress.get("completed_days", [])
@@ -197,36 +259,75 @@ def main() -> int:
             continue
 
         item = days[completed_day - 1]
+        if completed_day >= workflow["required_from_day"]:
+            session = read_session(ROOT, completed_day)
+            for stage in stage_ids:
+                record = session["stages"].get(stage, {})
+                if record.get("status") != "done":
+                    fail(errors, f"Day {completed_day} incomplete stage: {stage}")
+                else:
+                    for message in record_errors(ROOT, stage, record):
+                        fail(errors, f"Day {completed_day}: {message}")
         title = str(item.get("title") or item.get("theme") or "").strip()
         expected_heading = f"## Day {completed_day}：{title}"
         if expected_heading not in notes_text:
-            fail(errors, f"completed Day {completed_day} is missing from LEARNING-NOTES.md: {expected_heading}")
+            fail(
+                errors,
+                f"completed Day {completed_day} is missing from LEARNING-NOTES.md: {expected_heading}",
+            )
         else:
             section_start = notes_text.index(expected_heading)
             next_section = notes_text.find("\n## ", section_start + len(expected_heading))
-            section = notes_text[section_start:] if next_section == -1 else notes_text[section_start:next_section]
-            for required_heading in ("### 核心知识点", "### 它解决的问题", "### 理论基础", "### 代码落地", "### 知识验收", "### 关联产出"):
+            section = (
+                notes_text[section_start:]
+                if next_section == -1
+                else notes_text[section_start:next_section]
+            )
+            for required_heading in (
+                "### 核心知识点",
+                "### 它解决的问题",
+                "### 理论基础",
+                "### 代码落地",
+                "### 知识验收",
+                "### 关联产出",
+            ):
                 if required_heading not in section:
-                    fail(errors, f"LEARNING-NOTES.md Day {completed_day} is missing section: {required_heading}")
+                    fail(
+                        errors,
+                        f"LEARNING-NOTES.md Day {completed_day} is missing section: {required_heading}",
+                    )
 
         expected_nav = f"- [Day {completed_day}：{title}]"
         if expected_nav not in notes_text:
             fail(errors, f"LEARNING-NOTES.md is missing navigation entry for Day {completed_day}")
         if not re.search(rf"(?<!\d)Day {completed_day}(?!\d)", index_text):
-            fail(errors, f"LEARNING-NOTES.md knowledge topic index does not reference Day {completed_day}")
+            fail(
+                errors,
+                f"LEARNING-NOTES.md knowledge topic index does not reference Day {completed_day}",
+            )
 
         log_path = log_dir / f"day-{completed_day:03d}.md"
         if not log_path.is_file():
             fail(errors, f"completed Day {completed_day} is missing daily log: {log_path.name}")
             continue
         completed_log = log_path.read_text(encoding="utf-8")
-        knowledge_lines = [line.strip() for line in completed_log.splitlines() if line.strip().startswith("知识点：")]
+        knowledge_lines = [
+            line.strip()
+            for line in completed_log.splitlines()
+            if line.strip().startswith("知识点：")
+        ]
         if not knowledge_lines or not knowledge_lines[0].removeprefix("知识点：").strip():
             fail(errors, f"daily log {log_path.name} is missing an explicit knowledge point")
         if "## 知识落盘记录" not in completed_log:
             fail(errors, f"daily log {log_path.name} is missing the knowledge writeback section")
-        if "LEARNING-NOTES.md" not in completed_log or f"章节：Day {completed_day}" not in completed_log:
-            fail(errors, f"daily log {log_path.name} does not link its knowledge writeback to LEARNING-NOTES.md")
+        if (
+            "LEARNING-NOTES.md" not in completed_log
+            or f"章节：Day {completed_day}" not in completed_log
+        ):
+            fail(
+                errors,
+                f"daily log {log_path.name} does not link its knowledge writeback to LEARNING-NOTES.md",
+            )
 
         if completed_day >= EVIDENCE_STANDARD_START_DAY:
             evidence_path = ROOT / f"artifacts/day-{completed_day:03d}" / "verification.md"
@@ -236,9 +337,7 @@ def main() -> int:
             if expected_evidence_file not in completed_log:
                 fail(errors, f"daily log {log_path.name} must reference {expected_evidence_file}")
 
-    nested_git = [
-        path for path in ROOT.rglob(".git") if path != ROOT / ".git"
-    ]
+    nested_git = [path for path in ROOT.rglob(".git") if path != ROOT / ".git"]
     if nested_git:
         fail(errors, f"nested Git directories found: {nested_git}")
 
@@ -248,7 +347,9 @@ def main() -> int:
             print(f"- {error}")
         return 1
 
-    print("Repository validation passed: structure, targets, generated plan, and Git boundaries are consistent.")
+    print(
+        "Repository validation passed: structure, targets, generated plan, and Git boundaries are consistent."
+    )
     return 0
 
 

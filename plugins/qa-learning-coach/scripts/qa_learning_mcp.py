@@ -10,9 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-
 SERVER_NAME = "qa-learning-local"
-SERVER_VERSION = "0.1.0"
+SERVER_VERSION = "0.2.0"
 
 
 def project_root(arguments: dict[str, Any] | None = None) -> Path:
@@ -49,13 +48,22 @@ def run_planner(arguments: dict[str, Any], command: str, *extra: str) -> dict[st
 TOOLS = [
     {
         "name": "get_today_plan",
-        "description": "Read and generate the current QA automation learning day.",
+        "description": "Read the current learning plan without creating files.",
         "inputSchema": {"type": "object", "properties": {"root": {"type": "string"}}},
     },
     {
         "name": "get_progress",
         "description": "Read completed days and the next learning task.",
         "inputSchema": {"type": "object", "properties": {"root": {"type": "string"}}},
+    },
+    {
+        "name": "check_learning_day",
+        "description": "Read-only check that a learner-supplied day matches the repository's current day.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["day"],
+            "properties": {"day": {"type": "integer", "minimum": 1}, "root": {"type": "string"}},
+        },
     },
     {
         "name": "create_daily_log",
@@ -82,14 +90,101 @@ TOOLS = [
 ]
 
 
+TOOLS.extend(
+    [
+        {
+            "name": "get_learning_session",
+            "description": "Read stage records and the next unfinished learning step.",
+            "inputSchema": {
+                "type": "object",
+                "required": ["day"],
+                "properties": {
+                    "day": {"type": "integer", "minimum": 1},
+                    "root": {"type": "string"},
+                },
+            },
+        },
+        {
+            "name": "verify_learning_day",
+            "description": "Run the planned target and regression checks using the shared evidence runner.",
+            "inputSchema": {
+                "type": "object",
+                "required": ["day"],
+                "properties": {
+                    "day": {"type": "integer", "minimum": 1},
+                    "root": {"type": "string"},
+                },
+            },
+        },
+        {
+            "name": "record_learning_step",
+            "description": "Record actual learner participation; never infer completion from navigation or generated answers.",
+            "inputSchema": {
+                "type": "object",
+                "required": ["day", "stage", "record"],
+                "properties": {
+                    "day": {"type": "integer", "minimum": 1},
+                    "stage": {"type": "string"},
+                    "root": {"type": "string"},
+                    "record": {
+                        "type": "object",
+                        "required": ["note", "assistance"],
+                        "additionalProperties": False,
+                        "properties": {
+                            **{
+                                key: {"type": "string"}
+                                for key in (
+                                    "note",
+                                    "assistance",
+                                    "status",
+                                    "learner_response",
+                                    "next_action",
+                                    "outcome",
+                                    "review_result",
+                                    "transfer_prompt",
+                                    "transfer_response",
+                                    "transfer_assistance",
+                                    "confirmation",
+                                )
+                            },
+                            "evidence": {"type": "array", "items": {"type": "string"}},
+                        },
+                    },
+                },
+            },
+        },
+    ]
+)
+
+
 def tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     if name == "get_today_plan":
-        return run_planner(arguments, "today")
+        return run_planner(arguments, "show")
+    if name == "get_learning_session":
+        return run_planner(arguments, "session", str(arguments["day"]))
+    if name == "record_learning_step":
+        extra = [str(arguments["day"]), arguments["stage"]]
+        for key, value in arguments["record"].items():
+            flag = "--" + key.replace("_", "-")
+            if isinstance(value, list):
+                for reference in value:
+                    extra.extend([flag, str(reference)])
+            else:
+                extra.extend([flag, str(value)])
+        return run_planner(arguments, "checkpoint", *extra)
+    if name == "verify_learning_day":
+        return run_planner(arguments, "verify", str(arguments["day"]))
     if name == "get_progress":
         return run_planner(arguments, "status")
+    if name == "check_learning_day":
+        if "day" not in arguments:
+            raise ValueError("check_learning_day requires day")
+        return run_planner(arguments, "check-day", str(arguments["day"]))
     if name == "create_daily_log":
         day = arguments.get("day")
-        return run_planner(arguments, "today" if day is None else "plan", *([] if day is None else [str(day)]))
+        return run_planner(
+            arguments, "today" if day is None else "plan", *([] if day is None else [str(day)])
+        )
     if name == "complete_learning_day":
         if "day" not in arguments or not arguments.get("result"):
             raise ValueError("complete_learning_day requires day and result")
@@ -110,7 +205,17 @@ def handle(message: dict[str, Any]) -> None:
     request_id = message.get("id")
     if method == "initialize":
         requested = message.get("params", {}).get("protocolVersion", "2024-11-05")
-        send({"jsonrpc": "2.0", "id": request_id, "result": {"protocolVersion": requested, "capabilities": {"tools": {}}, "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION}}})
+        send(
+            {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {
+                    "protocolVersion": requested,
+                    "capabilities": {"tools": {}},
+                    "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
+                },
+            }
+        )
         return
     if method == "notifications/initialized":
         return
@@ -121,15 +226,38 @@ def handle(message: dict[str, Any]) -> None:
         try:
             params = message.get("params", {})
             result = tool_result(str(params.get("name")), params.get("arguments", {}))
-            send({"jsonrpc": "2.0", "id": request_id, "result": {"content": [{"type": "text", "text": result["output"]}]}})
+            send(
+                {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "result": {"content": [{"type": "text", "text": result["output"]}]},
+                }
+            )
         except Exception as exc:
-            send({"jsonrpc": "2.0", "id": request_id, "result": {"isError": True, "content": [{"type": "text", "text": str(exc)}]}})
+            send(
+                {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "result": {"isError": True, "content": [{"type": "text", "text": str(exc)}]},
+                }
+            )
         return
     if request_id is not None:
-        send({"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": f"method not found: {method}"}})
+        send(
+            {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "error": {"code": -32601, "message": f"method not found: {method}"},
+            }
+        )
 
 
 def main() -> None:
+    # MCP stdio uses UTF-8 JSON regardless of the Windows console code page.
+    if hasattr(sys.stdin, "reconfigure"):
+        sys.stdin.reconfigure(encoding="utf-8")
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     for line in sys.stdin:
         if not line.strip():
             continue

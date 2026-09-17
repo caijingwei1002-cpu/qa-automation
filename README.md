@@ -28,7 +28,7 @@ D:\
 
 四个 `test-projects/01-` 到 `test-projects/04-` 目录是测试工程目录，不是被测项目源码目录。被测项目的来源、路径、URL 和安全边界统一登记在 [config/targets.json](config/targets.json) 和 [TARGETS-SETUP.md](TARGETS-SETUP.md) 中。
 
-## 学习路线
+## 已有测试资产
 
 | 阶段 | 测试资产目录 | 被测目标 | 能力目标 |
 | --- | --- | --- | --- |
@@ -49,6 +49,8 @@ Copy-Item .env.example .env
 
 再按 [GIT-WORKFLOW.md](GIT-WORKFLOW.md) 连接自己的远程仓库，并按 [TARGETS-SETUP.md](TARGETS-SETUP.md) 准备本地被测项目。
 
+新版总路线见 [ROADMAP.md](ROADMAP.md)，交互规则见 [docs/INTERACTIVE-LEARNING.md](docs/INTERACTIVE-LEARNING.md)，编码规范见 [docs/TEST-CODING-STANDARD.md](docs/TEST-CODING-STANDARD.md)。计划生成源为 `config/project-lessons.json` 与 `tools/build_daily_plan.py`；后续项目登记在 `config/project-roadmap.json`，目前尚未部署。
+
 查看学习计划：
 
 ```powershell
@@ -59,6 +61,17 @@ python tools/validate_repo.py
 ```
 
 ## 开课前进度自检
+
+每日流程统一为七步：开课核对与复习 → 场景与需求讨论 → 测试设计 → 编码实践 → 验证与排错 → 审查与独立迁移 → 复盘与收尾。名称和顺序由 `config/learning-workflow.json` 管理；新验收从 Day 67 起生效，详细操作见 [交互协议](docs/INTERACTIVE-LEARNING.md)。
+
+教练负责保存步骤记录；学习者可以继续直接说“开始 Day N”“继续学习”“帮我修改”。协助实现如实记录，测试通过与独立掌握分别验收。
+
+```powershell
+python tools/plan_day.py show 67
+python tools/plan_day.py session 67
+```
+
+两条命令都只读。session 显示首个未完成步骤和上次下一动作；同一课可跨会话完成，工作台点击步骤不会更新验收状态。
 
 当学习请求中写明 `Day N` 时，先执行只读校验，再开始讲解、提问或修改文件：
 
@@ -76,6 +89,19 @@ python tools/run_day_verification.py 48
 
 `verification.md` 是正式总结证据，其他 `.txt` 文件只能作为可选原始输出。完成学习日时，`plan_day.py complete` 会校验证据文件、目标测试、全量回归、关键验证和环境结论；证据不完整时不会推进 `progress.json`。
 
+新验证同时保存 `run-record.json` 和 `runs/<run-id>/result.json`，包含执行项目、命令、退出码、时间、来源及测试代码指纹。工作台和 MCP 使用相同执行入口。更改测试代码或重新执行验证后，需要重新检查对应验收记录。
+学习者提供的终端结果可由教练按 [运行记录说明](docs/VERIFICATION-RECORDS.md) 整理后导入，来源固定记为 learner。
+完成命令从 Day 67 起还检查七步证据、独立迁移和明确确认，以及知识章节和日志；重复完成不追加历史，越级完成会被拒绝。
+
+工程工具验证（不启动被测服务）：
+
+```powershell
+python -m pip install -r requirements-dev.txt
+python -m pytest tools -q
+python -m unittest discover -s workbench/tests -v
+python tools/validate_repo.py
+```
+
 完成一个学习日并记录实际结果：
 
 ```powershell
@@ -84,7 +110,7 @@ python tools/plan_day.py complete 1 `
   --next-step "增加完成状态场景"
 ```
 
-当前计划包含 182 个核心学习日，覆盖 UI、API、性能、测试工程化、可靠性和作品集整理。每一天都按“学习 20 分钟 → 实践产出 50 分钟 → 运行验证 15 分钟 → 复盘 5 分钟”执行；计划明确记录知识、产出、验收标准和证据目录。计划由 [tools/build_daily_plan.py](tools/build_daily_plan.py) 生成，`daily-plan.json` 和 `DAILY-PLAN.md` 是生成结果，不应手工维护其中的单日路径。
+当前使用项目驱动的滚动计划：Day 1–55 保留，Day 56–69 已细化；后续 Booker Platform、Petstore、Medusa、Saleor、Juice Shop 和毕业项目见 `ROADMAP.md`。每课建议 120–150 分钟，可延长或拆分，包含讨论、学习者编码、验证排错、代码审查和独立迁移。`core_days` 表示已细化范围，不是整个路线长度。`daily-plan.json` 和 `DAILY-PLAN.md` 是生成结果，不应手工维护单日内容。
 
 ## 每日完成标准
 
@@ -139,5 +165,7 @@ qa-automation-learning/
 ```
 
 插件和本地 MCP 的边界见 [PLUGIN-AND-MCP.md](PLUGIN-AND-MCP.md)。
+
+文件清理边界：`__pycache__`、`.pytest_cache`、`.ruff_cache` 可以再生成；本地服务日志和旧辅助截图不纳入日常提交。`docs/archive/*-v1.json` 仍用于生成历史课程，不能作为无用备份删除。`curriculum.json`、`daily-plan.json` 和 `DAILY-PLAN.md` 是不同入口使用的生成结果，更新时运行生成器，不手工删减。学习日志、正式验证记录和被引用的历史证据需要保留。
 
 运行验证前，脚本会根据 config/targets.json 对已登记的本地目标执行服务预检：健康端点已可访问时直接复用；未启动时按目标配置启动并等待健康检查通过。服务启动失败会立即写入验证证据并跳过测试，避免长时间等待连接拒绝。需要手动管理服务时可使用 --skip-service。

@@ -16,3 +16,9 @@ jobs:
           python-version: "3.12"
       - name: Validate structure and daily plan
         run: python tools/validate_repo.py
+      - name: Install tooling test dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Test learning workflow and service preflight
+        run: python -m pytest tools -q
+      - name: Test workbench with the local fake service
+        run: python -m unittest discover -s workbench/tests -v

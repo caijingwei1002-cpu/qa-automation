@@ -7170,7 +7170,7 @@ def test_complete_checkout_order(logged_in_page: Page):
 - fixture 中的 `to_have_url("/inventory.html")` 证明登录前置完成；它不能证明订单成功。
 - 测试中的商品标题、购物车数量、结账页面标题和完成文案分别证明业务状态已经经过关键转换；单独 URL 不能证明页面内容和业务结果正确。
 - 完成订单后购物车徽标和实际条目为空，证明当前 UI 后置状态已清空；它不能证明其他账号或服务器端数据完全隔离。
-- `expect(locator).to_be_visible()` 等条件断言会等待页面状态；它适合等待菜单完成展开，不应被固定 `sleep` 替代。
+- `expect(locator).to_be_visible()` 可把失败定位到可见性检查；`click()` 本身也有可操作性等待。增加显式等待不能修正错误的角色定位器，本次真正修复是将 link 改为 button。
 - 定位器的 ARIA 角色必须以实际页面契约为准。验证时 Logout 的实际角色是 `button`，不是假设中的 `link`。
 
 #### 适用场景与边界

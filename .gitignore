@@ -29,6 +29,14 @@ artifacts/**/*.html
 !artifacts/**/*.md
 !artifacts/**/*.png
 !artifacts/**/*.jpg
+!artifacts/day-*/run-record.json
+!artifacts/day-*/runs/**/result.json
+
+# Local auxiliary output; keep historical files on disk, out of lesson commits.
+/artifacts/day-*/workbench-run-*.txt
+/workbench/*.stdout.log
+/workbench/*.stderr.log
+/test-projects/01-todomvc-ui/screenshots/
 
 # Java / Gradle
 target/

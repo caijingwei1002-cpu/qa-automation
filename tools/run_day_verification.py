@@ -4,16 +4,21 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import shlex
 import subprocess
 import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
+from learning_workflow import atomic_json, project_fingerprint  # noqa: E402
 from plan_day import (  # noqa: E402
     CURRICULUM_PATH,
     default_full_run,
@@ -98,7 +103,7 @@ def existing_notes(path: Path, heading: str) -> str | None:
     return body
 
 
-def run_command(actual: list[str], display: str) -> tuple[str, int]:
+def run_command(actual: list[str], display: str, timeout: float = 300) -> tuple[str, int]:
     """执行命令并生成可写入证据的结果文本。"""
     try:
         completed = subprocess.run(
@@ -108,6 +113,8 @@ def run_command(actual: list[str], display: str) -> tuple[str, int]:
             text=True,
             encoding="utf-8",
             errors="replace",
+            timeout=timeout,
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             check=False,
         )
         output = "\n".join(
@@ -116,6 +123,15 @@ def run_command(actual: list[str], display: str) -> tuple[str, int]:
         output = redact_output(output) or "<no output>"
         status = "passed" if completed.returncode == 0 else "failed"
         return f"exit_code={completed.returncode} ({status})\n{output}", completed.returncode
+    except subprocess.TimeoutExpired as exc:
+
+        def decode(value: str | bytes | None) -> str:
+            return (
+                value.decode("utf-8", errors="replace") if isinstance(value, bytes) else value or ""
+            )
+
+        output = redact_output(decode(exc.stdout) + decode(exc.stderr))
+        return f"exit_code=124 (failed)\ntimeout={timeout}s\n{output}", 124
     except OSError as exc:
         return (
             f"exit_code=127 (failed)\ncommand={display}\nerror={exc.__class__.__name__}: {exc}",
@@ -125,7 +141,7 @@ def run_command(actual: list[str], display: str) -> tuple[str, int]:
 
 def target_for_plan(plan: dict[str, object]) -> tuple[str, dict[str, object]] | None:
     """Find the registered target associated with a daily test project."""
-    project = str(plan.get("project", "")).rstrip("/")
+    project = str(plan.get("test_project", plan.get("project", ""))).rstrip("/")
     registry = load_json(TARGETS_PATH, {})
     targets = registry.get("targets", {}) if isinstance(registry, dict) else {}
     if not isinstance(targets, dict):
@@ -166,23 +182,13 @@ def prepare_service(plan: dict[str, object], enabled: bool) -> ServicePreflight:
     )
 
 
-def update_service_note(environment_notes: str, service: ServicePreflight) -> str:
-    """Add or replace the runner-owned service note without overwriting learner notes."""
-    note = f"- 服务预检：{service.evidence_line()}"
-    lines = environment_notes.splitlines()
-    for index, line in enumerate(lines):
-        if line.startswith("- 服务预检："):
-            lines[index] = note
-            return "\n".join(lines)
-    return "\n".join([*lines, note])
-
-
-def run_day(
+def execute_day(
     day: int,
     target_command: str | None = None,
     full_command: str | None = None,
     ensure_service: bool = True,
-) -> int:
+) -> dict:
+    started = time.monotonic()
     curriculum = load_json(CURRICULUM_PATH, {})
     plan = plan_for_day(curriculum, day)
     # 重新计算默认全量命令，确保 runner 与计划字段保持一致。
@@ -198,6 +204,7 @@ def run_day(
         python_path,
     )
 
+    fingerprint = project_fingerprint(ROOT, plan["test_project"])
     service = prepare_service(plan, ensure_service)
     if service.ok:
         if target_actual == full_actual:
@@ -214,46 +221,116 @@ def run_day(
         return_code = 125
         full_return_code = 125
 
+    record = {
+        "version": 1,
+        "run_id": uuid4().hex,
+        "day": day,
+        "source": "runner",
+        "test_project": plan["test_project"],
+        "python": str(python_path),
+        "finished_at": datetime.now(timezone.utc).isoformat(),
+        "duration_seconds": round(time.monotonic() - started, 2),
+        "project_fingerprint": fingerprint,
+        "service": service.evidence_line(),
+        "target": {
+            "planned_command": target_command or plan["run"],
+            "command": target_display,
+            "exit_code": return_code,
+            "output": target_result,
+        },
+        "regression": {
+            "planned_command": full_command or plan["full_run"],
+            "command": full_display,
+            "exit_code": full_return_code,
+            "output": full_result,
+        },
+    }
+    save_record(plan, record)
+    return record
+
+
+def save_record(plan: dict, record: dict) -> None:
+    day = plan["day"]
     evidence = verification_path(day)
     evidence.parent.mkdir(parents=True, exist_ok=True)
     key_checks = existing_notes(evidence, "## 关键验证") or "\n".join(
         [
-            f"- 目标测试退出码：`{return_code}`。",
-            f"- 全量回归退出码：`{full_return_code}`。",
-            "- 测试命令由本运行脚本绑定到仓库虚拟环境。",
+            "- 本次运行记录见下方机器记录；请教练补充与本课目标相关的关键检查。",
         ]
     )
     environment_notes = existing_notes(evidence, "## 环境问题与结论") or "\n".join(
         [
             f"- 工作目录：`{ROOT}`。",
-            f"- 测试解释器：`{python_path}`。",
-            "- 结论：结果已由命令真实执行并写入本文件；如有失败，应先记录根因再完成当天学习。",
+            "- 失败需先记录根因、修复或当前阻塞，再完成当天学习。",
         ]
     )
-    environment_notes = update_service_note(environment_notes, service)
+    # Replace the machine summary on every run; retain separately written human analysis.
+    environment_notes = "\n".join(
+        line for line in environment_notes.splitlines() if not line.startswith("- 本次运行：")
+    )
+    environment_notes += (
+        f"\n- 本次运行：{record['run_id']}，来源 {record['source']}，"
+        f"时间 {record['finished_at']}；target={record['target']['exit_code']}，"
+        f"regression={record['regression']['exit_code']}。"
+    )
     evidence.write_text(
         render_verification(
-            plan,
-            target_command=target_display,
-            target_result=target_result,
-            full_command=full_display,
-            full_result=full_result,
+            {**plan, "project": plan["test_project"]},
+            target_command=record["target"]["command"],
+            target_result=record["target"]["output"],
+            full_command=record["regression"]["command"],
+            full_result=record["regression"]["output"],
             key_checks=key_checks,
             environment_notes=environment_notes,
         ),
         encoding="utf-8",
     )
 
-    print(f"已写入：{evidence}")
-    print(f"服务预检：{service.evidence_line()}")
-    print(f"目标测试：exit_code={return_code}")
-    print(f"全量回归：exit_code={full_return_code}")
-    return 0 if return_code == 0 and full_return_code == 0 else 1
+    atomic_json(evidence.parent / "runs" / record["run_id"] / "result.json", record)
+    atomic_json(evidence.parent / "run-record.json", record)
+
+
+def run_day(
+    day: int,
+    target_command: str | None = None,
+    full_command: str | None = None,
+    ensure_service: bool = True,
+) -> int:
+    record = execute_day(day, target_command, full_command, ensure_service)
+    print(f"已写入：{verification_path(day)}")
+    print(f"目标测试：exit_code={record['target']['exit_code']}")
+    print(f"全量回归：exit_code={record['regression']['exit_code']}")
+    return 0 if all(record[k]["exit_code"] == 0 for k in ("target", "regression")) else 1
+
+
+def import_learner_result(day: int, path: Path) -> dict:
+    """Preserve the provenance of manually supplied results."""
+    plan = plan_for_day(load_json(CURRICULUM_PATH, {}), day)
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if record.get("day") != day or record.get("test_project") != plan["test_project"]:
+        raise ValueError("导入记录的学习日或项目不匹配")
+    if not record.get("finished_at") or not record.get("provenance"):
+        raise ValueError("导入需提供实际执行时间 finished_at 和来源说明 provenance")
+    if record.get("project_fingerprint") != project_fingerprint(ROOT, plan["test_project"]):
+        raise ValueError("导入代码指纹不匹配；先确认输出对应当前代码，再记录指纹")
+    for kind, command in (("target", plan["run"]), ("regression", plan["full_run"])):
+        run = record.get(kind, {})
+        if run.get("planned_command") != command or type(run.get("exit_code")) is not int:
+            raise ValueError(f"{kind} 命令或退出码无效")
+        if not run.get("output") or not run.get("command"):
+            raise ValueError(f"{kind} 缺少实际命令和输出")
+        run["output"] = redact_output(run["output"])
+    record.update(source="learner", run_id=uuid4().hex, version=1)
+    save_record(plan, record)
+    return record
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("day", type=int, help="学习日编号，例如 48")
+    parser.add_argument(
+        "--import-result", type=Path, help="导入教练根据学习者原始输出整理的 JSON 记录"
+    )
     parser.add_argument(
         "--target-command",
         help="覆盖计划中的目标测试命令",
@@ -268,6 +345,10 @@ def main() -> int:
         help="跳过已登记本地目标的服务预检和按需启动",
     )
     args = parser.parse_args()
+    if args.import_result:
+        import_learner_result(args.day, args.import_result)
+        print("已导入学习者结果；执行结果与课程验收分开判断。")
+        return 0
     return run_day(
         args.day,
         args.target_command,

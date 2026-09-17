@@ -7,6 +7,7 @@
 这个 Skill 的职责不是替你完成学习，而是让每天的任务保持在合适难度：
 
 - 读取当前阶段、测试资产目录和已完成记录；
+- 开课前核验用户写出的学习日，冲突时先纠正而不进入教学；
 - 生成当天唯一的最小任务；
 - 要求一个可运行脚本和测试证据；
 - 在失败时优先定位根因，不用重试掩盖问题；
@@ -15,12 +16,18 @@
 
 ## MCP 设计
 
-插件里包含一个本地 MCP Server 配置，提供四个工具：
+插件里包含一个本地 MCP Server 配置，工具调用统一计划与验证入口：
 
 - `get_today_plan`：读取当天学习任务；
 - `get_progress`：读取完成天数和下一阶段；
+- `check_learning_day`：只读核验用户给出的学习日是否与仓库当前进度一致；
 - `create_daily_log`：生成当天的记录文件和证据目录；
 - `complete_learning_day`：保存结果、复盘和下一步。
+- `get_learning_session`：只读查看七步记录和续学位置；
+- `record_learning_step`：教练记录真实参与、提示程度、产出和完成条件；
+- `verify_learning_day`：运行目标与回归，保存标准证据。
+
+`get_today_plan` 现在只读；创建日志使用 `create_daily_log`。七步规则见 `docs/INTERACTIVE-LEARNING.md`，新验收从 Day 67 起生效。
 
 MCP 只访问当前本地学习仓库，不连接外部账号，也不会替你对公共网站发起压力测试。被测项目位于仓库外的 `D:\qa-automation-targets`，由测试代码通过 URL 访问。需要云端同步时，再按需接入 GitHub、Notion 或 Linear。
 
@@ -50,7 +57,7 @@ MCP 只访问当前本地学习仓库，不连接外部账号，也不会替你�
 进入 `D:\qa-automation-learning` 后，可以直接对 Codex 说：
 
 ```text
-使用 $qa-learning-daily，读取我的当前进度，给我今天 90 分钟内能完成的任务。
+使用 $qa-learning-daily，读取我的当前进度和步骤记录，按统一七步流程从未完成处继续。
 ```
 
 完成后说：
@@ -63,6 +70,7 @@ MCP 只访问当前本地学习仓库，不连接外部账号，也不会替你�
 
 ```powershell
 python tools/validate_repo.py
+python tools/plan_day.py check-day 36
 python tools/plan_day.py today
 python tools/plan_day.py complete 1 --result "完成新增 Todo 脚本并通过" --next-step "增加完成状态场景"
 ```
