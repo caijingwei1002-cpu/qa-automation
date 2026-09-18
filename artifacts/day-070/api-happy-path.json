@@ -1,0 +1,28 @@
+{
+  "commit": "d36bd3f8647a091d406e53bad463c5e5d2ece1",
+  "room_port_override": 3011,
+  "created": {
+    "roomid": 4,
+    "bookingid": 4,
+    "booking_roomid": 4,
+    "checkin": "2026-10-17",
+    "checkout": "2026-10-18"
+  },
+  "steps": [
+    {"step": "auth-health", "status": 200, "body": {"status": "UP"}},
+    {"step": "booking-health", "status": 200, "body": {"status": "UP"}},
+    {"step": "room-health", "status": 200, "body": {"status": "UP"}},
+    {"step": "admin-login", "status": 200, "body": "", "cookie": "token=<redacted>"},
+    {"step": "token-validate", "status": 200, "body": ""},
+    {"step": "create-room", "status": 201, "body": {"roomid": 4, "roomName": "Day70-20260917032926029", "type": "Single", "accessible": false, "features": [], "roomPrice": 100}},
+    {"step": "create-booking", "status": 201, "body": {"bookingid": 4, "booking": {"bookingid": 4, "roomid": 4, "firstname": "Day", "lastname": "Seventy", "depositpaid": false, "bookingdates": {"checkin": "2026-10-17", "checkout": "2026-10-18"}}}},
+    {"step": "query-room", "status": 200, "body": {"roomid": 4}},
+    {"step": "query-booking", "status": 200, "body": {"bookingid": 4, "roomid": 4}},
+    {"step": "query-bookings-by-room", "status": 200, "body": {"bookings": [{"bookingid": 4, "roomid": 4}]}},
+    {"step": "cleanup-booking", "status": 202, "body": ""},
+    {"step": "cleanup-room", "status": 202, "body": ""},
+    {"step": "verify-booking-deleted", "status": 404, "body": ""},
+    {"step": "verify-room-deleted", "status": 500, "body": ""}
+  ],
+  "association_assertion": {"created_roomid": 4, "queried_booking_roomid": 4, "matched": true}
+}

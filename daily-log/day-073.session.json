@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "day": 73,
+  "stages": {
+    "preflight": {
+      "status": "done",
+      "note": "明确 Day 73 只读范围：盘点 assets UI 的端口、API route、环境变量和后端依赖；对已有服务做 GET 级身份验证；不启动 UI、不做浏览器 E2E、不生成业务数据；3001 Room 身份阻塞继续保留。",
+      "learner_response": "学习者说明 UI/API 源码和 GET 证据的采集范围，解释当前不做 UI E2E 的多变量归因风险，区分今天可证明与不可证明的结论，并明确 UI 200 不等于后端业务链成立。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-072/recovery-runbook.md",
+        "artifacts/day-072/verification.md"
+      ],
+      "next_action": "讨论 UI/API 依赖盘点的验收边界、GET 身份验证和 Room 默认端口阻塞的结论格式。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T07:34:49.350448+00:00"
+    },
+    "discussion": {
+      "status": "done",
+      "note": "定义 UI/API 依赖地图字段和源码/live 双证据层次；建立 SERVICE_UNREACHABLE、SERVICE_IDENTITY_MISMATCH、SERVICE_IDENTITY_UNCONFIRMED、CONTRACT_OR_API_FAILURE 分类；明确今天不启动服务、不做 UI E2E、不执行业务状态变更。",
+      "learner_response": "学习者规定依赖地图记录 UI route、源码位置、服务、端口、path/method、认证、只读属性、配置覆盖、live 状态和证据来源；区分源码默认依赖与 live 实际状态，并给出服务不可达、身份不符、身份未确认和契约异常的分类优先级。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-072/recovery-runbook.md",
+        "artifacts/day-072/verification.md"
+      ],
+      "next_action": "设计 UI/API 只读依赖地图、源码采集字段、live GET/进程检查和最终结论的记录结构。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T07:38:13.946653+00:00"
+    },
+    "design": {
+      "status": "done",
+      "note": "设计 A/B 两层只读勘察：A 层读取 assets 入口、next.config、BFF route、页面组件和启动脚本，建立 UI route→API route→后端服务依赖地图；B 层检查 3000/3001/3004 PID 与 GET health/基础路径；明确禁止 POST/PUT/PATCH/DELETE、启动脚本、终止进程和配置修改。",
+      "learner_response": "学习者设计了完整依赖地图字段、源码默认地址与 live 身份双证据、3000/3001/3004 只读端口和 GET 计划、四类运行时分类、通过/停止标准及 E2E Gate。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-072/recovery-runbook.md",
+        "artifacts/day-072/verification.md"
+      ],
+      "next_action": "创建依赖地图，执行 assets 源码盘点与 3000/3001/3004 只读 live survey；记录身份分类和结论边界。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T07:42:25.985272+00:00"
+    },
+    "practice": {
+      "status": "done",
+      "note": "完成 A/B 两层只读勘察：源码确认 assets 3003 及 Room/Booking/Auth 默认依赖和 BFF route；live 复核 3000/3001/3003/3004，分类为 Booking/UI/Auth unreachable、Room identity mismatch；未启动 UI、未执行 run_locally.cmd 或状态变更请求。",
+      "learner_response": "学习者设计了依赖地图和 live survey；教练按设计读取 d36bd3f assets 配置/routes/components，执行端口/PID/GET 检查，将结果写入依赖地图并同步测试资产 README。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-073/ui-api-dependency-map.md",
+        "test-projects/05-booker-platform/README.md"
+      ],
+      "next_action": "验证依赖地图字段、源码/live 结论边界和仓库状态，运行 Day 73 统一验证。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T07:45:06.014743+00:00"
+    },
+    "verification": {
+      "status": "done",
+      "note": "A/B 两层只读验证完成：统一 runner、validate_repo 和 git diff --check 通过；源码依赖地图完成，live 分类为 3000/3003/3004 SERVICE_UNREACHABLE、3001 SERVICE_IDENTITY_MISMATCH；不进入 E2E 或业务回归。",
+      "learner_response": "学习者规定源码依赖与 live 状态必须分列，并要求所有 live 异常按服务身份层级分类；教练完成源码、端口/PID 和 GET 证据采集及正式验证记录。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-073/ui-api-dependency-map.md",
+        "artifacts/day-073/verification.md"
+      ],
+      "next_action": "进入审查迁移：检查依赖地图是否把 UI 200、BFF 响应和后端身份正确分层，并迁移到一个服务端口变化的新场景。",
+      "outcome": "known_failure",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "run_id": "30387cd4b08b42c8a07b85321b0e344f",
+      "updated_at": "2026-09-17T07:46:15.039023+00:00"
+    },
+    "review": {
+      "status": "done",
+      "note": "审查通过：学习者区分 UI 200、BFF 500、下游服务身份和 Platform 契约；明确 Express 404 无法进入 Room 契约判断；说明 ROOM_API override 的默认/有效值双记录；迁移出 A 层静态依赖与 B 层动态身份的通用模型。",
+      "learner_response": "学习者解释了 BFF 下游身份不符导致 500 的分层归因，指出错误服务 404 的证据缺口，设计了 ROOM_API=3011 的默认/override 记录方式，并将依赖地图迁移到 Booking 和其他项目。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-073/ui-api-dependency-map.md",
+        "artifacts/day-073/verification.md"
+      ],
+      "next_action": "复盘源码依赖与 live 状态的区别，完成确认后落盘 Day 73 知识和日志。",
+      "outcome": "",
+      "transfer_prompt": "如果某项目的前端通过代理访问后端，代理返回 200 但后端目标 PID 未确认，你是否可以把代理 200 写成后端契约通过？请重新按 A 层/B 层证据组织结论。",
+      "transfer_response": "不可以；代理 200 只能证明代理层响应，需要继续确认后端 effective target、PID/进程来源、版本和实际 API 响应，才能判断后端契约。",
+      "transfer_assistance": "none",
+      "review_result": "A/B 双层证据、BFF 分层归因和 override 迁移审查通过。",
+      "confirmation": "",
+      "updated_at": "2026-09-17T07:47:44.606948+00:00"
+    },
+    "reflection": {
+      "status": "done",
+      "note": "已按实际 live survey 修正复盘：3000、3003、3004 均无监听并 connection refused，分类为 SERVICE_UNREACHABLE；3001 为外部 Express，分类为 SERVICE_IDENTITY_MISMATCH。学习者确认完成。",
+      "learner_response": "学习者总结 A 层源码依赖地图与 B 层 live survey 的区别，修正实际分类为 3000/3003/3004 SERVICE_UNREACHABLE、3001 SERVICE_IDENTITY_MISMATCH；说明 UI/BFF/下游分层、default/effective target 双记录和下一步边界。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-073/ui-api-dependency-map.md",
+        "artifacts/day-073/verification.md"
+      ],
+      "next_action": "运行 Day 73 完成校验并确认进度推进。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "Day 73 学习完成",
+      "updated_at": "2026-09-17T07:51:50.697962+00:00"
+    }
+  },
+  "history": [
+    {
+      "at": "2026-09-17T07:34:49.350448+00:00",
+      "stage": "preflight",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:38:13.946653+00:00",
+      "stage": "discussion",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:42:25.985272+00:00",
+      "stage": "design",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:45:06.014743+00:00",
+      "stage": "practice",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:46:15.039023+00:00",
+      "stage": "verification",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:47:44.606948+00:00",
+      "stage": "review",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:51:50.697962+00:00",
+      "stage": "reflection",
+      "superseded": {}
+    }
+  ]
+}

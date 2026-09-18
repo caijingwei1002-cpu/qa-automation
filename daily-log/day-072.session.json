@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "day": 72,
+  "stages": {
+    "preflight": {
+      "status": "done",
+      "note": "复习确认 Day 71 的 3001 外部 Node/Express 占用证据和未完成基线；明确停止/迁移前必须确认项目归属、依赖使用者、恢复方式和影响范围，且授权后仍需先完成 Room 默认基线再做缺陷回归。",
+      "learner_response": "学习者复述了 PID 29528、外部 restful-booker Node/Express 来源、Express 404 响应和 Platform 默认基线未恢复事实；定义了安全处置条件、无授权时的环境阻塞产出，以及恢复后仍需按进程身份→health→基础 GET→业务回归的顺序。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-071/room-3001-preflight.md",
+        "artifacts/day-071/verification.md"
+      ],
+      "next_action": "讨论 Day 72 的安全处置决策边界、恢复证据和是否允许进入缺陷回归。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T07:13:24.497120+00:00"
+    },
+    "discussion": {
+      "status": "done",
+      "note": "明确安全恢复的授权、归属、依赖、恢复方式和影响条件；定义 3001 释放后必须通过 Java/Room 进程身份、health 和基础 GET 三层基线；基线失败仍保存前后状态与原始响应；明确不改产品、不绕端口、不做 DELETE→GET 回归。",
+      "learner_response": "学习者定义了终止外部 Node 的受控前提和阻塞分支，规定了 Platform Room 默认端口三层验收、恢复失败时的证据清单，以及今天不做的产品和业务操作。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-071/room-3001-preflight.md",
+        "artifacts/day-071/verification.md"
+      ],
+      "next_action": "设计恢复动作前后的证据采集顺序、回滚/阻塞分支和默认 Room 基线断言。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T07:15:11.837432+00:00"
+    },
+    "design": {
+      "status": "done",
+      "note": "设计带安全闸门的恢复证据链：pre-snapshot、PID 身份再确认、授权 gate、停止后验证 3001 空闲、Platform Java/模块/版本身份、health、基础 GET 和 RoomBaselineReady；任一步失败即 PRECONDITION FAILED，禁止修改产品或跳过前置。",
+      "learner_response": "学习者设计了操作前状态快照、目标 PID 与端口双重一致性、授权默认 false、停止后端口再确认、Platform 进程/模块/版本闭合证据、health/基础 GET 断言和前置失败分支。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-071/room-3001-preflight.md",
+        "artifacts/day-071/verification.md"
+      ],
+      "next_action": "创建 Day 72 恢复 runbook，并执行只读 pre-snapshot 与身份复核；没有明确授权时保持 BLOCKED_BY_AUTHORIZATION。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T07:16:24.586324+00:00"
+    },
+    "practice": {
+      "status": "done",
+      "note": "完成 Day 72 runbook 和只读 pre-snapshot：端口/ PID/命令行/父进程仍一致，Platform commit/config 已核对，Express 404 仍复现；授权闸门为 false，按设计停止在 BLOCKED_BY_AUTHORIZATION，未执行终止或迁移。",
+      "learner_response": "学习者设计安全闸门和恢复证据链；教练将设计落成 artifacts/day-072/recovery-runbook.md，执行只读身份复核并将摘要同步到测试资产 README。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-072/recovery-runbook.md",
+        "test-projects/05-booker-platform/README.md"
+      ],
+      "next_action": "运行仓库校验和 Day 72 验证记录，确认授权阻塞被正确分类且没有进入产品缺陷回归。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T07:18:32.780704+00:00"
+    },
+    "verification": {
+      "status": "done",
+      "note": "统一验证、仓库校验和差异检查通过；已知结果为 BLOCKED_BY_AUTHORIZATION：外部 Node/Express 占用 3001，未获得停止授权，Platform Room 默认基线未恢复；未进入产品缺陷回归。",
+      "learner_response": "学习者要求以授权 gate、PID/端口一致性和 RoomBaselineReady 作为业务回归前置；教练完成只读 pre-snapshot、正式验证记录和仓库校验，按环境前置 known_failure 分类。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-072/recovery-runbook.md",
+        "artifacts/day-072/verification.md"
+      ],
+      "next_action": "进入审查迁移：区分授权阻塞与产品失败，并迁移到 PID 变化或获得授权后的新场景。",
+      "outcome": "known_failure",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "run_id": "f0229f47caa94d57baf9056fb7e7bdd2",
+      "updated_at": "2026-09-17T07:19:20.732588+00:00"
+    },
+    "review": {
+      "status": "done",
+      "note": "审查通过：学习者区分 BLOCKED_BY_AUTHORIZATION、port release、Room startup/health 和产品缺陷层级；迁移原则为 PID 变化即新对象需重新识别授权，产品判断前必须通过 RoomBaselineReady。",
+      "learner_response": "学习者说明了未获授权时不能写成启动失败、端口释放失败或产品缺陷；设计了新 PID 重新确认流程、health 500 的证据收集和 PID identity re-check + authorization gate 的安全价值。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-072/recovery-runbook.md",
+        "artifacts/day-072/verification.md"
+      ],
+      "next_action": "复盘 Day 72，记录授权 gate、RoomBaselineReady 和环境变更证据链；完成确认后落盘知识与日志。",
+      "outcome": "",
+      "transfer_prompt": "如果明确授权后 3001 已释放，但 Platform Room 启动命令返回成功、端口却没有 Java PID 监听，你会把它归为哪一层，并先收集什么证据？",
+      "transfer_response": "应归为 Room 启动/运行基线失败，而不是业务缺陷；先收集启动命令退出码、进程列表、端口监听、启动日志、JDK/配置/依赖和 git 版本，再决定是否进入 health 或基础 API。",
+      "transfer_assistance": "none",
+      "review_result": "安全闸门、前置失败分类和迁移边界审查通过。",
+      "confirmation": "",
+      "updated_at": "2026-09-17T07:20:54.029357+00:00"
+    },
+    "reflection": {
+      "status": "done",
+      "note": "学习者完成复盘并确认 Day 72：理解授权 Gate、PID 身份再确认和 RoomBaselineReady；确认当前 BLOCKED_BY_AUTHORIZATION，不把未执行动作写成失败。",
+      "learner_response": "学习者说明授权阻塞与启动失败/端口释放失败/产品缺陷的区别，复盘两道安全闸门、未来恢复的三类基线证据和今日 runbook、verification、README 产出。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-072/recovery-runbook.md",
+        "artifacts/day-072/verification.md"
+      ],
+      "next_action": "运行 Day 72 完成校验并确认进度推进。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "Day 72 学习完成",
+      "updated_at": "2026-09-17T07:25:07.604130+00:00"
+    }
+  },
+  "history": [
+    {
+      "at": "2026-09-17T07:13:24.497120+00:00",
+      "stage": "preflight",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:15:11.837432+00:00",
+      "stage": "discussion",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:16:24.586324+00:00",
+      "stage": "design",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:18:32.780704+00:00",
+      "stage": "practice",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:19:20.732588+00:00",
+      "stage": "verification",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:20:54.029357+00:00",
+      "stage": "review",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T07:25:07.604130+00:00",
+      "stage": "reflection",
+      "superseded": {}
+    }
+  ]
+}

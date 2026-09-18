@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "day": 74,
+  "stages": {
+    "preflight": {
+      "status": "done",
+      "note": "复习确认 A 层证明源码静态依赖，B 层证明 live 服务身份与响应；/api/room 返回 500 且 3001 已确认是外部 Express 时，结论为 SERVICE_IDENTITY_MISMATCH 导致的 BFF/live 环境失败，不归因于目标 Room 契约。",
+      "learner_response": "A 层证明 /api/room 的静态转发关系、默认地址和 override；B 层证明当前 PID/进程/服务身份和真实响应。3001 是外部 Express 时，/api/room 的 500 只能归因于下游服务身份不符导致的 BFF/live 环境失败，不能写成 Room API 契约异常。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-073/ui-api-dependency-map.md"
+      ],
+      "next_action": "明确 Day 74 只读 BFF 路由的业务范围、认证前置、默认/override 目标和禁止的状态变更。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T08:56:08.605191+00:00"
+    },
+    "discussion": {
+      "status": "done",
+      "note": "学习者选择 GET /api/room 与 GET /api/booking 作为只读对照；明确 Room 默认 ROOM_API=3001 且当前身份不符时只记录 BFF/live failure，不比较 Room 契约；Booking 默认 BOOKING_API=3000 且查询需要 token Cookie，没有现成 token 时只观察认证拒绝，不调用 POST /auth/login。",
+      "learner_response": "选择 GET /api/room 和 GET /api/booking。前者无状态变更，默认 ROOM_API 指向 3001，但 3001 是外部 Express，500 只能归因 BFF/live identity mismatch；后者是只读但需要 token，未认证只能记录 401/403，不为取 token 执行 POST。两者都不启动服务、不杀进程、不改 override、不做 POST/PUT/PATCH/DELETE。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-073/ui-api-dependency-map.md"
+      ],
+      "next_action": "为两个 GET 路由设计源码/配置/live 三栏证据矩阵、认证前置、停止条件和分类断言。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T08:59:08.351478+00:00"
+    },
+    "design": {
+      "status": "done",
+      "note": "学习者设计 R1/R2 Room 默认与 override、B1/B2 Booking 默认与 override 四条最小用例；统一采用源码 GET-only → default/override → BFF 可达 → 下游监听 → 服务身份 → 认证前置 → 契约比较的链路，并定义各层停止分类。当前 UI/BFF 未启动、3000 无监听、3001 身份不符、无现成 token，因此只读 live 用例停在前置，不伪造契约通过。",
+      "learner_response": "四条用例分别覆盖 Room/Booking 的默认与 override 解析；Room GET 无认证，Booking GET 必须已有 token，不能调用登录。每条都保存请求、解析目标、监听、身份、状态和有限响应摘要；BFF 不可达、下游不可达、身份不符或认证缺失时停止。当前只能做源码分析和端口身份只读探测。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-073/ui-api-dependency-map.md"
+      ],
+      "next_action": "将四条用例、证据字段、禁止动作和当前阻断结果落成 artifacts/day-074/read-only-scope.md。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T09:03:36.927474+00:00"
+    },
+    "practice": {
+      "status": "done",
+      "note": "学习者提供完整 BFF 只读范围与证据矩阵草稿；教练将其落盘为 artifacts/day-074/read-only-scope.md 并做结构化整理。产物包含 R1/R2/B1/B2、default/override/resolved target、认证前置、证据字段、停止层、当前阻断和禁止状态变更；未新增 HTTP 请求或环境修改。",
+      "learner_response": "提交 Day 74 BFF Read-Only Scope & Evidence Matrix，明确四条用例、统一 evidence gates、各层分类和当前 UI/BFF 未启动、3000 无监听、3001 身份不符、无 token 的停止点。",
+      "assistance": "coach",
+      "evidence": [
+        "artifacts/day-074/read-only-scope.md"
+      ],
+      "next_action": "执行仓库与 artifact 结构校验，确认文件只记录已知事实，且验证步骤不会启动服务或产生状态变更。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-17T09:07:58.682284+00:00"
+    },
+    "verification": {
+      "status": "done",
+      "note": "Day 74 验证通过：git diff --check、validate_repo.py 和 artifact 存在/结构检查通过；read-only-scope.md 包含四条用例、evidence gates、分类、停止层和禁止动作。--skip-service runner 未启动服务，未新增 HTTP 请求或业务状态变更；因此只验证证据产物和安全边界，不宣称 Room/Booking live 契约通过。",
+      "learner_response": "学习者提交的四条 BFF 只读证据矩阵已落盘，验证确认 R1/R2/B1/B2 均明确了前置、原始证据和停止规则；当前环境只保留源码与既有 live 事实。",
+      "assistance": "coach",
+      "evidence": [
+        "artifacts/day-074/read-only-scope.md",
+        "artifacts/day-074/verification.md"
+      ],
+      "next_action": "完成审查并独立迁移到另一个 BFF 代理场景，判断代理成功响应能否代表正确下游契约。",
+      "outcome": "passed",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "run_id": "dae86bedc4a346419c94abd69a8f4fb3",
+      "updated_at": "2026-09-17T09:09:33.495627+00:00"
+    },
+    "review": {
+      "status": "done",
+      "note": "独立迁移审查通过：学习者将 A/B 双层证据迁移到 Catalog BFF，明确 Python 进程属于其他项目时分类为 SERVICE_IDENTITY_MISMATCH；即使代理返回 200，也不能作为 Catalog 契约通过，必须先证明 resolved target、目标监听、预期服务身份和认证前置。",
+      "learner_response": "A 层证明路由、默认/override 和访问设计；B 层证明 resolved target、监听者和真实响应。当前身份不符应分类 SERVICE_IDENTITY_MISMATCH，200 只能说明某个服务响应成功，不能进入 Catalog 契约判断；还需要默认目标、override、resolved target、目标服务身份、监听、认证和原始响应证据。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-074/read-only-scope.md"
+      ],
+      "next_action": "复盘 Day 74 的知识、产物和局限，明确完成确认后落盘知识与日志。",
+      "outcome": "",
+      "transfer_prompt": "某前端 BFF 的 GET /api/catalog 返回 200，但源码默认 CATALOG_API=localhost:8080，8080 由另一个项目的 Python 进程监听。如何按 A/B 证据和服务身份闸门归因？",
+      "transfer_response": "A 层证明源码访问设计；B 层证明实际 resolved target、监听者和响应。身份不符分类 SERVICE_IDENTITY_MISMATCH，200 不能作为 Catalog 契约通过，还需确认目标解析、预期服务身份、监听、认证和原始响应。",
+      "transfer_assistance": "none",
+      "review_result": "独立迁移通过：能将 BFF 服务身份优先和代理状态不等于下游契约的方法迁移到陌生项目。",
+      "confirmation": "",
+      "updated_at": "2026-09-17T09:13:04.024625+00:00"
+    },
+    "reflection": {
+      "status": "done",
+      "note": "学习者复盘确认：BFF 200/500 只能证明代理得到响应，不能替代下游服务身份和契约证据；default/override/resolved target 可从源码与现有环境整理；当前 BFF 未启动、3001 身份不符、3000 无监听、无 token，契约层未进入。学习者说明了环境前置不完整的局限，并确认 Day 74 完成。",
+      "learner_response": "BFF 返回 200 或 500 都不能直接说明目标服务契约，因为可能命中错误端口、旧服务、Mock 或其他应用。当前 default/override/resolved target 可整理，BFF 层因未启动受阻，Room 深层停在 SERVICE_IDENTITY_MISMATCH，Booking 深层停在 DOWNSTREAM_UNAVAILABLE 与 AUTH_PRECONDITION_UNMET，契约层未进入。局限是只能建立证据边界和错误归因方法，不能验证真正目标服务业务契约。Day 74 学习完成。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-074/read-only-scope.md",
+        "artifacts/day-074/verification.md"
+      ],
+      "next_action": "运行 Day 74 完成校验并确认进度推进。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "Day 74 学习完成",
+      "updated_at": "2026-09-17T09:16:57.262589+00:00"
+    }
+  },
+  "history": [
+    {
+      "at": "2026-09-17T08:56:08.605191+00:00",
+      "stage": "preflight",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T08:59:08.351478+00:00",
+      "stage": "discussion",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T09:03:36.927474+00:00",
+      "stage": "design",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T09:07:58.682284+00:00",
+      "stage": "practice",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T09:09:33.495627+00:00",
+      "stage": "verification",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T09:13:04.024625+00:00",
+      "stage": "review",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-17T09:16:57.262589+00:00",
+      "stage": "reflection",
+      "superseded": {}
+    }
+  ]
+}

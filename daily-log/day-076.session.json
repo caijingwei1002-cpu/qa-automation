@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "day": 76,
+  "stages": {
+    "preflight": {
+      "status": "done",
+      "note": "学习者明确未获授权时不得停止或重启外部进程、抢占端口、修改产品配置或执行业务状态变更；可继续读取源码配置、观察端口进程、静态检查、Mock/单元测试和只读 health/GET，并将未知占用记录为环境前置未满足或服务身份待确认。",
+      "learner_response": "在没有明确授权停止外部进程的情况下，Day 76 的 preflight 不能主动改变现有运行环境。不能 kill/taskkill/Stop-Process 现有进程，不能停止或重启别人启动的服务、容器、代理，也不能强制清理监听进程；不应修改产品配置、数据库状态或执行创建、更新、删除业务资源的请求。可以读取配置与源码、确认默认值和 override、查看端口和进程信息但不终止它们、检查日志、做静态检查和测试收集、执行 Mock/单元测试，以及只读 health/GET。边界概括为观察→读取→比对→Mock→静态验证→只读探测；不能停止→重启→杀进程→抢占端口→修改配置→创建/更新/删除外部状态。未知进程占用目标端口时，应记录环境前置未满足或服务身份待确认，而不是自行杀进程。",
+      "assistance": "none",
+      "evidence": [
+        "progress.json",
+        "daily-log/day-075.session.json"
+      ],
+      "next_action": "讨论默认 3001 身份不符且 BFF Mock 通过时，是否具备进入真实 Room 缺陷回归的证据条件。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-18T03:30:58.061036+00:00"
+    },
+    "discussion": {
+      "status": "done",
+      "note": "学习者判断当前不能进入真实 Room 缺陷回归：BFF Mock 只证明受控下游输入下的 BFF mapping；3001 虽有监听但已证明是身份不符的外部 Express 服务，不能形成 Room 契约证据。学习者给出 resolved target、监听、服务身份、认证、endpoint 和缺陷预期六项最小准入证据，并决定无授权时停在身份闸门，继续只读配置/脚本审查、合法 override/独立实例核对和隔离 Mock/静态验证。",
+      "learner_response": "现在不能进入真实 Room 缺陷回归。BFF Mock 通过只证明 BFF 在受控下游输入下的映射行为；默认 3001 是身份不符的外部 Express 服务，真实 Room 下游身份未建立，任意 200/404/500 都不能可靠归因到 Room。最小证据依次包括 resolved target、监听存在、Room 服务身份、认证前置、目标 endpoint 可达和明确的缺陷预期。当前在身份检查处 STOP。无授权时不停止、重启、替换或抢占外部服务；保持环境不变，记录身份前置未满足，检查合法 override/独立实例/启动脚本和文档，继续 Mock、单元和静态验证。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-072/recovery-runbook.md",
+        "artifacts/day-073/ui-api-dependency-map.md",
+        "artifacts/day-075/bff-error-mapping-matrix.md"
+      ],
+      "next_action": "设计默认路径与安全隔离路径的验证矩阵、证据字段、停止条件和不变量。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-18T05:50:08.115534+00:00"
+    },
+    "design": {
+      "status": "done",
+      "note": "学习者设计两条互不替代的证据链。默认路径 D1-D4 依次覆盖 resolved target、监听、进程/服务身份、只读 health/GET；隔离路径 I1-I4 覆盖配置解析、Mock 身份判定、BFF route + Mock HTTP client 和静态规则。每项均定义输入、测试层、断言、证据字段、停止条件和不变量；统一记录 evidence_layer、target_source、resolved_target、listen_state、process_identity、service_identity、identity_basis、HTTP/BFF 状态、trace/request id、result_classification 和 stop_reason。核心不变量为只增加证据不改变环境，前置未成立时停在当前层，不把下游未验证事实升级为 Room 契约。",
+      "learner_response": "Day 76 的验证矩阵分成默认路径和隔离路径。默认路径 D1 resolved target 区分 default/override/resolved value；D2 检查监听但不把监听等同身份；D3 用 PID、命令行、工作目录等证明或否定 Room 身份，mismatch/unknown 时停止真实契约判断；D4 只读 health/GET 记录 status/body/header，但 GET 200 不能自动判为 Room。隔离路径 I1 验证配置解析，I2 用纯函数或 Mock 验证 match/mismatch/unknown，I3 验证 BFF 映射和脱敏，I4 静态审查 resolved target、异常分支和日志风险。两条链互不替代，统一证据字段并使用分层 result_classification，而不是模糊 PASS/FAIL。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-073/ui-api-dependency-map.md",
+        "artifacts/day-074/read-only-scope.md",
+        "artifacts/day-075/bff-error-mapping-matrix.md"
+      ],
+      "next_action": "将验证矩阵落成 artifacts/day-076/ 的可审计决策产物，保留学习者设计归属并标明未执行的真实服务验证。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-18T05:52:17.993705+00:00"
+    },
+    "practice": {
+      "status": "done",
+      "note": "学习者提交了完整默认/隔离验证矩阵，教练将其原意结构化落盘为 Day 76 可审计决策产物。产物明确 D1-D4、I1-I4、证据字段、停止条件、环境不变量和当前身份不符结论；没有产品代码、环境或业务状态变更。",
+      "learner_response": "我提交的 Day 76 验证矩阵把默认路径和隔离路径分成互不替代的证据链，覆盖 resolved target、监听、进程身份、只读 health/GET、配置解析、Mock 身份判定、BFF Mock、静态规则，并明确分层 result_classification 和只增加证据不改变环境的不变量。",
+      "assistance": "coach",
+      "evidence": [
+        "artifacts/day-076/verification-matrix.md"
+      ],
+      "next_action": "先提出验证顺序、失败假设和证据检查动作，再运行结构校验与仓库验证；不启动真实服务、不改变外部进程。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-18T05:54:00.480467+00:00"
+    },
+    "verification": {
+      "status": "done",
+      "note": "按学习者提出的顺序完成仓库/产物与只读环境检查。git diff --check、python tools/validate_repo.py、python tools/run_day_verification.py 76 --skip-service 均通过，目标与回归 exit_code=0；pytest 未执行到收集因为 pytest 命令和 Python 模块均不可用，ruff 命令不可用，均分类为执行环境工具链前置问题。当前 Get-NetTCPConnection 未观察到 3001 监听，旧 PID 29528 的进程查询无结果且 CIM 查询拒绝访问，因此当前 Room 身份未建立；未启动服务、未访问 HTTP、未做状态变更，真实 Room regression not reached。",
+      "learner_response": "验证应先做 git status、静态配置/证据搜索、测试收集和 Ruff，再做只读 3001 监听与身份检查，最后独立验证配置/身份/BFF Mock；代码收集或断言失败归为产物/仓库问题，监听缺失、身份不符或证据不足归为真实环境前置未满足。本轮仓库验证和 skip-service 正式验证通过；pytest/ruff 被环境工具链阻塞；当前 3001 无监听结果，不能进入真实 Room 回归。",
+      "assistance": "coach",
+      "evidence": [
+        "artifacts/day-076/verification-matrix.md",
+        "artifacts/day-076/environment-check.md",
+        "artifacts/day-076/verification.md",
+        "artifacts/day-076/run-record.json"
+      ],
+      "next_action": "进行代码/证据审查，检查是否把工具链阻塞或当前无监听错误归因成产品结论，然后完成陌生代理场景迁移。",
+      "outcome": "passed",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "run_id": "2bd3418a14e94e0189b5c4620c8dd50f",
+      "updated_at": "2026-09-18T05:59:07.001281+00:00"
+    },
+    "review": {
+      "status": "done",
+      "note": "学习者完成陌生 Report 代理场景迁移，并在审查后明确修订结论边界：3005 监听存在、GET 200+JSON 和 BFF Mock/脱敏通过分别成立，但进程身份因权限不足为 unknown；不能把 unknown 写成 mismatch，也不能进入真实 Report 契约回归。学习者列出允许的只读身份补证和禁止的提权、停止/重启、配置替换及状态变更动作。",
+      "learner_response": "在 3005 有监听、GET 返回 200+JSON、进程身份因权限不足无法读取、BFF Mock 与脱敏通过时，不能开始真实 Report 契约回归。应区分 resolved target=3005、listen present、HTTP reachability confirmed、process_identity=unknown、BFF isolated verification=passed；停止原因是 service_identity_unknown，原因是 insufficient_permission_to_verify_process_identity，而不是 mismatch。可继续读取配置/源码/启动脚本、检查已有只读身份 endpoint、非敏感 headers、日志和静态规则，禁止提权绕过访问控制、kill/restart/replace、修改配置、状态变更或把 Mock/200+JSON 当真实契约通过。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-076/verification-matrix.md",
+        "artifacts/day-076/environment-check.md"
+      ],
+      "next_action": "复述 Day 76 的证据分层、停止规则、工具限制和当前局限，并给出明确的学习完成确认。",
+      "outcome": "",
+      "transfer_prompt": "陌生场景：/api/report 默认下游 3005 正在监听，GET 返回 200+JSON，进程身份因权限不足无法读取，BFF Mock 与脱敏检查通过。请判断是否能开始真实 Report 契约回归，分类当前事实/证据层/停止原因，并说明允许和禁止的下一步。",
+      "transfer_response": "不能开始真实 Report 契约回归。3005 监听、GET 200+JSON、BFF Mock 和脱敏分别通过，但进程身份因权限不足为 unknown；服务身份未确认，真实 Report 契约未进入。停止原因是 service_identity_unknown，不能写成 mismatch。允许只读配置、源码、启动脚本、已知 health/version/info、非敏感 headers、日志和静态规则补证；禁止提权绕过、kill/restart/replace、改配置、状态变更以及把 Mock 或 200+JSON 当真实契约通过。",
+      "transfer_assistance": "none",
+      "review_result": "独立迁移通过：学习者能将 Day 76 服务身份闸门迁移到 Report 场景，区分 present、mismatch、unknown 三种状态，并保持真实契约未到达边界。",
+      "confirmation": "",
+      "updated_at": "2026-09-18T06:16:11.337615+00:00"
+    },
+    "reflection": {
+      "status": "done",
+      "note": "学习者完成复盘：默认路径只证明 resolved target、监听、身份和只读响应的逐层前置，隔离路径只证明配置、身份判定、BFF Mock、脱敏和静态逻辑；present 不是身份成立，mismatch 与 unknown 都停止但分类不同，listener absent 停在更早前置。pytest/ruff 不可用属于 not executed/not verified，3001 无监听属于 real_environment_precondition_not_met，历史 mismatch 不延伸为当前事实；真实 Room 产品结论为 NOT_REACHED/NOT_VERIFIED。",
+      "learner_response": "Day 76 的核心，是把真实环境前置证据和隔离验证证据严格分开。默认路径不能因端口存在或 GET=200 证明 Room 正确；隔离路径能验证配置、身份判定、BFF Mock、脱敏和静态规则，但不能代替真实 Room。listener present 仍需身份确认；mismatch 停止并分类 service_identity_mismatch；unknown 停止并分类 service_identity_unknown；listener absent 更早停止。pytest/ruff 不可用记录为 verification not executed、not verified；3001 无监听记录为 real_environment_precondition_not_met，不能推出 Room 产品失败。当前真实结论是 Room 契约回归未到达，主要局限是服务身份/可达性和工具链受环境限制。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-076/verification-matrix.md",
+        "artifacts/day-076/environment-check.md",
+        "artifacts/day-076/verification.md"
+      ],
+      "next_action": "继续 Restful Booker Platform：仅在获得明确授权且重新证明服务身份后恢复真实基线；否则补充隔离验证和多服务测试设计。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "Day 76 学习完成",
+      "updated_at": "2026-09-18T06:23:42.453369+00:00"
+    }
+  },
+  "history": [
+    {
+      "at": "2026-09-18T03:30:58.061036+00:00",
+      "stage": "preflight",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T05:50:08.115534+00:00",
+      "stage": "discussion",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T05:52:17.993705+00:00",
+      "stage": "design",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T05:54:00.480467+00:00",
+      "stage": "practice",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T05:59:07.001281+00:00",
+      "stage": "verification",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T06:16:11.337615+00:00",
+      "stage": "review",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T06:23:42.453369+00:00",
+      "stage": "reflection",
+      "superseded": {}
+    }
+  ]
+}

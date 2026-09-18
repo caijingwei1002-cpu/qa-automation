@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "day": 75,
+  "stages": {
+    "preflight": {
+      "status": "done",
+      "note": "学习者明确 BFF 的统一 500+[] 只能证明异常映射分支被执行，不能证明目标 Room 契约失败；列出 resolved target、实际下游请求、服务身份、原始响应/客户端异常、认证和 endpoint 命中等前置证据。",
+      "learner_response": "BFF 500+[] 压缩了下游异常来源，只能证明 BFF 进入异常处理分支。要报告 Room 契约失败，必须先确认 resolved target、实际请求、目标 Room 身份、映射前原始 status/body/headers 或连接异常、认证和 endpoint 命中；当前只能报告 BFF 映射行为。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-074/read-only-scope.md"
+      ],
+      "next_action": "讨论 BFF 错误映射的业务风险、诊断信息边界和无服务条件下的 Mock 验证范围。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-18T02:48:12.226643+00:00"
+    },
+    "discussion": {
+      "status": "done",
+      "note": "学习者将 Mock 范围限定为 BFF 错误映射与可观测性，不验证真实 Room。覆盖 ConnectionError、下游 404、下游 500、Timeout 四类输入；区分 BFF status、downstream status 和 exception category；要求内部诊断可恢复但外部响应统一且脱敏。",
+      "learner_response": "Mock 只证明受控下游输入下 BFF 如何映射，不能证明真实 Room 的身份、状态码或契约。四类输入可形成 BFF mapping contract；内部应保留 trace/route/service/operation/failure_type/downstream_status 等受控诊断，禁止暴露 Authorization、Cookie、token、堆栈、内部拓扑和敏感 body。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-074/read-only-scope.md"
+      ],
+      "next_action": "设计无需真实服务的 Mock 测试矩阵、断言层级、日志脱敏检查和失败分类。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-18T02:58:28.184527+00:00"
+    },
+    "design": {
+      "status": "done",
+      "note": "学习者选择 BFF route + Mock HTTP client 作为主测试层，因为需要验证 route 是否进入异常分支、对外 status/body/headers、下游 status 保留和敏感信息泄漏；纯 mapper 单测只能补充。设计 M1 ConnectionError、M2 下游 404、M3 下游 500、M4 Timeout 四类矩阵，分离 bff_status、downstream_status、exception_category，并定义不能升级为 Room 契约结论的边界。",
+      "learner_response": "主层是 BFF route + Mock HTTP client。四类 Mock 分别断言 BFF 500+[]、内部 failure category 和 downstream status；M3 必须区分 BFF 500 与下游 500；四类都做敏感 headers/body 不泄漏断言；不能据此判断真实 Room 身份、真实响应或契约。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-074/read-only-scope.md"
+      ],
+      "next_action": "将 M1-M4 测试矩阵、外部/内部断言、脱敏检查和证据边界落成 artifacts/day-075/bff-error-mapping-matrix.md。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-18T03:01:33.604030+00:00"
+    },
+    "practice": {
+      "status": "done",
+      "note": "学习者提交完整 M1-M4 Mock route 测试矩阵；教练将其落盘为 artifacts/day-075/bff-error-mapping-matrix.md。产物覆盖 BFF route + Mock HTTP client、ConnectionError/404/500/Timeout、bff_status/downstream_status/exception_category、外部与内部断言、敏感信息脱敏和真实 Room 结论边界；未修改产品代码或外部环境。",
+      "learner_response": "提交 Day 75 Mock 测试矩阵，选择 BFF route + Mock HTTP client 主层，区分四类下游输入和三类状态，验证映射、诊断与不泄漏，明确不能升级为 Room 契约结论。",
+      "assistance": "coach",
+      "evidence": [
+        "artifacts/day-075/bff-error-mapping-matrix.md"
+      ],
+      "next_action": "运行静态校验、artifact 结构检查和 Day 75 统一验证；不启动真实服务，不执行状态变更。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "updated_at": "2026-09-18T03:02:42.073899+00:00"
+    },
+    "verification": {
+      "status": "done",
+      "note": "Day 75 验证通过：git diff --check、validate_repo.py、artifact 结构检查和 --skip-service runner 均通过。矩阵完整覆盖四类 Mock 输入、外部 mapping、内部诊断、三类状态区分和敏感信息边界；没有启动真实服务、访问真实 Room 或执行状态变更，因此只证明 BFF Mock 审查产物，不宣称真实 API 契约通过。",
+      "learner_response": "M1-M4 矩阵和验证记录已落盘，验证确认 route-level Mock 设计、bff_status/downstream_status/exception_category 分离、脱敏断言和真实 Room 契约边界完整。",
+      "assistance": "coach",
+      "evidence": [
+        "artifacts/day-075/bff-error-mapping-matrix.md",
+        "artifacts/day-075/verification.md"
+      ],
+      "next_action": "迁移到另一个代理错误映射场景，独立判断哪些 Mock 结果可以归因到代理层、哪些不能归因到真实下游。",
+      "outcome": "passed",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "",
+      "run_id": "b327518206074a01b88121f23164bf9f",
+      "updated_at": "2026-09-18T03:03:38.243857+00:00"
+    },
+    "review": {
+      "status": "done",
+      "note": "独立迁移审查通过：学习者将 Mock 错误映射方法迁移到 Payment BFF，明确下游 401 被 BFF 映射为 500+[] 时只能归因到 BFF mapping；区分 bff_status=500、downstream_status=401、exception_category=downstream_http_error；指出 request failed 诊断不足，并分别设计 response/log 脱敏与结构化诊断断言。",
+      "learner_response": "Payment 场景归因于 BFF 错误映射层，不能写成支付服务契约失败。500+[] 不能证明下游 500，实际下游是 401；日志至少需要 route、operation、bff_status、downstream_status、exception_category、trace/correlation 信息，同时禁止 token、Cookie、Authorization 和敏感 body 泄漏。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-075/bff-error-mapping-matrix.md"
+      ],
+      "next_action": "复盘 Day 75 的 BFF mapping 知识、诊断局限和完成确认。",
+      "outcome": "",
+      "transfer_prompt": "Mock Payment downstream 返回 401 和敏感 headers，BFF 返回 500+[]，日志只有 request failed。请判断归因层、状态区分、日志缺口和 response/log 安全断言。",
+      "transfer_response": "归因到 BFF mapping；bff_status=500、downstream_status=401、exception_category=downstream_http_error；现有日志无法区分故障类型；分别验证 response 映射和日志/response 不泄漏 token、Cookie、Authorization、敏感 body。",
+      "transfer_assistance": "none",
+      "review_result": "独立迁移通过：能将 Mock BFF 错误映射、三类状态分离和脱敏证据迁移到陌生代理场景。",
+      "confirmation": "",
+      "updated_at": "2026-09-18T03:12:41.582552+00:00"
+    },
+    "reflection": {
+      "status": "done",
+      "note": "学习者复盘完成并确认：主层选择 BFF route + Mock HTTP client 是为了覆盖 route 捕获、外部 response、日志诊断和脱敏；bff_status/downstream_status/exception_category 必须分开；Mock 只证明 BFF 对受控输入的处理，不证明真实下游；主要风险是多类故障被压缩为 500+[] 且日志只剩 request failed。",
+      "learner_response": "主测试层选择 BFF route + Mock HTTP client，mapper 单测只能补充。三类状态分别描述 BFF 响应、下游响应和异常类别，不能合并。Mock 能证明 BFF 在受控输入下的映射、分类和脱敏，不能证明真实服务的身份、认证、响应或契约。主要风险是不同故障被压缩成 500+[]，同时不能泄漏 Authorization、Cookie、token、敏感 body、完整堆栈和内部拓扑。Day 75 学习完成。",
+      "assistance": "none",
+      "evidence": [
+        "artifacts/day-075/bff-error-mapping-matrix.md",
+        "artifacts/day-075/verification.md"
+      ],
+      "next_action": "运行 Day 75 完成校验并确认进度推进。",
+      "outcome": "",
+      "transfer_prompt": "",
+      "transfer_response": "",
+      "transfer_assistance": "",
+      "review_result": "",
+      "confirmation": "Day 75 学习完成",
+      "updated_at": "2026-09-18T03:13:54.564497+00:00"
+    }
+  },
+  "history": [
+    {
+      "at": "2026-09-18T02:48:12.226643+00:00",
+      "stage": "preflight",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T02:58:28.184527+00:00",
+      "stage": "discussion",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T03:01:33.604030+00:00",
+      "stage": "design",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T03:02:42.073899+00:00",
+      "stage": "practice",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T03:03:38.243857+00:00",
+      "stage": "verification",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T03:12:41.582552+00:00",
+      "stage": "review",
+      "superseded": {}
+    },
+    {
+      "at": "2026-09-18T03:13:54.564497+00:00",
+      "stage": "reflection",
+      "superseded": {}
+    }
+  ]
+}

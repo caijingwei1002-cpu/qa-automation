@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QA 学习工作台</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="learning-rail">
+      <div class="brand"><span class="brand-mark">Q</span><div><strong>QA 学习工作台</strong><small>Codex 陪练模式</small></div></div>
+      <section class="day-summary">
+        <div class="day-line"><span>DAY</span><strong id="day-number">—</strong><em id="phase-day">读取中</em></div>
+        <h2 id="plan-title">正在读取今日计划</h2><p id="plan-learn"></p>
+        <div class="progress"><i id="phase-progress"></i></div><small id="phase-meta"></small>
+      </section>
+      <nav class="learning-path" aria-label="今日学习步骤">
+        <p>正在读取每日七步流程…</p>
+      </nav>
+      <div class="rail-footer"><span id="overall-progress-text">正在读取滚动进度</span><button id="roadmap-button">查看学习路径</button></div>
+    </aside>
+
+    <main class="conversation-column">
+      <header class="conversation-header">
+        <div><span class="eyebrow" id="phase-name">LEARNING SESSION</span><h1>和 Codex 一起完成今天</h1></div>
+        <div class="connection"><span class="connection-dot" id="connection-dot"></span><div><strong id="connection-label">正在连接</strong><small id="account-label">Codex App Server</small></div><button class="icon-button" id="reconnect-button" title="重新连接">↻</button></div>
+      </header>
+      <section class="chat-scroll" id="chat-scroll">
+        <div class="session-intro" id="session-intro">
+          <span class="intro-mark">✦</span><h2>今天不急着写代码</h2>
+          <p>从上次未完成步骤继续：核对复习、需求讨论、测试设计、编码、验证、审查迁移、复盘收尾。</p>
+          <button class="primary-button" id="start-session-button">开始今天的学习</button>
+        </div>
+        <div class="messages" id="messages" aria-live="polite"></div>
+        <div class="typing hidden" id="typing"><span></span><span></span><span></span><em>Codex 正在思考</em></div>
+      </section>
+      <footer class="composer-area">
+        <div class="prompt-actions" id="prompt-actions">
+          <button data-prompt="我先回答刚才的诊断问题。我的理解是：">回答诊断问题</button>
+          <button data-stage-jump="discussion">讨论需求</button><button data-stage-jump="design">设计测试</button><button data-stage-jump="practice">编码实践</button>
+          <button data-stage-jump="verification">验证排错</button><button data-stage-jump="review">审查与迁移</button><button data-stage-jump="reflection">复盘收尾</button>
+        </div>
+        <div class="composer"><textarea id="message-input" rows="1" placeholder="说说你的理解，或者把卡住的地方告诉 Codex…" disabled></textarea><button class="stop-button hidden" id="stop-button" title="停止当前回复">■</button><button class="send-button" id="send-button" disabled title="发送">↑</button></div>
+        <div class="composer-hint"><span>Enter 发送 · Shift+Enter 换行</span><span>文件与命令操作会先请求你的审批</span></div>
+      </footer>
+    </main>
+
+    <aside class="context-panel">
+      <section class="context-card goal-card"><div class="card-title"><span class="eyebrow">今日交付</span><span class="badge" id="timebox-badge">弹性课时</span></div><h3 id="deliverable"></h3><p id="done-standard"></p></section>
+      <section class="context-card"><div class="card-title"><span class="eyebrow">学习现场</span><button class="text-button" id="refresh-context">刷新</button></div><div class="context-list">
+        <div><span class="context-icon code">‹›</span><p><strong>代码改动</strong><small id="change-status">读取中</small></p></div>
+        <div><span class="context-icon test">✓</span><p><strong>测试证据</strong><small id="evidence-status">读取中</small></p></div>
+        <div><span class="context-icon note">≡</span><p><strong>学习记录</strong><small id="log-status">读取中</small></p></div>
+      </div></section>
+      <section class="context-card action-card"><span class="eyebrow">随时可用</span>
+        <button class="context-action" id="open-code-button"><span>打开代码工作区</span><small id="target-file-name"></small><b>›</b></button>
+        <button class="context-action" id="open-pycharm-button"><span>在 PyCharm 中继续</span><small>共享同一份项目文件</small><b>↗</b></button>
+        <button class="context-action" id="run-test-button"><span>直接运行当天测试</span><small id="run-command-short"></small><b>▶</b></button>
+      </section>
+      <section class="coach-note"><span>学习原则</span><p>先表达自己的理解，再让 Codex 补充。遇到失败先读错误，不把“测试通过”误当成“已经学会”。</p></section>
+    </aside>
+  </div>
+
+  <div class="setup-overlay hidden" id="setup-overlay"><div class="setup-card">
+    <span class="setup-icon">✦</span><span class="eyebrow">CODEX APP SERVER</span><h2 id="setup-title">正在连接你的 Codex</h2>
+    <p id="setup-message">工作台会在本机启动 Codex App Server，不会把项目暴露到局域网。</p><pre class="setup-detail hidden" id="setup-detail"></pre>
+    <div class="setup-actions"><button class="secondary-button hidden" id="login-button">使用 ChatGPT 登录</button><button class="primary-button" id="setup-retry">重试连接</button></div>
+    <small>如果独立 CLI 不在 PATH，可设置 <code>CODEX_EXE</code> 后重启工作台。</small>
+  </div></div>
+
+  <div class="drawer-backdrop hidden" id="drawer-backdrop"></div>
+  <aside class="code-drawer" id="code-drawer" aria-label="代码工作区">
+    <header><div><span class="eyebrow">CODE WORKSPACE</span><h2>今日代码</h2></div><button class="close-button" id="close-code-button">×</button></header>
+    <div class="drawer-body"><aside class="drawer-files"><input id="file-search" placeholder="筛选当前项目文件"><div id="file-tree"></div></aside>
+      <section class="drawer-editor"><div class="editor-bar"><strong id="current-file">请选择文件</strong><div><button id="diff-button" disabled>Git Diff</button><button class="save-button" id="save-button" disabled>保存 Ctrl+S</button></div></div>
+        <textarea id="editor" spellcheck="false" disabled></textarea><div class="editor-status"><span id="save-state">未打开文件</span><span id="file-language">TEXT</span></div><pre class="drawer-console hidden" id="drawer-console"></pre>
+      </section></div>
+  </aside>
+
+  <div class="modal-backdrop hidden" id="roadmap-modal"><section class="roadmap-modal-card"><header><div><span class="eyebrow">ROLLING PLAN</span><h2>学习路径</h2></div><button class="close-button" id="close-roadmap">×</button></header><div class="roadmap-grid" id="roadmap-grid"></div></section></div>
+  <div class="toast" id="toast" role="status"></div><script src="/static/app.js"></script>
+</body>
+</html>

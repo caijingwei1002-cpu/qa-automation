@@ -1,0 +1,167 @@
+{
+  "mode": "rolling",
+  "detailed_through_day": 75,
+  "source_preparation_reminder_days_before": 2,
+  "source_preparation_policy": "仅在即将进入下一项目且代码确实需要时提醒；先说明磁盘、依赖和端口要求，获得学习者同意后再拉取，不提前批量下载。",
+  "total_additional_sessions_estimate": [
+    102,
+    140
+  ],
+  "projects": [
+    {
+      "id": "booker-platform",
+      "name": "Restful Booker Platform",
+      "test_asset_directory": "test-projects/05-booker-platform",
+      "sessions_estimate": [
+        18,
+        24
+      ],
+      "source": "https://github.com/mwinteringham/restful-booker-platform",
+      "scenarios": [
+        "管理员创建房间→访客预订→管理端核对记录",
+        "API 准备数据→UI 验证→API 清理",
+        "日期冲突与多服务故障定位"
+      ],
+      "capabilities": [
+        "UI/API 联合测试",
+        "探索式测试",
+        "决策表与状态转换",
+        "Docker 与服务就绪",
+        "可访问性与视觉回归",
+        "CI 回归"
+      ],
+      "status": "in_progress",
+      "discovered_commit": "d36bd3f8647a091d406e53bad463c5e5d2ece1",
+      "source_checkout": "restful-booker-platform",
+      "entry_gate": "上一项目验收；本地部署勘察、版本固定、业务契约和运行命令确认后细化课程",
+      "exit_gate": "实际验证证据、代码审查、独立迁移、项目总结齐全"
+    },
+    {
+      "id": "petstore",
+      "name": "Petstore 性能入门",
+      "test_asset_directory": "test-projects/04-petstore-performance",
+      "sessions_estimate": [
+        10,
+        14
+      ],
+      "source": "https://github.com/swagger-api/swagger-petstore",
+      "scenarios": [
+        "接口契约→CRUD 回归→负载模型",
+        "阶梯负载→指标判断→性能基线"
+      ],
+      "capabilities": [
+        "OpenAPI",
+        "k6",
+        "p95/p99",
+        "压力峰值与稳定性",
+        "资源监控",
+        "性能报告"
+      ],
+      "status": "pending_discovery",
+      "entry_gate": "上一项目验收；本地部署勘察、版本固定、业务契约和运行命令确认后细化课程",
+      "exit_gate": "实际验证证据、代码审查、独立迁移、项目总结齐全"
+    },
+    {
+      "id": "medusa",
+      "name": "Medusa 电商综合项目",
+      "test_asset_directory": "test-projects/06-medusa-commerce",
+      "sessions_estimate": [
+        24,
+        32
+      ],
+      "source": "https://docs.medusajs.com/learn/installation/docker",
+      "scenarios": [
+        "商品→购物车→订单→库存核对",
+        "库存不足与并发下单",
+        "失败重试与重复副作用"
+      ],
+      "capabilities": [
+        "数据库与一致性",
+        "集成测试与测试替身",
+        "属性测试",
+        "并发与幂等",
+        "异步轮询与消息（部署确认后）",
+        "监控容量与故障恢复",
+        "移动视口与网络模拟"
+      ],
+      "status": "pending_discovery",
+      "entry_gate": "上一项目验收；本地部署勘察、版本固定、业务契约和运行命令确认后细化课程",
+      "exit_gate": "实际验证证据、代码审查、独立迁移、项目总结齐全"
+    },
+    {
+      "id": "saleor",
+      "name": "Saleor GraphQL 项目",
+      "test_asset_directory": "test-projects/07-saleor-graphql",
+      "sessions_estimate": [
+        16,
+        22
+      ],
+      "source": "https://github.com/saleor/saleor-platform",
+      "scenarios": [
+        "HTTP 200 但业务返回 errors",
+        "分页与变量组合查询",
+        "契约变化与角色权限"
+      ],
+      "capabilities": [
+        "GraphQL",
+        "契约变化",
+        "权限矩阵",
+        "Schema 与业务错误",
+        "数据工厂进阶",
+        "时间时区与本地化"
+      ],
+      "status": "pending_discovery",
+      "entry_gate": "上一项目验收；本地部署勘察、版本固定、业务契约和运行命令确认后细化课程",
+      "exit_gate": "实际验证证据、代码审查、独立迁移、项目总结齐全"
+    },
+    {
+      "id": "juice-shop",
+      "name": "Juice Shop 安全专项",
+      "test_asset_directory": "test-projects/08-juice-shop-security",
+      "sessions_estimate": [
+        14,
+        20
+      ],
+      "source": "https://github.com/juice-shop/juice-shop",
+      "scenarios": [
+        "认证授权边界→影响验证→证据报告",
+        "输入与敏感信息问题→回归设计"
+      ],
+      "capabilities": [
+        "认证与授权",
+        "输入安全",
+        "敏感数据",
+        "上传下载",
+        "漏洞复现与修复验证",
+        "仅本地隔离训练"
+      ],
+      "status": "pending_discovery",
+      "entry_gate": "上一项目验收；本地部署勘察、版本固定、业务契约和运行命令确认后细化课程",
+      "exit_gate": "实际验证证据、代码审查、独立迁移、项目总结齐全"
+    },
+    {
+      "id": "capstone",
+      "name": "综合毕业项目",
+      "test_asset_directory": null,
+      "sessions_estimate": [
+        10,
+        14
+      ],
+      "source": null,
+      "scenarios": [
+        "从需求独立交付测试策略、自动化、专项与演示"
+      ],
+      "capabilities": [
+        "变异测试",
+        "覆盖映射",
+        "CI 质量门禁",
+        "可观测性与 SLO",
+        "容量与恢复",
+        "作品集与技术答辩"
+      ],
+      "status": "pending_discovery",
+      "entry_gate": "上一项目验收；本地部署勘察、版本固定、业务契约和运行命令确认后细化课程",
+      "exit_gate": "实际验证证据、代码审查、独立迁移、项目总结齐全"
+    }
+  ]
+}
