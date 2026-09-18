@@ -1,9 +1,14 @@
 # Day {{day}} 验证证据
 
-日期：{{date}}
-阶段：{{phase}}
-项目：{{project}}
-主题：{{theme}}
+| 项目 | 内容 |
+| --- | --- |
+| 日期 | {{date}} |
+| 阶段 | {{phase}} |
+| 项目 | {{project}} |
+| 主题 | {{theme}} |
+| 课型 | {{lesson_type}} |
+| 验证层 | {{validation_mode}} |
+| 服务策略 | {{service_mode}} |
 
 ## 目标测试
 
@@ -40,3 +45,7 @@
 ## 环境问题与结论
 
 {{environment_notes}}
+
+## 结论分层
+
+{{result_classification}}

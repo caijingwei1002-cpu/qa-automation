@@ -4,7 +4,7 @@
 
 学习请求遵循 `docs/INTERACTIVE-LEARNING.md`，步骤的唯一配置是 `config/learning-workflow.json`。
 先运行 `python tools/plan_day.py check-day N` 和 `python tools/plan_day.py session N`，核对日编号和续学位置。
-按七步推进：核对复习、需求讨论、测试设计、编码、验证排错、审查迁移、复盘收尾。
+按七步推进：核对复习、需求讨论、测试设计、实践与实现、验证排错、审查迁移、复盘收尾。
 每次只推进学习者实际参与并具备证据的步骤；不能把参考答案、代写或点击导航算作完成。
 日常记录由教练使用 `plan_day.py checkpoint` 维护，不要求学习者手填 JSON。
 收到完成确认后，先落盘知识和日志，再调用完成校验；不得直接改进度绕过校验。

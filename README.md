@@ -13,7 +13,8 @@ D:\
 │   │   ├── 01-todomvc-ui
 │   │   ├── 02-saucedemo-ui
 │   │   ├── 03-restful-booker-api
-│   │   └── 04-petstore-performance
+│   │   ├── 04-petstore-performance
+│   │   └── 05-booker-platform
 │   ├── config                          # 目标登记和可提交配置
 │   ├── daily-log                       # 每日学习记录
 │   ├── artifacts                       # 精选测试证据
@@ -23,10 +24,11 @@ D:\
 └── qa-automation-targets              # 第三方被测项目，不属于当前 Git 仓库
     ├── todomvc
     ├── restful-booker
+    ├── restful-booker-platform
     └── swagger-petstore
 ```
 
-四个 `test-projects/01-` 到 `test-projects/04-` 目录是测试工程目录，不是被测项目源码目录。被测项目的来源、路径、URL 和安全边界统一登记在 [config/targets.json](config/targets.json) 和 [TARGETS-SETUP.md](TARGETS-SETUP.md) 中。
+五个 `test-projects/01-` 到 `test-projects/05-` 目录是测试工程目录，不是被测项目源码目录。被测项目的来源、路径、URL 和安全边界统一登记在 [config/targets.json](config/targets.json) 和 [TARGETS-SETUP.md](TARGETS-SETUP.md) 中。
 
 ## 已有测试资产
 
@@ -36,6 +38,7 @@ D:\
 | 2 | `test-projects/02-saucedemo-ui` | SauceDemo 在线 Demo | 业务流程、Page Object、报告与稳定性 |
 | 3 | `test-projects/03-restful-booker-api` | 本地 Restful Booker clone | API、鉴权、关联、Schema、清理 |
 | 4 | `test-projects/04-petstore-performance` | 本地 Swagger Petstore clone | OpenAPI、接口回归、k6、性能与容量 |
+| 5 | `test-projects/05-booker-platform` | 本地 Restful Booker Platform clone | 多服务身份、UI/API 边界、隔离测试与联合回归 |
 
 公共网站只做轻量功能验证；压力、峰值、稳定性和容量测试只对本地或明确授权的环境执行。
 
@@ -49,7 +52,7 @@ Copy-Item .env.example .env
 
 再按 [GIT-WORKFLOW.md](GIT-WORKFLOW.md) 连接自己的远程仓库，并按 [TARGETS-SETUP.md](TARGETS-SETUP.md) 准备本地被测项目。
 
-新版总路线见 [ROADMAP.md](ROADMAP.md)，交互规则见 [docs/INTERACTIVE-LEARNING.md](docs/INTERACTIVE-LEARNING.md)，编码规范见 [docs/TEST-CODING-STANDARD.md](docs/TEST-CODING-STANDARD.md)。计划生成源为 `config/project-lessons.json` 与 `tools/build_daily_plan.py`；后续项目登记在 `config/project-roadmap.json`，目前尚未部署。
+新版总路线见 [ROADMAP.md](ROADMAP.md)，交互规则见 [docs/INTERACTIVE-LEARNING.md](docs/INTERACTIVE-LEARNING.md)，编码规范见 [docs/TEST-CODING-STANDARD.md](docs/TEST-CODING-STANDARD.md)。计划生成源为 `config/project-lessons.json` 与 `tools/build_daily_plan.py`；Booker Platform 正在学习，其余后续项目登记在 `config/project-roadmap.json`，部署后再细化课程。
 
 查看学习计划：
 
@@ -62,7 +65,7 @@ python tools/validate_repo.py
 
 ## 开课前进度自检
 
-每日流程统一为七步：开课核对与复习 → 场景与需求讨论 → 测试设计 → 编码实践 → 验证与排错 → 审查与独立迁移 → 复盘与收尾。名称和顺序由 `config/learning-workflow.json` 管理；新验收从 Day 67 起生效，详细操作见 [交互协议](docs/INTERACTIVE-LEARNING.md)。
+每日流程统一为七步：开课核对与复习 → 场景与需求讨论 → 测试设计 → 实践与实现 → 验证与排错 → 审查与独立迁移 → 复盘与收尾。名称和顺序由 `config/learning-workflow.json` 管理；基础步骤记录从 Day 67 起生效，课型与能力证据规则从 Day 77 起生效，详细操作见 [交互协议](docs/INTERACTIVE-LEARNING.md)。
 
 教练负责保存步骤记录；学习者可以继续直接说“开始 Day N”“继续学习”“帮我修改”。协助实现如实记录，测试通过与独立掌握分别验收。
 
@@ -110,18 +113,20 @@ python tools/plan_day.py complete 1 `
   --next-step "增加完成状态场景"
 ```
 
-当前使用项目驱动的滚动计划：Day 1–55 保留，Day 56–69 已细化；后续 Booker Platform、Petstore、Medusa、Saleor、Juice Shop 和毕业项目见 `ROADMAP.md`。每课建议 120–150 分钟，可延长或拆分，包含讨论、学习者编码、验证排错、代码审查和独立迁移。`core_days` 表示已细化范围，不是整个路线长度。`daily-plan.json` 和 `DAILY-PLAN.md` 是生成结果，不应手工维护单日内容。
+当前使用项目驱动的滚动计划：Day 1–55 保留，当前细化范围由 `daily-plan.json` 和 `config/project-roadmap.json` 共同校验；后续 Booker Platform、Petstore、Medusa、Saleor、Juice Shop 和毕业项目见 `ROADMAP.md`。每课建议 120–150 分钟，可延长或拆分，包含讨论、学习者实践、验证排错、审查和独立迁移。`core_days` 表示已细化范围，不是整个路线长度。`daily-plan.json` 和 `DAILY-PLAN.md` 是生成结果，不应手工维护单日内容。
 
 ## 每日完成标准
 
 每个学习日至少留下：
 
 1. 一条能用自己的话解释的知识重点；
-2. 一个与该知识重点直接对应的可运行测试脚本或工程改动；
+2. 一个与课型和知识重点直接对应的产出；编码课必须是可运行测试脚本或工程改动；
 3. 一次真实执行结果，失败时记录根因或阻塞条件；
 4. 一份学习记录、知识验收和证据路径；
 5. 一份可脱离代码文件复习的 LEARNING-NOTES.md 知识章节；
-6. 一次有意义的本地 Git 提交。
+6. 一次有意义的本地 Git 提交，或明确记录本日未创建提交。
+
+学习过程、能力掌握、自动化执行、真实环境和产品契约分别判断。格式检查通过不能代替测试通过，分析文档不能代替独立编码，Mock 通过不能代替真实服务契约。完整改进见 [学习平台优化实施说明](docs/LEARNING-PLATFORM-OPTIMIZATION.md)，历史边界见 [历史学习证据审查](docs/HISTORICAL-EVIDENCE-AUDIT.md)；Day 77 起的新知识章节进入 [分拆知识索引](docs/knowledge/README.md)。
 
 ## 每日完结后的知识落盘流程
 

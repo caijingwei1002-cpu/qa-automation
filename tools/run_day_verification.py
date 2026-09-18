@@ -18,7 +18,7 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
-from learning_workflow import atomic_json, project_fingerprint  # noqa: E402
+from learning_workflow import atomic_json, project_fingerprint, write_text_lf  # noqa: E402
 from plan_day import (  # noqa: E402
     CURRICULUM_PATH,
     default_full_run,
@@ -27,7 +27,11 @@ from plan_day import (  # noqa: E402
     render_verification,
     verification_path,
 )
-from target_service import ServicePreflight, ensure_target_service  # noqa: E402
+from target_service import (  # noqa: E402
+    ServicePreflight,
+    ensure_target_service,
+    observe_target_service,
+)
 
 SENSITIVE_VALUE = re.compile(
     r"""(?i)(["']?(?:token|password|authorization|cookie)["']?\s*[:=]\s*["']?)([^"'\s,;}]+)"""
@@ -166,15 +170,19 @@ def target_root() -> Path:
     return root if root.is_absolute() else ROOT / root
 
 
-def prepare_service(plan: dict[str, object], enabled: bool) -> ServicePreflight:
-    """Run the opt-outable local service preflight for the plan's registered target."""
+def prepare_service(plan: dict[str, object], mode: str) -> ServicePreflight:
+    """Apply an explicit service policy; observation is the safe default."""
     matched = target_for_plan(plan)
-    if not enabled:
+    if mode == "none":
         target_name = matched[0] if matched else "none"
-        return ServicePreflight(target_name, "skipped", "命令行参数要求跳过服务预检")
+        return ServicePreflight(target_name, "not-required", "本课为隔离验证，不需要真实服务")
     if matched is None:
-        return ServicePreflight("none", "skipped", "当前计划没有匹配的目标登记")
+        return ServicePreflight("none", "identity-unknown", "当前计划没有匹配的目标登记")
     target_name, definition = matched
+    if mode == "observe":
+        return observe_target_service(target_name, definition)
+    if mode != "start":
+        raise ValueError(f"未知 service mode：{mode}")
     return ensure_target_service(
         target_name,
         definition,
@@ -186,7 +194,7 @@ def execute_day(
     day: int,
     target_command: str | None = None,
     full_command: str | None = None,
-    ensure_service: bool = True,
+    service_mode: str | None = None,
 ) -> dict:
     started = time.monotonic()
     curriculum = load_json(CURRICULUM_PATH, {})
@@ -205,7 +213,11 @@ def execute_day(
     )
 
     fingerprint = project_fingerprint(ROOT, plan["test_project"])
-    service = prepare_service(plan, ensure_service)
+    planned_service_mode = str(plan.get("service_mode", "observe"))
+    if service_mode == "start" and planned_service_mode == "none":
+        raise ValueError("本课是隔离验证，不能通过命令行启动外部服务")
+    selected_service_mode = service_mode or planned_service_mode
+    service = prepare_service(plan, selected_service_mode)
     if service.ok:
         if target_actual == full_actual:
             target_result, return_code = run_command(target_actual, target_display)
@@ -232,6 +244,7 @@ def execute_day(
         "duration_seconds": round(time.monotonic() - started, 2),
         "project_fingerprint": fingerprint,
         "service": service.evidence_line(),
+        "service_mode": selected_service_mode,
         "target": {
             "planned_command": target_command or plan["run"],
             "command": target_display,
@@ -273,7 +286,34 @@ def save_record(plan: dict, record: dict) -> None:
         f"时间 {record['finished_at']}；target={record['target']['exit_code']}，"
         f"regression={record['regression']['exit_code']}。"
     )
-    evidence.write_text(
+    exit_codes = [record[k]["exit_code"] for k in ("target", "regression")]
+    execution_status = (
+        "passed"
+        if all(code == 0 for code in exit_codes)
+        else "failed"
+        if any(code == 1 for code in exit_codes)
+        else "blocked"
+    )
+    validation_mode = str(plan.get("validation_mode", "legacy"))
+    product_status = (
+        "not_reached" if validation_mode != "integration" else "not_evaluated_by_runner"
+    )
+    classification = "\n".join(
+        [
+            f"- 自动化执行：{execution_status}",
+            f"- 验证层：{validation_mode}",
+            f"- 真实环境：{record.get('service', 'not_recorded')}",
+            f"- 产品契约：{product_status}",
+        ]
+    )
+    record["classification"] = {
+        "execution": execution_status,
+        "validation_mode": validation_mode,
+        "environment": record.get("service", "not_recorded"),
+        "product_contract": product_status,
+    }
+    write_text_lf(
+        evidence,
         render_verification(
             {**plan, "project": plan["test_project"]},
             target_command=record["target"]["command"],
@@ -282,8 +322,8 @@ def save_record(plan: dict, record: dict) -> None:
             full_result=record["regression"]["output"],
             key_checks=key_checks,
             environment_notes=environment_notes,
+            result_classification=classification,
         ),
-        encoding="utf-8",
     )
 
     atomic_json(evidence.parent / "runs" / record["run_id"] / "result.json", record)
@@ -294,9 +334,9 @@ def run_day(
     day: int,
     target_command: str | None = None,
     full_command: str | None = None,
-    ensure_service: bool = True,
+    service_mode: str | None = None,
 ) -> int:
-    record = execute_day(day, target_command, full_command, ensure_service)
+    record = execute_day(day, target_command, full_command, service_mode)
     print(f"已写入：{verification_path(day)}")
     print(f"目标测试：exit_code={record['target']['exit_code']}")
     print(f"全量回归：exit_code={record['regression']['exit_code']}")
@@ -313,6 +353,11 @@ def import_learner_result(day: int, path: Path) -> dict:
         raise ValueError("导入需提供实际执行时间 finished_at 和来源说明 provenance")
     if record.get("project_fingerprint") != project_fingerprint(ROOT, plan["test_project"]):
         raise ValueError("导入代码指纹不匹配；先确认输出对应当前代码，再记录指纹")
+    if day >= 77:
+        if record.get("service_mode") != plan.get("service_mode"):
+            raise ValueError("导入记录的 service_mode 与课程不匹配")
+        if not str(record.get("service", "")).strip():
+            raise ValueError("导入记录缺少真实环境或隔离范围说明 service")
     for kind, command in (("target", plan["run"]), ("regression", plan["full_run"])):
         run = record.get(kind, {})
         if run.get("planned_command") != command or type(run.get("exit_code")) is not int:
@@ -342,18 +387,24 @@ def main() -> int:
     parser.add_argument(
         "--skip-service",
         action="store_true",
-        help="跳过已登记本地目标的服务预检和按需启动",
+        help="兼容旧命令：等同 --service-mode none",
+    )
+    parser.add_argument(
+        "--service-mode",
+        choices=("none", "observe", "start"),
+        help="服务策略；默认读取课程配置或只读 observe，start 必须显式指定",
     )
     args = parser.parse_args()
     if args.import_result:
         import_learner_result(args.day, args.import_result)
         print("已导入学习者结果；执行结果与课程验收分开判断。")
         return 0
+    selected_service_mode = "none" if args.skip_service else args.service_mode
     return run_day(
         args.day,
         args.target_command,
         args.full_command,
-        ensure_service=not args.skip_service,
+        service_mode=selected_service_mode,
     )
 
 

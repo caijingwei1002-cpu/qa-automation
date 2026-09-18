@@ -145,6 +145,11 @@ TOOLS.extend(
                                     "transfer_response",
                                     "transfer_assistance",
                                     "confirmation",
+                                    "artifact_type",
+                                    "learner_contribution",
+                                    "coach_contribution",
+                                    "mastery_level",
+                                    "verification_scope",
                                 )
                             },
                             "evidence": {"type": "array", "items": {"type": "string"}},

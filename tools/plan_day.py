@@ -21,6 +21,7 @@ from learning_workflow import (  # noqa: E402
     completion_errors,
     load_workflow,
     session_summary,
+    write_text_lf,
 )
 
 CURRICULUM_PATH = ROOT / "curriculum.json"
@@ -40,6 +41,8 @@ def source_preparation_reminder(day: int) -> str | None:
     detailed_through = int(roadmap.get("detailed_through_day", 0))
     reminder_days = int(roadmap.get("source_preparation_reminder_days_before", 0))
     if not detailed_through or day < detailed_through - reminder_days + 1:
+        return None
+    if any(item.get("status") == "in_progress" for item in roadmap.get("projects", [])):
         return None
     pending = [
         item for item in roadmap.get("projects", []) if item.get("status") == "pending_discovery"
@@ -115,6 +118,18 @@ def enrich_daily_plan(plan: dict[str, Any]) -> dict[str, Any]:
     plan.setdefault("full_run", default_full_run(plan))
     plan.setdefault("done", "产出完成、命令执行并记录结果")
     plan.setdefault("stretch", "补充一个边界场景或改进建议")
+    plan.setdefault("lesson_type", "coding")
+    plan.setdefault("competency", plan["learn"])
+    plan.setdefault("required_artifact_type", "test")
+    plan.setdefault("validation_mode", "isolated")
+    plan.setdefault("service_mode", "none")
+    plan.setdefault("requires_executable", True)
+    plan.setdefault("requires_independent_implementation", False)
+    plan.setdefault("prohibited_conclusions", [])
+    plan.setdefault(
+        "knowledge_file",
+        f"docs/knowledge/day-{plan['day']:03d}.md" if plan["day"] >= 77 else "LEARNING-NOTES.md",
+    )
     return plan
 
 
@@ -217,6 +232,10 @@ def render_log(plan: dict[str, Any], result: str = "", next_step: str = "") -> s
         "{{learn}}": plan["learn"],
         "{{task}}": plan["task"],
         "{{evidence}}": plan["evidence"],
+        "{{lesson_type}}": plan["lesson_type"],
+        "{{competency}}": plan["competency"],
+        "{{validation_mode}}": plan["validation_mode"],
+        "{{knowledge_file}}": plan["knowledge_file"],
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
@@ -230,6 +249,8 @@ def render_log(plan: dict[str, Any], result: str = "", next_step: str = "") -> s
     timebox = plan["timebox"]
     detail = [
         f"弹性时间建议：学习讨论 {timebox['study_minutes']} 分钟 + 实践 {timebox['practice_minutes']} 分钟 + 验证 {timebox['verification_minutes']} 分钟 + 审查 {timebox.get('review_minutes', 0)} 分钟 + 复盘 {timebox['reflection_minutes']} 分钟，可延长或拆分",
+        f"课型：{plan['lesson_type']}；能力目标：{plan['competency']}",
+        f"验证层：{plan['validation_mode']}；服务策略：{plan['service_mode']}",
         f"场景讨论：{plan.get('scenario', plan['theme'])}",
         f"学习内容：{plan['study']}",
         f"动手实践：{plan['practice']}",
@@ -259,6 +280,7 @@ def render_verification(
     full_result: str = "待运行",
     key_checks: str = "- 待补充本日关键验证。",
     environment_notes: str = "- 待记录环境信息、异常根因和最终结论。",
+    result_classification: str = "- 自动化执行：未执行\n- 真实环境：未确认\n- 产品契约：未进入",
 ) -> str:
     """将日计划填入统一验证证据模板。"""
     text = VERIFICATION_TEMPLATE_PATH.read_text(encoding="utf-8")
@@ -268,12 +290,16 @@ def render_verification(
         "{{phase}}": plan["phase"],
         "{{project}}": plan["project"],
         "{{theme}}": plan["theme"],
+        "{{lesson_type}}": str(plan.get("lesson_type", "legacy")),
+        "{{validation_mode}}": str(plan.get("validation_mode", "legacy")),
+        "{{service_mode}}": str(plan.get("service_mode", "legacy")),
         "{{target_command}}": target_command or plan["run"],
         "{{target_result}}": target_result,
         "{{full_command}}": full_command or plan["full_run"],
         "{{full_result}}": full_result,
         "{{key_checks}}": key_checks,
         "{{environment_notes}}": environment_notes,
+        "{{result_classification}}": result_classification,
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
@@ -285,7 +311,7 @@ def ensure_verification(plan: dict[str, Any]) -> Path:
     path = verification_path(plan["day"])
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
-        path.write_text(render_verification(plan), encoding="utf-8")
+        write_text_lf(path, render_verification(plan))
     return path
 
 
@@ -347,6 +373,14 @@ def validate_verification(path: Path, plan: dict[str, Any]) -> list[str]:
     if not environment or not re.search(r"(?m)^\s*-\s+\S", environment):
         errors.append("verification.md is missing environment or conclusion notes")
 
+    if plan.get("lesson_type") and int(plan.get("day", 0)) >= int(
+        load_workflow(ROOT).get("evidence_rules_from_day", 10**9)
+    ):
+        classification = _section(text, "## 结论分层")
+        for label in ("自动化执行：", "验证层：", "真实环境：", "产品契约："):
+            if label not in classification:
+                errors.append(f"verification.md conclusion classification is missing: {label}")
+
     return errors
 
 
@@ -394,7 +428,7 @@ def write_daily_log(plan: dict[str, Any], result: str = "", next_step: str = "")
 
     updated = normalize_evidence_reference(updated, plan)
     if updated != existing:
-        log_path.write_text(updated, encoding="utf-8")
+        write_text_lf(log_path, updated)
     return log_path
 
 
@@ -518,10 +552,13 @@ def command_status(args: argparse.Namespace) -> None:
 
 def validate_knowledge(plan: dict[str, Any], log_path: Path) -> list[str]:
     errors = []
-    notes_path = ROOT / "LEARNING-NOTES.md"
+    knowledge_file = str(plan.get("knowledge_file", "LEARNING-NOTES.md"))
+    notes_path = ROOT / knowledge_file
     notes = notes_path.read_text(encoding="utf-8") if notes_path.is_file() else ""
-    heading = f"## Day {plan['day']}：{plan['theme']}"
-    section = _section(notes, heading)
+    heading = f"Day {plan['day']}：{plan['theme']}"
+    section = notes if knowledge_file != "LEARNING-NOTES.md" else _section(notes, f"## {heading}")
+    if knowledge_file != "LEARNING-NOTES.md" and f"# {heading}" not in notes:
+        errors.append("知识文件标题与学习日不匹配")
     for required in (
         "### 核心知识点",
         "### 它解决的问题",
@@ -532,15 +569,23 @@ def validate_knowledge(plan: dict[str, Any], log_path: Path) -> list[str]:
     ):
         if required not in section:
             errors.append(f"知识落盘缺少 {required}")
-    if f"- [Day {plan['day']}：{plan['theme']}]" not in notes:
-        errors.append("知识库目录未同步")
-    if not re.search(rf"(?<!\d)Day {plan['day']}(?!\d)", _section(notes, "## 知识主题索引")):
-        errors.append("知识主题索引未同步")
+    if knowledge_file == "LEARNING-NOTES.md":
+        if f"- [{heading}]" not in notes:
+            errors.append("知识库目录未同步")
+        if not re.search(rf"(?<!\d)Day {plan['day']}(?!\d)", _section(notes, "## 知识主题索引")):
+            errors.append("知识主题索引未同步")
+    else:
+        index = (ROOT / "docs/knowledge/README.md").read_text(encoding="utf-8")
+        if f"- [{heading}](day-{plan['day']:03d}.md)" not in index:
+            errors.append("分拆知识库索引未同步")
     log = log_path.read_text(encoding="utf-8") if log_path.is_file() else ""
-    if not re.search(r"(?m)^知识点：\S", log) or "## 知识落盘记录" not in log:
+    has_knowledge = re.search(r"(?m)^(?:知识点：\s*\S.*|\| 知识点 \|\s*\S.*\|)\s*$", log)
+    if not has_knowledge or "## 知识落盘记录" not in log:
         errors.append("日志缺少知识点或知识落盘记录")
     if f"章节：Day {plan['day']}" not in log:
         errors.append("日志未引用对应知识章节")
+    if knowledge_file not in log:
+        errors.append("日志未引用对应知识文件")
     return errors
 
 
@@ -581,6 +626,11 @@ def command_checkpoint(args: argparse.Namespace) -> None:
         "transfer_assistance",
         "review_result",
         "confirmation",
+        "artifact_type",
+        "learner_contribution",
+        "coach_contribution",
+        "mastery_level",
+        "verification_scope",
     )
     value = checkpoint(ROOT, args.day, args.stage, {key: getattr(args, key) for key in fields})
     print(json.dumps(value, ensure_ascii=False, indent=2))
@@ -612,6 +662,11 @@ def build_parser() -> argparse.ArgumentParser:
         "transfer-assistance",
         "review-result",
         "confirmation",
+        "artifact-type",
+        "learner-contribution",
+        "coach-contribution",
+        "mastery-level",
+        "verification-scope",
     ):
         step.add_argument(f"--{field}", default="")
     check_day = sub.add_parser("check-day", help="只读核验请求的学习日是否为当前进度")

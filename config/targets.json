@@ -28,6 +28,7 @@
         "command": ["npm", "start"],
         "working_directory": "restful-booker",
         "health_path": "/ping",
+        "expected_status": 201,
         "health_timeout_seconds": 1,
         "startup_timeout_seconds": 30,
         "poll_interval_seconds": 0.5

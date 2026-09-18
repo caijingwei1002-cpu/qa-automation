@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from unittest.mock import Mock
 
-from tools.target_service import ensure_target_service
+from tools.target_service import ensure_target_service, observe_target_service
 
 
 def _definition() -> dict[str, object]:
@@ -16,6 +16,7 @@ def _definition() -> dict[str, object]:
         "startup": {
             "command": ["npm", "start"],
             "health_path": "/ping",
+            "expected_status": 201,
             "startup_timeout_seconds": 5,
             "poll_interval_seconds": 0.1,
         },
@@ -36,6 +37,56 @@ def test_reuses_healthy_service_without_starting(tmp_path: Path):
 
     assert result.state == "already-running"
     assert result.ok
+    popen.assert_not_called()
+
+
+def test_observe_never_starts_a_service(tmp_path: Path):
+    probe = Mock(return_value=(False, "ConnectionRefusedError"))
+
+    result = observe_target_service(
+        "restful-booker",
+        _definition(),
+        environ={},
+        probe=probe,
+    )
+
+    assert result.state == "unreachable"
+    assert not result.ok
+    assert "未启动或修改" not in result.message
+    assert "身份与产品结论均未建立" in result.message
+
+
+def test_observe_reports_reachability_without_claiming_product_health(tmp_path: Path):
+    probe = Mock(return_value=(True, "http=201"))
+
+    result = observe_target_service(
+        "restful-booker",
+        _definition(),
+        environ={},
+        probe=probe,
+    )
+
+    assert result.state == "identity-match"
+    assert result.ok
+    assert "只读 identity signature" in result.message
+    assert "未启动或修改服务" in result.message
+
+
+def test_identity_signature_mismatch_never_starts_service(tmp_path: Path):
+    probe = Mock(return_value=(True, "http=200"))
+    popen = Mock()
+
+    result = ensure_target_service(
+        "restful-booker",
+        _definition(),
+        target_root=tmp_path,
+        environ={},
+        probe=probe,
+        popen=popen,
+    )
+
+    assert result.state == "identity-mismatch"
+    assert not result.ok
     popen.assert_not_called()
 
 

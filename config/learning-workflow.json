@@ -1,11 +1,15 @@
 {
   "version": 1,
   "required_from_day": 67,
+  "evidence_rules_from_day": 77,
+  "lesson_types": ["analysis", "coding", "debugging", "assessment"],
+  "artifact_types": ["analysis", "code", "configuration", "test", "report"],
+  "mastery_levels": ["not_assessed", "assisted", "independent"],
   "stages": [
     {"id": "preflight", "title": "开课核对与复习", "deliverable": "当前日、未解决问题、复习回答", "prompt": "请只读核对学习日和步骤记录，从未完成处继续；新课先复习相关知识。"},
     {"id": "discussion", "title": "场景与需求讨论", "deliverable": "业务场景、输入边界、预期依据", "prompt": "请给业务场景，让我澄清输入、边界和预期，再补充相关概念。"},
     {"id": "design", "title": "测试设计", "deliverable": "学习者用例、测试层、数据、断言、隔离方案", "prompt": "请让我先提出用例、测试层、数据和断言，再检查设计遗漏。"},
-    {"id": "practice", "title": "编码实践", "deliverable": "实现文件、实际修改者、提示程度", "prompt": "请根据设计让我先编码，按需要逐级提示，记录实际帮助程度。"},
+    {"id": "practice", "title": "实践与实现", "deliverable": "与课型匹配的产物、实际修改者、提示程度", "prompt": "请根据课型让我先完成分析或实现，按需要逐级提示，记录学习者和教练的实际贡献。"},
     {"id": "verification", "title": "验证与排错", "deliverable": "目标与回归结果、失败分析、正式证据", "prompt": "请让我先说明验证方法或失败假设，再协助执行、排错和回归，保存证据。"},
     {"id": "review", "title": "审查与独立迁移", "deliverable": "自审、审查修改复审、陌生迁移题与实际作答", "prompt": "请检查审查闭环，再给一个未提供答案的变化场景，等待我的实际回答或实现后验收。"},
     {"id": "reflection", "title": "复盘与收尾", "deliverable": "复盘、完成确认、知识章节、日志与下一步", "prompt": "请核对前六步证据，让我复盘；收到明确完成确认并通过校验后才能更新进度和提交。"}

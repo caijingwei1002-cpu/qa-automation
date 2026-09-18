@@ -12,6 +12,9 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSISTANCE = ("none", "question", "reasoning", "example", "demonstration", "coach")
+ARTIFACT_TYPES = ("analysis", "code", "configuration", "test", "report")
+MASTERY_LEVELS = ("not_assessed", "assisted", "independent")
+EXECUTABLE_SUFFIXES = {".py", ".js", ".ts", ".tsx", ".jsx", ".ps1"}
 
 
 def project_fingerprint(root: Path, project: str) -> str:
@@ -26,7 +29,21 @@ def project_fingerprint(root: Path, project: str) -> str:
         ):
             continue
         if path.is_file() and (
-            path.suffix in (".py", ".ini", ".json", ".toml", ".yaml", ".yml", ".js")
+            path.suffix
+            in (
+                ".py",
+                ".ini",
+                ".json",
+                ".toml",
+                ".yaml",
+                ".yml",
+                ".js",
+                ".ts",
+                ".tsx",
+                ".jsx",
+                ".ps1",
+                ".md",
+            )
             or path.name == "requirements.txt"
         ):
             digest.update(path.relative_to(base).as_posix().encode())
@@ -46,6 +63,7 @@ def atomic_json(path: Path, value: Any) -> None:
         with tempfile.NamedTemporaryFile(
             mode="w",
             encoding="utf-8",
+            newline="\n",
             dir=path.parent,
             prefix=path.name,
             suffix=".tmp",
@@ -60,6 +78,13 @@ def atomic_json(path: Path, value: Any) -> None:
     finally:
         if name and Path(name).exists():
             Path(name).unlink()
+
+
+def write_text_lf(path: Path, text: str) -> None:
+    """Write UTF-8 text with deterministic LF endings on every platform."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(text)
 
 
 def session_path(root: Path, day: int) -> Path:
@@ -95,7 +120,13 @@ def session_summary(root: Path, day: int) -> dict[str, Any]:
     }
 
 
-def record_errors(root: Path, stage: str, record: dict[str, Any]) -> list[str]:
+def record_errors(
+    root: Path,
+    stage: str,
+    record: dict[str, Any],
+    *,
+    day: int | None = None,
+) -> list[str]:
     errors = []
     if record.get("status") not in ("done", "in_progress"):
         errors.append("status 必须为 done 或 in_progress")
@@ -124,6 +155,23 @@ def record_errors(root: Path, stage: str, record: dict[str, Any]) -> list[str]:
             errors.append("迁移获得提示后需另设陌生场景，不能记为独立通过")
     if stage == "reflection" and not str(record.get("confirmation", "")).strip():
         errors.append("缺少学习者明确完成确认原话 confirmation")
+    strict_from = int(load_workflow(root).get("evidence_rules_from_day", 10**9))
+    if day is not None and day >= strict_from:
+        if stage == "practice":
+            if record.get("artifact_type") not in ARTIFACT_TYPES:
+                errors.append("实践必须记录有效 artifact_type")
+            for field in ("learner_contribution", "coach_contribution"):
+                if not str(record.get(field, "")).strip():
+                    errors.append(f"实践必须记录 {field}")
+        if stage == "verification" and not str(record.get("verification_scope", "")).strip():
+            errors.append("验证必须记录 verification_scope")
+        if stage in ("review", "reflection"):
+            if record.get("mastery_level") not in MASTERY_LEVELS:
+                errors.append(f"{stage} 必须记录有效 mastery_level")
+        if stage == "review":
+            for field in ("learner_contribution", "coach_contribution"):
+                if not str(record.get(field, "")).strip():
+                    errors.append(f"审查必须记录 {field}")
     return errors
 
 
@@ -139,7 +187,7 @@ def checkpoint(root: Path, day: int, stage: str, record: dict[str, Any]) -> dict
     for previous in order[:index]:
         if session["stages"].get(previous, {}).get("status") != "done":
             raise ValueError(f"请先完成 {previous}，不能跳步")
-    errors = record_errors(root, stage, record)
+    errors = record_errors(root, stage, record, day=day)
     if errors:
         raise ValueError("；".join(errors))
     if stage == "verification" and record["status"] == "done":
@@ -170,7 +218,7 @@ def completion_errors(root: Path, day: int, plan: dict[str, Any]) -> list[str]:
         if record.get("status") != "done":
             errors.append(f"未完成步骤：{stage['title']}")
         else:
-            errors.extend(record_errors(root, stage["id"], record))
+            errors.extend(record_errors(root, stage["id"], record, day=day))
     # Machine results and learner participation are independent evidence.
     path = root / f"artifacts/day-{day:03d}/run-record.json"
     if not path.is_file():
@@ -204,4 +252,40 @@ def completion_errors(root: Path, day: int, plan: dict[str, Any]) -> list[str]:
             errors.append(f"{kind} 缺少实际输出")
     if not result.get("finished_at"):
         errors.append("缺少执行时间")
+    strict_from = int(workflow.get("evidence_rules_from_day", 10**9))
+    if day >= strict_from:
+        lesson_type = plan.get("lesson_type")
+        if lesson_type not in workflow.get("lesson_types", []):
+            errors.append("课程缺少有效 lesson_type")
+        practice = session["stages"].get("practice", {})
+        review = session["stages"].get("review", {})
+        verification = session["stages"].get("verification", {})
+        required_artifact = plan.get("required_artifact_type")
+        if practice.get("artifact_type") != required_artifact:
+            errors.append("实践产物类型与课程要求不匹配")
+        if verification.get("verification_scope") != plan.get("validation_mode"):
+            errors.append("验证范围与课程 validation_mode 不匹配")
+        if result.get("service_mode") != plan.get("service_mode"):
+            errors.append("运行记录 service_mode 与课程不匹配")
+        if plan.get("requires_executable"):
+            if str(plan.get("run", "")).strip() == "git diff --check":
+                errors.append("可执行课程不能用 git diff --check 代替目标测试")
+            executable_evidence = [
+                root / reference
+                for reference in practice.get("evidence", [])
+                if (root / reference).suffix.lower() in EXECUTABLE_SUFFIXES
+            ]
+            if not executable_evidence:
+                errors.append("可执行课程缺少代码或测试实现证据")
+            target_output = str(result.get("target", {}).get("output", ""))
+            if "pytest" in str(plan.get("run", "")) and not any(
+                marker in target_output.lower()
+                for marker in (" passed", " failed", " error", " errors")
+            ):
+                errors.append("pytest 目标验证缺少测试收集或执行汇总")
+        if plan.get("requires_independent_implementation"):
+            if review.get("mastery_level") != "independent":
+                errors.append("本课要求独立实现，但审查未达到 independent")
+            if review.get("transfer_assistance") != "none":
+                errors.append("独立实现迁移不能带提示")
     return errors

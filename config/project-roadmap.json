@@ -1,6 +1,6 @@
 {
   "mode": "rolling",
-  "detailed_through_day": 75,
+  "detailed_through_day": 77,
   "source_preparation_reminder_days_before": 2,
   "source_preparation_policy": "仅在即将进入下一项目且代码确实需要时提醒；先说明磁盘、依赖和端口要求，获得学习者同意后再拉取，不提前批量下载。",
   "total_additional_sessions_estimate": [

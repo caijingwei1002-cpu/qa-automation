@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from build_daily_plan import DAILY_METHOD, LEGACY_METHOD, build_plan  # noqa: E402
+from build_daily_plan import DAILY_METHOD, LEGACY_METHOD, build_plan, render_markdown  # noqa: E402
 from learning_workflow import load_workflow, read_session, record_errors  # noqa: E402
 from plan_day import EVIDENCE_STANDARD_START_DAY, validate_verification  # noqa: E402
 
@@ -36,6 +36,17 @@ REQUIRED_DAILY_FIELDS = (
     "evidence",
     "learning_output_link",
     "timebox",
+)
+REQUIRED_EVIDENCE_CONTRACT_FIELDS = (
+    "lesson_type",
+    "competency",
+    "required_artifact_type",
+    "validation_mode",
+    "service_mode",
+    "requires_executable",
+    "requires_independent_implementation",
+    "prohibited_conclusions",
+    "knowledge_file",
 )
 LEGACY_DIRS = {
     "01-todomvc-ui",
@@ -76,6 +87,9 @@ def main() -> int:
         "ROADMAP.md",
         "docs/INTERACTIVE-LEARNING.md",
         "docs/TEST-CODING-STANDARD.md",
+        "docs/HISTORICAL-EVIDENCE-AUDIT.md",
+        "docs/LEARNING-PLATFORM-OPTIMIZATION.md",
+        "docs/knowledge/README.md",
         "templates/daily-log.md",
         "templates/code-review.md",
         "templates/verification.md",
@@ -116,6 +130,8 @@ def main() -> int:
 
     curriculum = load_json("curriculum.json")
     workflow = load_workflow(ROOT)
+    if daily_plan.get("evidence_rules_from_day") != workflow.get("evidence_rules_from_day"):
+        fail(errors, "daily plan evidence rule start differs from the canonical workflow")
     stage_ids = [stage["id"] for stage in workflow["stages"]]
     if len(stage_ids) != 7 or len(set(stage_ids)) != 7:
         fail(errors, "learning workflow must contain seven distinct stages")
@@ -127,9 +143,20 @@ def main() -> int:
         or daily_output.get("timebox") != EXPECTED_TIMEBOX
     ):
         fail(errors, "curriculum daily_output does not match the current interactive learning loop")
+    expected_contract = {
+        key: workflow.get(key)
+        for key in ("evidence_rules_from_day", "lesson_types", "artifact_types", "mastery_levels")
+    }
+    if curriculum.get("learning_contract") != expected_contract:
+        fail(errors, "curriculum learning contract differs from the canonical workflow")
     expected_days = build_plan()
     if days != expected_days:
         fail(errors, "daily-plan.json is out of sync with tools/build_daily_plan.py; regenerate it")
+    generated_markdown = (ROOT / "DAILY-PLAN.md").read_text(encoding="utf-8")
+    if generated_markdown != render_markdown(expected_days):
+        fail(errors, "DAILY-PLAN.md is out of sync with tools/build_daily_plan.py; regenerate it")
+    if load_json("config/project-roadmap.json").get("detailed_through_day") != len(days):
+        fail(errors, "project roadmap detailed horizon differs from generated daily plan")
     phases = curriculum.get("phases", [])
     cursor = 0
     for phase in phases:
@@ -184,6 +211,28 @@ def main() -> int:
                 f"day {item.get('day', expected_day)} missing daily fields: {', '.join(missing)}",
             )
             continue
+        strict_from = int(workflow.get("evidence_rules_from_day", 10**9))
+        if expected_day >= strict_from:
+            contract_missing = [
+                field for field in REQUIRED_EVIDENCE_CONTRACT_FIELDS if field not in item
+            ]
+            if contract_missing:
+                fail(
+                    errors,
+                    f"day {expected_day} missing evidence contract fields: {', '.join(contract_missing)}",
+                )
+            if item.get("lesson_type") not in workflow.get("lesson_types", []):
+                fail(errors, f"day {expected_day} has invalid lesson_type")
+            if item.get("required_artifact_type") not in workflow.get("artifact_types", []):
+                fail(errors, f"day {expected_day} has invalid required_artifact_type")
+            if item.get("validation_mode") not in {"repository", "isolated", "integration"}:
+                fail(errors, f"day {expected_day} has invalid validation_mode")
+            if item.get("service_mode") not in {"none", "observe", "start"}:
+                fail(errors, f"day {expected_day} has invalid service_mode")
+            if item.get("requires_executable") and item.get("run") == "git diff --check":
+                fail(errors, f"day {expected_day} executable lesson uses only git diff --check")
+            if not isinstance(item.get("prohibited_conclusions"), list):
+                fail(errors, f"day {expected_day} prohibited_conclusions must be a list")
         if item.get("day") != expected_day:
             fail(errors, f"daily plan day sequence mismatch at position {expected_day}")
         for field in REQUIRED_DAILY_FIELDS:
@@ -267,22 +316,30 @@ def main() -> int:
                 if record.get("status") != "done":
                     fail(errors, f"Day {completed_day} incomplete stage: {stage}")
                 else:
-                    for message in record_errors(ROOT, stage, record):
+                    for message in record_errors(ROOT, stage, record, day=completed_day):
                         fail(errors, f"Day {completed_day}: {message}")
         title = str(item.get("title") or item.get("theme") or "").strip()
-        expected_heading = f"## Day {completed_day}：{title}"
-        if expected_heading not in notes_text:
+        knowledge_file = str(item.get("knowledge_file", "LEARNING-NOTES.md"))
+        knowledge_path = ROOT / knowledge_file
+        knowledge_text = (
+            knowledge_path.read_text(encoding="utf-8") if knowledge_path.is_file() else ""
+        )
+        heading_text = f"Day {completed_day}：{title}"
+        expected_heading = (
+            f"## {heading_text}" if knowledge_file == "LEARNING-NOTES.md" else f"# {heading_text}"
+        )
+        if expected_heading not in knowledge_text:
             fail(
                 errors,
-                f"completed Day {completed_day} is missing from LEARNING-NOTES.md: {expected_heading}",
+                f"completed Day {completed_day} is missing from {knowledge_file}: {expected_heading}",
             )
         else:
-            section_start = notes_text.index(expected_heading)
-            next_section = notes_text.find("\n## ", section_start + len(expected_heading))
+            section_start = knowledge_text.index(expected_heading)
+            next_section = knowledge_text.find("\n## ", section_start + len(expected_heading))
             section = (
-                notes_text[section_start:]
+                knowledge_text[section_start:]
                 if next_section == -1
-                else notes_text[section_start:next_section]
+                else knowledge_text[section_start:next_section]
             )
             for required_heading in (
                 "### 核心知识点",
@@ -295,39 +352,43 @@ def main() -> int:
                 if required_heading not in section:
                     fail(
                         errors,
-                        f"LEARNING-NOTES.md Day {completed_day} is missing section: {required_heading}",
+                        f"{knowledge_file} Day {completed_day} is missing section: {required_heading}",
                     )
 
-        expected_nav = f"- [Day {completed_day}：{title}]"
-        if expected_nav not in notes_text:
-            fail(errors, f"LEARNING-NOTES.md is missing navigation entry for Day {completed_day}")
-        if not re.search(rf"(?<!\d)Day {completed_day}(?!\d)", index_text):
-            fail(
-                errors,
-                f"LEARNING-NOTES.md knowledge topic index does not reference Day {completed_day}",
-            )
+        if knowledge_file == "LEARNING-NOTES.md":
+            expected_nav = f"- [{heading_text}]"
+            if expected_nav not in notes_text:
+                fail(
+                    errors,
+                    f"LEARNING-NOTES.md is missing navigation entry for Day {completed_day}",
+                )
+            if not re.search(rf"(?<!\d)Day {completed_day}(?!\d)", index_text):
+                fail(
+                    errors,
+                    f"LEARNING-NOTES.md knowledge topic index does not reference Day {completed_day}",
+                )
+        else:
+            knowledge_index = (ROOT / "docs/knowledge/README.md").read_text(encoding="utf-8")
+            expected_nav = f"- [{heading_text}](day-{completed_day:03d}.md)"
+            if expected_nav not in knowledge_index:
+                fail(errors, f"knowledge index is missing Day {completed_day}")
 
         log_path = log_dir / f"day-{completed_day:03d}.md"
         if not log_path.is_file():
             fail(errors, f"completed Day {completed_day} is missing daily log: {log_path.name}")
             continue
         completed_log = log_path.read_text(encoding="utf-8")
-        knowledge_lines = [
-            line.strip()
-            for line in completed_log.splitlines()
-            if line.strip().startswith("知识点：")
-        ]
-        if not knowledge_lines or not knowledge_lines[0].removeprefix("知识点：").strip():
+        has_knowledge = re.search(
+            r"(?m)^(?:知识点：\s*\S.*|\| 知识点 \|\s*\S.*\|)\s*$", completed_log
+        )
+        if not has_knowledge:
             fail(errors, f"daily log {log_path.name} is missing an explicit knowledge point")
         if "## 知识落盘记录" not in completed_log:
             fail(errors, f"daily log {log_path.name} is missing the knowledge writeback section")
-        if (
-            "LEARNING-NOTES.md" not in completed_log
-            or f"章节：Day {completed_day}" not in completed_log
-        ):
+        if knowledge_file not in completed_log or f"章节：Day {completed_day}" not in completed_log:
             fail(
                 errors,
-                f"daily log {log_path.name} does not link its knowledge writeback to LEARNING-NOTES.md",
+                f"daily log {log_path.name} does not link its knowledge writeback to {knowledge_file}",
             )
 
         if completed_day >= EVIDENCE_STANDARD_START_DAY:

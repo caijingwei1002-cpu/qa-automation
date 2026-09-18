@@ -1,4 +1,4 @@
-"""Ensure a registered local target service is reachable before verification."""
+"""Observe registered targets safely and start them only after explicit opt-in."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ class ServicePreflight:
 
     @property
     def ok(self) -> bool:
-        return self.state in {"skipped", "already-running", "started"}
+        return self.state in {"not-required", "identity-match", "already-running", "started"}
 
     def evidence_line(self) -> str:
         """Return a safe, concise line suitable for verification evidence."""
@@ -67,6 +67,92 @@ def probe_health(url: str, timeout_seconds: float) -> tuple[bool, str]:
         return False, f"http={exc.code}"
     except (OSError, URLError, TimeoutError) as exc:
         return False, exc.__class__.__name__
+
+
+def _identity_result(startup: Mapping[str, object], healthy: bool, reason: str) -> str:
+    """Classify a configured HTTP signature without treating generic 2xx as identity."""
+    expected = startup.get("expected_status")
+    if not isinstance(expected, int):
+        return "unknown"
+    if reason == f"http={expected}":
+        return "match"
+    if reason.startswith("http="):
+        return "mismatch"
+    return "unreachable" if not healthy else "unknown"
+
+
+def observe_target_service(
+    target_name: str,
+    definition: Mapping[str, object],
+    *,
+    environ: Mapping[str, str] | None = None,
+    probe: Callable[[str, float], tuple[bool, str]] = probe_health,
+) -> ServicePreflight:
+    """Perform a read-only reachability check without starting or stopping anything."""
+    environment = environ if environ is not None else os.environ
+    startup = definition.get("startup")
+    if not isinstance(startup, Mapping):
+        return ServicePreflight(
+            target_name,
+            "identity-unknown",
+            "目标未配置可确认身份的只读 health 路径；未启动或修改任何服务",
+        )
+
+    url_env = str(definition.get("url_env", "")).strip()
+    base_url = environment.get(url_env) if url_env else None
+    if not base_url:
+        base_url = definition.get("default_url")
+    if not isinstance(base_url, str) or not base_url.strip():
+        return ServicePreflight(target_name, "configuration-error", "未配置目标 URL")
+
+    try:
+        parsed = urlparse(base_url.strip())
+        hostname = parsed.hostname
+    except ValueError:
+        return ServicePreflight(target_name, "configuration-error", "目标 URL 无法解析")
+    if parsed.scheme not in {"http", "https"} or hostname not in LOCAL_HOSTS:
+        return ServicePreflight(
+            target_name,
+            "external-not-probed",
+            f"目标 {_safe_endpoint(base_url)} 不是本地地址；默认不主动探测",
+        )
+
+    health_path = str(startup.get("health_path", DEFAULT_HEALTH_PATH)).strip()
+    try:
+        health_timeout = float(
+            startup.get("health_timeout_seconds", DEFAULT_HEALTH_TIMEOUT_SECONDS)
+        )
+    except (TypeError, ValueError):
+        return ServicePreflight(target_name, "configuration-error", "health timeout 必须是数字")
+    if not isfinite(health_timeout) or health_timeout <= 0:
+        return ServicePreflight(target_name, "configuration-error", "health timeout 必须为正数")
+
+    health_url = urljoin(base_url.rstrip("/") + "/", health_path.lstrip("/"))
+    healthy, reason = probe(health_url, health_timeout)
+    identity = _identity_result(startup, healthy, reason)
+    if identity == "match":
+        return ServicePreflight(
+            target_name,
+            "identity-match",
+            f"只读 identity signature={_safe_endpoint(health_url)}, {reason}；未启动或修改服务",
+        )
+    if identity == "mismatch":
+        return ServicePreflight(
+            target_name,
+            "identity-mismatch",
+            f"只读 identity signature={_safe_endpoint(health_url)}, {reason}；响应不符合登记特征",
+        )
+    if identity == "unknown" and healthy:
+        return ServicePreflight(
+            target_name,
+            "identity-unknown",
+            f"只读 health={_safe_endpoint(health_url)}, {reason}；未配置足够身份特征",
+        )
+    return ServicePreflight(
+        target_name,
+        "unreachable",
+        f"只读 health={_safe_endpoint(health_url)}, {reason}；身份与产品结论均未建立",
+    )
 
 
 def _command_from_config(raw_command: object) -> list[str] | None:
@@ -135,11 +221,18 @@ def ensure_target_service(
         return ServicePreflight(target_name, "failed", "服务启动参数必须为正数")
 
     healthy, reason = probe(health_url, health_timeout)
-    if healthy:
+    identity = _identity_result(startup, healthy, reason)
+    if identity == "match":
         return ServicePreflight(
             target_name,
             "already-running",
             f"health={_safe_endpoint(health_url)}, {reason}",
+        )
+    if identity in {"mismatch", "unknown"}:
+        return ServicePreflight(
+            target_name,
+            f"identity-{identity}",
+            f"现有监听未通过登记身份特征：health={_safe_endpoint(health_url)}, {reason}；未启动或替换服务",
         )
 
     command = _command_from_config(startup.get("command"))
@@ -179,13 +272,20 @@ def ensure_target_service(
     last_reason = reason
     while True:
         healthy, last_reason = probe(health_url, health_timeout)
-        if healthy:
+        identity = _identity_result(startup, healthy, last_reason)
+        if identity == "match":
             pid = getattr(process, "pid", None)
             return ServicePreflight(
                 target_name,
                 "started",
                 f"health={_safe_endpoint(health_url)}, {last_reason}",
                 pid=pid if isinstance(pid, int) else None,
+            )
+        if identity in {"mismatch", "unknown"}:
+            return ServicePreflight(
+                target_name,
+                f"identity-{identity}",
+                f"启动后的监听未通过登记身份特征：health={_safe_endpoint(health_url)}, {last_reason}",
             )
 
         return_code = process.poll()

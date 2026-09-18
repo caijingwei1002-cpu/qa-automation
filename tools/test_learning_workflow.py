@@ -66,7 +66,7 @@ def lab(tmp_path, monkeypatch):
     monkeypatch.setattr(
         runner,
         "prepare_service",
-        lambda *_: runner.ServicePreflight("demo", "skipped", "unit fixture"),
+        lambda *_: runner.ServicePreflight("demo", "not-required", "unit fixture"),
     )
     monkeypatch.setattr(runner, "run_command", Mock(return_value=("1 passed", 0)))
     return tmp_path, plan
@@ -138,6 +138,114 @@ def test_assisted_transfer_and_missing_confirmation_rejected(lab):
     assert workflow.record_errors(
         root, "reflection", {**step_record("reflection"), "confirmation": ""}
     )
+
+
+def test_new_evidence_rules_reject_document_only_coding_claim(lab):
+    root, _ = lab
+    record = {
+        "status": "done",
+        "note": "只整理了说明文档",
+        "assistance": "coach",
+        "evidence": ["test-projects/demo/tests/test_demo.py"],
+    }
+
+    errors = workflow.record_errors(root, "practice", record, day=77)
+
+    assert any("artifact_type" in error for error in errors)
+    assert any("learner_contribution" in error for error in errors)
+    assert any("coach_contribution" in error for error in errors)
+
+
+def test_strict_coding_completion_rejects_git_diff_as_target(lab):
+    root, plan = lab
+    workflow_config = json.loads(
+        (root / "config/learning-workflow.json").read_text(encoding="utf-8")
+    )
+    workflow_config["evidence_rules_from_day"] = 67
+    workflow.atomic_json(root / "config/learning-workflow.json", workflow_config)
+    plan.update(
+        lesson_type="coding",
+        competency="实现参数化测试",
+        required_artifact_type="test",
+        validation_mode="isolated",
+        service_mode="none",
+        requires_executable=True,
+        requires_independent_implementation=True,
+        prohibited_conclusions=[],
+        run="git diff --check",
+        full_run="git diff --check",
+    )
+    runner.execute_day(67)
+    for stage in workflow.load_workflow(root)["stages"]:
+        record = step_record(stage["id"])
+        if stage["id"] == "practice":
+            record.update(
+                artifact_type="test",
+                learner_contribution="独立实现测试",
+                coach_contribution="none",
+            )
+        if stage["id"] == "verification":
+            record["verification_scope"] = "isolated"
+        if stage["id"] in ("review", "reflection"):
+            record["mastery_level"] = "independent"
+        if stage["id"] == "review":
+            record.update(
+                learner_contribution="独立修改",
+                coach_contribution="审查",
+            )
+        workflow.checkpoint(root, 67, stage["id"], record)
+
+    errors = workflow.completion_errors(root, 67, plan)
+
+    assert any("git diff --check" in error for error in errors)
+
+
+def test_isolated_lesson_rejects_explicit_service_start(lab):
+    _, plan = lab
+    plan["service_mode"] = "none"
+
+    with pytest.raises(ValueError, match="隔离验证"):
+        runner.execute_day(67, service_mode="start")
+
+
+def test_strict_coding_completion_accepts_matching_executable_evidence(lab):
+    root, plan = lab
+    workflow_config = json.loads(
+        (root / "config/learning-workflow.json").read_text(encoding="utf-8")
+    )
+    workflow_config["evidence_rules_from_day"] = 67
+    workflow.atomic_json(root / "config/learning-workflow.json", workflow_config)
+    plan.update(
+        lesson_type="coding",
+        competency="实现可运行测试",
+        required_artifact_type="test",
+        validation_mode="isolated",
+        service_mode="none",
+        requires_executable=True,
+        requires_independent_implementation=True,
+        prohibited_conclusions=[],
+    )
+    runner.execute_day(67)
+    for stage in workflow.load_workflow(root)["stages"]:
+        record = step_record(stage["id"])
+        if stage["id"] == "practice":
+            record.update(
+                artifact_type="test",
+                learner_contribution="独立实现 test_demo.py",
+                coach_contribution="只做审查",
+            )
+        if stage["id"] == "verification":
+            record["verification_scope"] = "isolated"
+        if stage["id"] in ("review", "reflection"):
+            record["mastery_level"] = "independent"
+        if stage["id"] == "review":
+            record.update(
+                learner_contribution="独立完成变化场景",
+                coach_contribution="提出迁移题",
+            )
+        workflow.checkpoint(root, 67, stage["id"], record)
+
+    assert workflow.completion_errors(root, 67, plan) == []
 
 
 def test_missing_or_outside_evidence_rejected(lab):

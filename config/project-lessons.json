@@ -201,6 +201,28 @@
           "run": "git diff --check",
           "done": "记录当前 3001 占用者与服务身份、恢复前置、授权状态、允许/禁止动作和下一步选择；无授权时不误报默认 Platform Room 通过且不执行状态变更，有授权时也只能按 runbook 逐项核验",
           "scenario": "如果默认 3001 仍是身份不符的外部服务，但 BFF Mock 测试全部通过，今天能否进入真实 Room 缺陷回归？需要哪些最小证据才能改变结论？"
+        },
+        {
+          "title": "服务身份判定器与参数化单元测试",
+          "learn": "把 absent、unknown、mismatch、match 的证据规则实现为可测试的纯函数",
+          "competency": "独立把证据分类规则落实为参数化单元测试，并解释每个分支为什么不能越级形成产品结论",
+          "deliverable": "学习者独立实现服务身份判定器及参数化测试，覆盖无监听、证据不足、身份不符和身份匹配",
+          "file": "test-projects/05-booker-platform/tests/test_service_identity.py",
+          "run": "pytest test-projects/05-booker-platform/tests/test_service_identity.py -q",
+          "full_run": "pytest test-projects/05-booker-platform/tests -q",
+          "done": "测试被正常收集且四类身份分支通过；学习者完成一次无提示的新增证据组合迁移，并明确单元测试不能证明真实 Room 已运行",
+          "scenario": "只给监听状态和若干身份字段时，如何避免把 reachable 或 HTTP 200 错判为目标服务？",
+          "lesson_type": "coding",
+          "required_artifact_type": "test",
+          "validation_mode": "isolated",
+          "service_mode": "none",
+          "requires_executable": true,
+          "requires_independent_implementation": true,
+          "prohibited_conclusions": [
+            "参数化单元测试通过不等于真实 Room 服务身份成立",
+            "HTTP 可达或 200 不得单独判定为 match",
+            "本课不得启动、停止或替换任何外部服务"
+          ]
         }
       ]
     }
