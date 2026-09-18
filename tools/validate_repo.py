@@ -10,17 +10,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from build_daily_plan import DAILY_METHOD, LEGACY_METHOD, build_plan, render_markdown  # noqa: E402
+from build_daily_plan import (  # noqa: E402
+    DAILY_METHOD,
+    LEGACY_METHOD,
+    build_plan,
+    course_day_estimate,
+    render_markdown,
+    render_project_index,
+)
 from learning_workflow import load_workflow, read_session, record_errors  # noqa: E402
 from plan_day import EVIDENCE_STANDARD_START_DAY, validate_verification  # noqa: E402
 
-EXPECTED_ASSETS = {
-    "test-projects/01-todomvc-ui",
-    "test-projects/02-saucedemo-ui",
-    "test-projects/03-restful-booker-api",
-    "test-projects/04-petstore-performance",
-    "test-projects/05-booker-platform",
-}
 EXPECTED_TIMEBOX = DAILY_METHOD
 REQUIRED_DAILY_FIELDS = (
     "title",
@@ -68,6 +68,85 @@ def fail(errors: list[str], message: str) -> None:
     errors.append(message)
 
 
+def project_structure_errors(root: Path, targets: dict, days: list, roadmap: dict) -> list[str]:
+    """Only materialize projects used by the detailed curriculum; keep future work in the roadmap."""
+    errors = []
+    projects = roadmap.get("projects", [])
+    expected_sequences = list(range(1, len(projects) + 1))
+    actual_sequences = [item.get("sequence") for item in projects]
+    if actual_sequences != expected_sequences:
+        errors.append(
+            f"project roadmap sequence must be continuous: expected {expected_sequences}, "
+            f"got {actual_sequences}"
+        )
+    project_ids = [item.get("id") for item in projects]
+    if len(project_ids) != len(set(project_ids)):
+        errors.append("project roadmap ids must be unique")
+    valid_estimates = True
+    for project in projects:
+        estimate = project.get("sessions_estimate")
+        if (
+            not isinstance(estimate, list)
+            or len(estimate) != 2
+            or not all(isinstance(value, int) and value > 0 for value in estimate)
+            or estimate[0] > estimate[1]
+        ):
+            valid_estimates = False
+            errors.append(f"project has invalid sessions_estimate: {project.get('id')}")
+    if projects and valid_estimates:
+        estimated_start, estimated_end = course_day_estimate(roadmap)
+        if estimated_start < len(days) or estimated_start > estimated_end:
+            errors.append("project estimates do not cover the detailed course range")
+
+    for project in projects:
+        relative = project.get("test_asset_directory")
+        sequence = project.get("sequence")
+        if relative and isinstance(sequence, int):
+            expected_prefix = f"{sequence:02d}-"
+            if not Path(relative).name.startswith(expected_prefix):
+                errors.append(f"project directory must match sequence {sequence:02d}: {relative}")
+
+    asset_paths = [item["test_asset_directory"] for item in targets.get("targets", {}).values()]
+    registered = set(asset_paths)
+    if len(asset_paths) != len(registered):
+        errors.append("multiple targets use the same test asset directory")
+    planned = {item[key] for item in days for key in ("project", "test_project") if item.get(key)}
+    for relative in sorted(planned - registered):
+        errors.append(f"detailed project has no registered target: {relative}")
+    for relative in sorted(registered - planned):
+        errors.append(
+            f"registered target has no detailed lessons; keep it in the roadmap: {relative}"
+        )
+    for relative in sorted(registered):
+        asset = Path(relative)
+        if asset.is_absolute() or len(asset.parts) != 2 or asset.parts[0] != "test-projects":
+            errors.append(f"invalid test asset directory: {relative}")
+            continue
+        if not (root / asset).is_dir():
+            errors.append(f"missing test asset directory: {relative}")
+        if not (root / asset / "README.md").is_file():
+            errors.append(f"missing test asset README: {relative}/README.md")
+    asset_root = root / "test-projects"
+    if asset_root.is_dir():
+        actual = {
+            path.relative_to(root).as_posix()
+            for path in asset_root.iterdir()
+            if path.is_dir() and not path.name.startswith((".", "__"))
+        }
+        for relative in sorted(actual - registered):
+            errors.append(f"unregistered test asset directory: {relative}")
+    for project in projects:
+        relative = project.get("test_asset_directory")
+        if not relative:
+            continue
+        if project.get("status") == "pending_discovery":
+            if relative in registered or relative in planned or (root / relative).exists():
+                errors.append(f"pending project must remain roadmap-only: {relative}")
+        elif relative not in registered:
+            errors.append(f"started roadmap project has no registered target: {relative}")
+    return errors
+
+
 def main() -> int:
     """检查仓库结构、生成计划、学习记录和 Git 边界是否保持一致。"""
     errors: list[str] = []
@@ -102,12 +181,6 @@ def main() -> int:
         if not (ROOT / relative).is_file():
             fail(errors, f"missing required file: {relative}")
 
-    for relative in EXPECTED_ASSETS:
-        if not (ROOT / relative).is_dir():
-            fail(errors, f"missing test asset directory: {relative}")
-        if not (ROOT / relative / "README.md").is_file():
-            fail(errors, f"missing test asset README: {relative}/README.md")
-
     for relative in LEGACY_DIRS:
         if (ROOT / relative).exists():
             fail(errors, f"legacy top-level project directory still exists: {relative}")
@@ -116,11 +189,10 @@ def main() -> int:
     registered_assets = {
         item["test_asset_directory"] for item in targets.get("targets", {}).values()
     }
-    if registered_assets != EXPECTED_ASSETS:
-        fail(errors, f"target registry does not match test assets: {sorted(registered_assets)}")
-
     daily_plan = load_json("daily-plan.json")
     days = daily_plan.get("days", [])
+    roadmap = load_json("config/project-roadmap.json")
+    errors.extend(project_structure_errors(ROOT, targets, days, roadmap))
     if daily_plan.get("core_days") != len(days):
         fail(errors, "detailed day count is inconsistent")
     if daily_plan.get("session_minutes") != sum(DAILY_METHOD.values()):
@@ -155,6 +227,9 @@ def main() -> int:
     generated_markdown = (ROOT / "DAILY-PLAN.md").read_text(encoding="utf-8")
     if generated_markdown != render_markdown(expected_days):
         fail(errors, "DAILY-PLAN.md is out of sync with tools/build_daily_plan.py; regenerate it")
+    generated_project_index = (ROOT / "test-projects/README.md").read_text(encoding="utf-8")
+    if generated_project_index != render_project_index(expected_days, roadmap):
+        fail(errors, "test-projects/README.md is out of sync; regenerate the project index")
     if load_json("config/project-roadmap.json").get("detailed_through_day") != len(days):
         fail(errors, "project roadmap detailed horizon differs from generated daily plan")
     phases = curriculum.get("phases", [])
@@ -298,6 +373,13 @@ def main() -> int:
     if not isinstance(completed_days, list):
         fail(errors, "progress.json completed_days must be a list")
         completed_days = []
+    current_day = progress.get("current_day")
+    expected_completed = list(range(1, current_day)) if isinstance(current_day, int) else []
+    if completed_days != expected_completed:
+        fail(
+            errors,
+            f"learning day sequence has gaps: expected {expected_completed}, got {completed_days}",
+        )
 
     notes_path = ROOT / "LEARNING-NOTES.md"
     notes_text = notes_path.read_text(encoding="utf-8") if notes_path.is_file() else ""
@@ -374,6 +456,9 @@ def main() -> int:
                 fail(errors, f"knowledge index is missing Day {completed_day}")
 
         log_path = log_dir / f"day-{completed_day:03d}.md"
+        artifact_path = ROOT / f"artifacts/day-{completed_day:03d}"
+        if not artifact_path.is_dir():
+            fail(errors, f"completed Day {completed_day} is missing artifact directory")
         if not log_path.is_file():
             fail(errors, f"completed Day {completed_day} is missing daily log: {log_path.name}")
             continue

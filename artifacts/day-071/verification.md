@@ -2,7 +2,7 @@
 
 日期：2026-09-17
 阶段：Restful Booker Platform
-项目：test-projects/05-booker-platform
+项目：test-projects/04-booker-platform
 主题：默认端口基线与服务身份
 
 ## 目标测试

@@ -13,7 +13,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from build_daily_plan import DAILY_METHOD  # noqa: E402
+from build_daily_plan import DAILY_METHOD, course_day_estimate  # noqa: E402
 from learning_workflow import (  # noqa: E402
     ASSISTANCE,
     atomic_json,
@@ -541,6 +541,24 @@ def command_status(args: argparse.Namespace) -> None:
     core_done = min(completed, core)
     print(f"当前学习日：Day {progress['current_day']}")
     print(f"已完成：{completed} 天（已细化范围 {core_done}/{core}，非全部项目总进度）")
+    roadmap = load_json(PROJECT_ROADMAP_PATH, {})
+    projects = roadmap.get("projects", [])
+    completed_projects = [item for item in projects if item.get("status") == "completed"]
+    active_projects = [item for item in projects if item.get("status") == "in_progress"]
+    pending_projects = [item for item in projects if item.get("status") == "pending_discovery"]
+    estimated_start, estimated_end = course_day_estimate(roadmap)
+    remaining_start = max(0, estimated_start - completed)
+    remaining_end = max(0, estimated_end - completed)
+    print(
+        f"项目进度：{len(completed_projects)}/{len(projects)} 已完成，"
+        f"{len(active_projects)} 个学习中，{len(pending_projects)} 个待开始"
+    )
+    if active_projects:
+        active = active_projects[0]
+        print(f"当前项目：{active['sequence']:02d} {active['name']}")
+    print(f"课程预计终点：Day {estimated_start}–{estimated_end}")
+    print(f"预计剩余：{remaining_start}–{remaining_end} 课（含当前未完成日）")
+    print(f"已细化计划：截至 Day {core}")
     if completed:
         print(f"最近完成：Day {progress['completed_days'][-1]}")
     next_plan = plan_for_day(curriculum, progress["current_day"])

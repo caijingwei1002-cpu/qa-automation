@@ -13,8 +13,7 @@ D:\
 │   │   ├── 01-todomvc-ui
 │   │   ├── 02-saucedemo-ui
 │   │   ├── 03-restful-booker-api
-│   │   ├── 04-petstore-performance
-│   │   └── 05-booker-platform
+│   │   └── 04-booker-platform
 │   ├── config                          # 目标登记和可提交配置
 │   ├── daily-log                       # 每日学习记录
 │   ├── artifacts                       # 精选测试证据
@@ -24,21 +23,14 @@ D:\
 └── qa-automation-targets              # 第三方被测项目，不属于当前 Git 仓库
     ├── todomvc
     ├── restful-booker
-    ├── restful-booker-platform
-    └── swagger-petstore
+    └── restful-booker-platform
 ```
 
-五个 `test-projects/01-` 到 `test-projects/05-` 目录是测试工程目录，不是被测项目源码目录。被测项目的来源、路径、URL 和安全边界统一登记在 [config/targets.json](config/targets.json) 和 [TARGETS-SETUP.md](TARGETS-SETUP.md) 中。
+`test-projects/` 只保留已进入实际课程的项目，并按学习顺序连续编号。完整顺序、状态、目录和学习日范围见自动生成的[测试项目索引](test-projects/README.md)。Petstore 等待勘察项目仅保留在路线图中。被测项目的来源、路径、URL 和安全边界统一登记在 [config/targets.json](config/targets.json) 和 [TARGETS-SETUP.md](TARGETS-SETUP.md) 中。
 
-## 已有测试资产
+## 项目入口
 
-| 阶段 | 测试资产目录 | 被测目标 | 能力目标 |
-| --- | --- | --- | --- |
-| 1 | `test-projects/01-todomvc-ui` | 本地 TodoMVC clone | UI 定位、交互、断言、数据驱动 |
-| 2 | `test-projects/02-saucedemo-ui` | SauceDemo 在线 Demo | 业务流程、Page Object、报告与稳定性 |
-| 3 | `test-projects/03-restful-booker-api` | 本地 Restful Booker clone | API、鉴权、关联、Schema、清理 |
-| 4 | `test-projects/04-petstore-performance` | 本地 Swagger Petstore clone | OpenAPI、接口回归、k6、性能与容量 |
-| 5 | `test-projects/05-booker-platform` | 本地 Restful Booker Platform clone | 多服务身份、UI/API 边界、隔离测试与联合回归 |
+当前项目是 `04-booker-platform`，Petstore 将作为 `05-petstore-performance` 在完成部署勘察后创建。项目编号以 [config/project-roadmap.json](config/project-roadmap.json) 为唯一配置，由计划生成器同步到[项目索引](test-projects/README.md)。
 
 公共网站只做轻量功能验证；压力、峰值、稳定性和容量测试只对本地或明确授权的环境执行。
 
@@ -113,7 +105,7 @@ python tools/plan_day.py complete 1 `
   --next-step "增加完成状态场景"
 ```
 
-当前使用项目驱动的滚动计划：Day 1–55 保留，当前细化范围由 `daily-plan.json` 和 `config/project-roadmap.json` 共同校验；后续 Booker Platform、Petstore、Medusa、Saleor、Juice Shop 和毕业项目见 `ROADMAP.md`。每课建议 120–150 分钟，可延长或拆分，包含讨论、学习者实践、验证排错、审查和独立迁移。`core_days` 表示已细化范围，不是整个路线长度。`daily-plan.json` 和 `DAILY-PLAN.md` 是生成结果，不应手工维护单日内容。
+当前使用项目驱动的滚动计划：Day 1–55 保留，当前细化范围由 `daily-plan.json` 和 `config/project-roadmap.json` 共同校验；当前 Booker Platform 与后续 Petstore、Medusa、Saleor、Juice Shop 和毕业项目见 `ROADMAP.md`。每课建议 120–150 分钟，可延长或拆分，包含讨论、学习者实践、验证排错、审查和独立迁移。`core_days` 表示已细化范围，不是整个路线长度。`daily-plan.json`、`DAILY-PLAN.md` 和 `test-projects/README.md` 是生成结果，不应手工维护其中的索引内容。
 
 ## 每日完成标准
 
@@ -153,7 +145,7 @@ qa-automation-learning/
 │   ├── 01-todomvc-ui/
 │   ├── 02-saucedemo-ui/
 │   ├── 03-restful-booker-api/
-│   └── 04-petstore-performance/
+│   └── 04-booker-platform/
 ├── daily-log/
 ├── artifacts/
 ├── LEARNING-NOTES.md

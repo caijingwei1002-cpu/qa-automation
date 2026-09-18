@@ -2,7 +2,7 @@
 
 日期：2026-09-18
 阶段：Restful Booker Platform
-项目：test-projects/05-booker-platform
+项目：test-projects/04-booker-platform
 主题：服务身份闸门与只读基线决策
 
 ## 目标测试

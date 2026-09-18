@@ -34,21 +34,12 @@
         "poll_interval_seconds": 0.5
       }
     },
-    "swagger-petstore": {
-      "kind": "git",
-      "repository": "https://github.com/swagger-api/swagger-petstore.git",
-      "local_directory": "swagger-petstore",
-      "url_env": "PETSTORE_URL",
-      "default_url": "http://127.0.0.1:8080",
-      "test_asset_directory": "test-projects/04-petstore-performance",
-      "startup_reference": "Read the cloned project's current README before starting the local service."
-    },
     "booker-platform": {
       "kind": "git",
       "repository": "https://github.com/mwinteringham/restful-booker-platform.git",
       "local_directory": "restful-booker-platform",
       "default_url": "http://127.0.0.1:3004",
-      "test_asset_directory": "test-projects/05-booker-platform",
+      "test_asset_directory": "test-projects/04-booker-platform",
       "startup_reference": "Read the pinned source README and module configuration before starting the selected services."
     }
   }

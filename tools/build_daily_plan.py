@@ -16,6 +16,11 @@ DAILY_METHOD = dict(
     review_minutes=25,
     reflection_minutes=15,
 )
+PROJECT_STATUS_LABELS = {
+    "completed": "已完成",
+    "in_progress": "学习中",
+    "pending_discovery": "待勘察",
+}
 
 
 def read(path):
@@ -49,6 +54,72 @@ def lesson_contract(task):
         ),
         "prohibited_conclusions": task.get("prohibited_conclusions", []),
     }
+
+
+def format_day_ranges(days):
+    """Render sorted day numbers as compact, continuous ranges."""
+    if not days:
+        return "待细化"
+    ranges = []
+    start = previous = days[0]
+    for day in days[1:]:
+        if day == previous + 1:
+            previous = day
+            continue
+        ranges.append((start, previous))
+        start = previous = day
+    ranges.append((start, previous))
+    return "、".join(
+        f"Day {start}" if start == end else f"Day {start}–{end}" for start, end in ranges
+    )
+
+
+def course_day_estimate(roadmap):
+    """Derive the full course range from project estimates without duplicated totals."""
+    estimates = [project["sessions_estimate"] for project in roadmap.get("projects", [])]
+    return [sum(item[0] for item in estimates), sum(item[1] for item in estimates)]
+
+
+def render_project_index(plan, roadmap):
+    """Generate the single user-facing project index from the roadmap."""
+    estimated_start, estimated_end = course_day_estimate(roadmap)
+    lines = [
+        "# 测试项目索引",
+        "",
+        "本索引由 `config/project-roadmap.json` 生成。项目编号表示学习顺序；",
+        "只有已完成勘察并进入课程的项目才会在本目录创建测试资产。",
+        "第三方被测项目源码统一放在仓库外的 `D:\\qa-automation-targets`。",
+        f"当前课程已细化到 Day {len(plan)}；完整路线预计在 Day {estimated_start}–{estimated_end} 结束。",
+        "",
+        "| 序号 | 状态 | 项目 | 测试资产目录 | 学习日 |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for project in sorted(roadmap.get("projects", []), key=lambda item: item["sequence"]):
+        path = project["test_asset_directory"]
+        days = sorted(
+            {
+                item["day"]
+                for item in plan
+                if path in {item.get("project"), item.get("test_project")}
+            }
+        )
+        lines.append(
+            f"| {project['sequence']:02d} | "
+            f"{PROJECT_STATUS_LABELS.get(project['status'], project['status'])} | "
+            f"{project['name']} | `{path}` | {format_day_ranges(days)} |"
+        )
+    lines.extend(
+        [
+            "",
+            "新增项目时先完成版本、依赖、端口、契约和运行方式勘察，再更新路线图、",
+            "运行目标登记和课程源配置，最后运行 `python tools/build_daily_plan.py`。",
+            "待勘察项目不提前创建空目录、运行配置或学习日志。",
+            "",
+            "测试代码通过环境配置访问目标，不依赖第三方源码的内部绝对路径。",
+            "",
+        ]
+    )
+    return "\n".join(lines)
 
 
 def build_plan():
@@ -130,6 +201,7 @@ def render_markdown(plan):
 
 def write_outputs(plan):
     workflow = load_workflow(ROOT)
+    roadmap = read("config/project-roadmap.json")
     save(
         "daily-plan.json",
         dict(
@@ -188,6 +260,8 @@ def write_outputs(plan):
     )
     with (ROOT / "DAILY-PLAN.md").open("w", encoding="utf-8", newline="\n") as stream:
         stream.write(render_markdown(plan))
+    with (ROOT / "test-projects" / "README.md").open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(render_project_index(plan, roadmap))
 
 
 if __name__ == "__main__":

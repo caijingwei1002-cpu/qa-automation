@@ -3,15 +3,84 @@
   "detailed_through_day": 77,
   "source_preparation_reminder_days_before": 2,
   "source_preparation_policy": "仅在即将进入下一项目且代码确实需要时提醒；先说明磁盘、依赖和端口要求，获得学习者同意后再拉取，不提前批量下载。",
-  "total_additional_sessions_estimate": [
-    102,
-    140
-  ],
   "projects": [
     {
+      "sequence": 1,
+      "id": "todomvc",
+      "name": "TodoMVC UI 基础",
+      "test_asset_directory": "test-projects/01-todomvc-ui",
+      "sessions_estimate": [
+        14,
+        14
+      ],
+      "source": "https://github.com/tastejs/todomvc",
+      "scenarios": [
+        "Todo 创建、完成、删除和筛选",
+        "UI 定位、等待、证据和回归"
+      ],
+      "capabilities": [
+        "pytest",
+        "Playwright",
+        "UI 断言",
+        "参数化与 Fixture"
+      ],
+      "status": "completed",
+      "entry_gate": "学习环境可运行",
+      "exit_gate": "基础 UI 自动化与阶段验收完成"
+    },
+    {
+      "sequence": 2,
+      "id": "saucedemo",
+      "name": "SauceDemo UI 业务流程",
+      "test_asset_directory": "test-projects/02-saucedemo-ui",
+      "sessions_estimate": [
+        21,
+        21
+      ],
+      "source": "https://www.saucedemo.com/",
+      "scenarios": [
+        "登录、商品、购物车与结算",
+        "Page Object、报告和跨页面回归"
+      ],
+      "capabilities": [
+        "业务流程测试",
+        "Page Object",
+        "多浏览器",
+        "失败诊断"
+      ],
+      "status": "completed",
+      "entry_gate": "TodoMVC 阶段完成",
+      "exit_gate": "完整 UI 业务流和框架验收完成"
+    },
+    {
+      "sequence": 3,
+      "id": "restful-booker",
+      "name": "Restful Booker API",
+      "test_asset_directory": "test-projects/03-restful-booker-api",
+      "sessions_estimate": [
+        34,
+        34
+      ],
+      "source": "https://github.com/mwinteringham/restful-booker",
+      "scenarios": [
+        "Booking CRUD、鉴权与业务规则",
+        "数据隔离、Mock、重试和并行回归"
+      ],
+      "capabilities": [
+        "API 自动化",
+        "Schema 与业务断言",
+        "测试架构",
+        "可靠清理与诊断"
+      ],
+      "status": "completed",
+      "entry_gate": "UI 自动化阶段完成",
+      "exit_gate": "API 回归、独立迁移和阶段验收完成"
+    },
+    {
+      "sequence": 4,
       "id": "booker-platform",
       "name": "Restful Booker Platform",
-      "test_asset_directory": "test-projects/05-booker-platform",
+      "test_asset_directory": "test-projects/04-booker-platform",
       "sessions_estimate": [
         18,
         24
@@ -37,9 +106,10 @@
       "exit_gate": "实际验证证据、代码审查、独立迁移、项目总结齐全"
     },
     {
+      "sequence": 5,
       "id": "petstore",
       "name": "Petstore 性能入门",
-      "test_asset_directory": "test-projects/04-petstore-performance",
+      "test_asset_directory": "test-projects/05-petstore-performance",
       "sessions_estimate": [
         10,
         14
@@ -62,6 +132,7 @@
       "exit_gate": "实际验证证据、代码审查、独立迁移、项目总结齐全"
     },
     {
+      "sequence": 6,
       "id": "medusa",
       "name": "Medusa 电商综合项目",
       "test_asset_directory": "test-projects/06-medusa-commerce",
@@ -89,6 +160,7 @@
       "exit_gate": "实际验证证据、代码审查、独立迁移、项目总结齐全"
     },
     {
+      "sequence": 7,
       "id": "saleor",
       "name": "Saleor GraphQL 项目",
       "test_asset_directory": "test-projects/07-saleor-graphql",
@@ -115,6 +187,7 @@
       "exit_gate": "实际验证证据、代码审查、独立迁移、项目总结齐全"
     },
     {
+      "sequence": 8,
       "id": "juice-shop",
       "name": "Juice Shop 安全专项",
       "test_asset_directory": "test-projects/08-juice-shop-security",
@@ -140,9 +213,10 @@
       "exit_gate": "实际验证证据、代码审查、独立迁移、项目总结齐全"
     },
     {
+      "sequence": 9,
       "id": "capstone",
       "name": "综合毕业项目",
-      "test_asset_directory": null,
+      "test_asset_directory": "test-projects/09-capstone",
       "sessions_estimate": [
         10,
         14

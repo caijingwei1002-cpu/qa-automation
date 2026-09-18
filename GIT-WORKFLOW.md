@@ -26,6 +26,8 @@ git push -u origin main
 
 ## 2. 准备被测项目
 
+按当前课程需要选择项目，先核对资源并获得学习者同意，再执行对应 clone；不批量下载未来项目。
+
 ```powershell
 New-Item -ItemType Directory -Force D:\qa-automation-targets
 
@@ -35,8 +37,8 @@ git clone https://github.com/tastejs/todomvc.git `
 git clone https://github.com/mwinteringham/restful-booker.git `
   D:\qa-automation-targets\restful-booker
 
-git clone https://github.com/swagger-api/swagger-petstore.git `
-  D:\qa-automation-targets\swagger-petstore
+git clone https://github.com/mwinteringham/restful-booker-platform.git `
+  D:\qa-automation-targets\restful-booker-platform
 ```
 
 SauceDemo 没有需要 clone 的完整官方 Web 源码，直接使用：
@@ -50,7 +52,7 @@ clone 后先检查第三方仓库状态：
 ```powershell
 git -C D:\qa-automation-targets\todomvc status
 git -C D:\qa-automation-targets\restful-booker status
-git -C D:\qa-automation-targets\swagger-petstore status
+git -C D:\qa-automation-targets\restful-booker-platform status
 ```
 
 ## 3. 编写、验证和提交自己的测试代码

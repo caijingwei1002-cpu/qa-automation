@@ -26,7 +26,7 @@
       "learner_response": "选择 API 集成级闭环，不启动 UI；需要从源码确认 endpoint、认证方式、字段、状态码、room-booking 关联、日期规则和持久化查询。",
       "assistance": "none",
       "evidence": [
-        "test-projects/05-booker-platform/README.md",
+        "test-projects/04-booker-platform/README.md",
         "config/project-roadmap.json"
       ],
       "next_action": "根据源码设计唯一 Room、Booking、关联断言和清理顺序。",

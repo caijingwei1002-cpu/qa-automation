@@ -22,7 +22,7 @@ jobs:
         run: python -m pytest tools -q
       - name: Check maintained Python style
         run: |
-          python -m ruff check tools plugins test-projects/03-restful-booker-api test-projects/05-booker-platform
-          python -m ruff format --check tools plugins test-projects/03-restful-booker-api test-projects/05-booker-platform
+          python -m ruff check tools plugins test-projects/03-restful-booker-api test-projects/04-booker-platform
+          python -m ruff format --check tools plugins test-projects/03-restful-booker-api test-projects/04-booker-platform
       - name: Test workbench with the local fake service
         run: python -m unittest discover -s workbench/tests -v

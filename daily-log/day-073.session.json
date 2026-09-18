@@ -63,7 +63,7 @@
       "assistance": "none",
       "evidence": [
         "artifacts/day-073/ui-api-dependency-map.md",
-        "test-projects/05-booker-platform/README.md"
+        "test-projects/04-booker-platform/README.md"
       ],
       "next_action": "验证依赖地图字段、源码/live 结论边界和仓库状态，运行 Day 73 统一验证。",
       "outcome": "",

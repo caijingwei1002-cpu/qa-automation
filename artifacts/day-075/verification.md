@@ -2,7 +2,7 @@
 
 日期：2026-09-18
 阶段：Restful Booker Platform
-项目：test-projects/05-booker-platform
+项目：test-projects/04-booker-platform
 主题：BFF 错误映射与可观测性审查
 
 ## 目标测试

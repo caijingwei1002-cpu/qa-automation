@@ -3,7 +3,7 @@
   "run_id": "2bd3418a14e94e0189b5c4620c8dd50f",
   "day": 76,
   "source": "runner",
-  "test_project": "test-projects/05-booker-platform",
+  "test_project": "test-projects/04-booker-platform",
   "python": "D:\\qa-automation-learning\\.venv\\Scripts\\python.exe",
   "finished_at": "2026-09-18T05:58:11.426105+00:00",
   "duration_seconds": 0.11,

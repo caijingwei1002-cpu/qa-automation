@@ -7526,7 +7526,7 @@ finally:
 
 ### 关联产出
 
-- 测试资产说明：`test-projects/05-booker-platform/README.md`
+- 测试资产说明：`test-projects/04-booker-platform/README.md`
 - 被测源码：`D:\qa-automation-targets\restful-booker-platform\`
 - 运行证据：`artifacts/day-070/verification.md`
 - 原始闭环摘要：`artifacts/day-070/api-happy-path.json`
@@ -7773,7 +7773,7 @@ room_baseline_ready = True
 
 - 恢复 runbook：[artifacts/day-072/recovery-runbook.md](artifacts/day-072/recovery-runbook.md)
 - 验证记录：[artifacts/day-072/verification.md](artifacts/day-072/verification.md)
-- 测试资产：[test-projects/05-booker-platform/README.md](test-projects/05-booker-platform/README.md)
+- 测试资产：[test-projects/04-booker-platform/README.md](test-projects/04-booker-platform/README.md)
 - 运行记录：[artifacts/day-072/run-record.json](artifacts/day-072/run-record.json)
 - 运行命令：`python tools/run_day_verification.py 72 --skip-service`
 - 仓库校验：`python tools/validate_repo.py`
@@ -7892,7 +7892,7 @@ B 层只读 survey 的实际结果为：`3000`、`3003`、`3004` 无监听并 co
 
 - 依赖地图：[artifacts/day-073/ui-api-dependency-map.md](artifacts/day-073/ui-api-dependency-map.md)
 - 验证记录：[artifacts/day-073/verification.md](artifacts/day-073/verification.md)
-- 测试资产：[test-projects/05-booker-platform/README.md](test-projects/05-booker-platform/README.md)
+- 测试资产：[test-projects/04-booker-platform/README.md](test-projects/04-booker-platform/README.md)
 - 运行记录：[artifacts/day-073/run-record.json](artifacts/day-073/run-record.json)
 - 运行命令：`python tools/run_day_verification.py 73 --skip-service`
 - 仓库校验：`python tools/validate_repo.py`
@@ -8004,7 +8004,7 @@ else:
 - 只读范围与证据矩阵：[artifacts/day-074/read-only-scope.md](artifacts/day-074/read-only-scope.md)
 - 验证记录：[artifacts/day-074/verification.md](artifacts/day-074/verification.md)
 - 运行记录：[artifacts/day-074/run-record.json](artifacts/day-074/run-record.json)
-- 项目资产：[test-projects/05-booker-platform/README.md](test-projects/05-booker-platform/README.md)
+- 项目资产：[test-projects/04-booker-platform/README.md](test-projects/04-booker-platform/README.md)
 
 ## Day 75：BFF 错误映射与可观测性审查
 
@@ -8107,7 +8107,7 @@ Mock 可以故意注入 sentinel，例如 mock-secret-do-not-leak，并从两个
 - Mock 测试矩阵：[artifacts/day-075/bff-error-mapping-matrix.md](artifacts/day-075/bff-error-mapping-matrix.md)
 - 验证记录：[artifacts/day-075/verification.md](artifacts/day-075/verification.md)
 - 运行记录：[artifacts/day-075/run-record.json](artifacts/day-075/run-record.json)
-- 项目资产：[test-projects/05-booker-platform/README.md](test-projects/05-booker-platform/README.md)
+- 项目资产：[test-projects/04-booker-platform/README.md](test-projects/04-booker-platform/README.md)
 
 ## Day 76：服务身份闸门与只读基线决策
 
@@ -8242,7 +8242,7 @@ return continue_to_contract_checks(target)
 - 正式验证记录：[artifacts/day-076/verification.md](artifacts/day-076/verification.md)
 - 机器运行记录：[artifacts/day-076/run-record.json](artifacts/day-076/run-record.json)
 - 步骤证据：[daily-log/day-076.session.json](daily-log/day-076.session.json)
-- 项目资产：[test-projects/05-booker-platform/README.md](test-projects/05-booker-platform/README.md)
+- 项目资产：[test-projects/04-booker-platform/README.md](test-projects/04-booker-platform/README.md)
 
 ## 知识主题索引
 

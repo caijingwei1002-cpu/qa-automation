@@ -9,7 +9,7 @@ D:\qa-automation-learning       # 你的 Git 仓库：测试资产
 D:\qa-automation-targets        # 外部目录：被测项目 clone
 ```
 
-创建外部目录并 clone 有源码的项目：
+以下命令仅在进入对应项目、完成资源核对并获得学习者同意后按需执行，已有源码不重复下载：
 
 ```powershell
 New-Item -ItemType Directory -Force D:\qa-automation-targets
@@ -20,8 +20,8 @@ git clone https://github.com/tastejs/todomvc.git `
 git clone https://github.com/mwinteringham/restful-booker.git `
   D:\qa-automation-targets\restful-booker
 
-git clone https://github.com/swagger-api/swagger-petstore.git `
-  D:\qa-automation-targets\swagger-petstore
+git clone https://github.com/mwinteringham/restful-booker-platform.git `
+  D:\qa-automation-targets\restful-booker-platform
 ```
 
 如果目标目录已经存在，先检查状态，不要直接覆盖本地修改：
@@ -29,7 +29,7 @@ git clone https://github.com/swagger-api/swagger-petstore.git `
 ```powershell
 git -C D:\qa-automation-targets\todomvc status
 git -C D:\qa-automation-targets\restful-booker status
-git -C D:\qa-automation-targets\swagger-petstore status
+git -C D:\qa-automation-targets\restful-booker-platform status
 ```
 
 ## 目标登记
@@ -41,7 +41,10 @@ git -C D:\qa-automation-targets\swagger-petstore status
 | `test-projects/01-todomvc-ui` | `D:\qa-automation-targets\todomvc` | 本地 Web | 本地轻量 UI 测试 |
 | `test-projects/02-saucedemo-ui` | `https://www.saucedemo.com/` | 在线 Web Demo | 只做功能验证，不做压力测试 |
 | `test-projects/03-restful-booker-api` | `D:\qa-automation-targets\restful-booker` | 本地 API | 按其 README 用 npm 或 Docker 启动 |
-| `test-projects/04-petstore-performance` | `D:\qa-automation-targets\swagger-petstore` | 本地 API | 接口、契约和授权环境下的性能测试 |
+| `test-projects/04-booker-platform` | `D:\qa-automation-targets\restful-booker-platform` | 本地多服务 | 先确认版本、服务身份与当前课程允许的测试范围 |
+
+Petstore 等后续项目处于待勘察阶段，仅登记在 [路线图](config/project-roadmap.json)。
+完成勘察并细化课程后再创建测试资产、加入运行目标登记和配置环境变量。
 
 启动命令以各被测项目当前版本的 README 和配置为准。不要假设第三方仓库的端口永远不变；启动后把实际地址写入 `.env`，不要修改 `config/targets.json` 来保存个人机器状态。
 

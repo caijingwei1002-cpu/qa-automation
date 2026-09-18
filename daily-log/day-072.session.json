@@ -63,7 +63,7 @@
       "assistance": "none",
       "evidence": [
         "artifacts/day-072/recovery-runbook.md",
-        "test-projects/05-booker-platform/README.md"
+        "test-projects/04-booker-platform/README.md"
       ],
       "next_action": "运行仓库校验和 Day 72 验证记录，确认授权阻塞被正确分类且没有进入产品缺陷回归。",
       "outcome": "",

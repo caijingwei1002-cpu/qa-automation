@@ -133,7 +133,7 @@
     {
       "id": "booker-platform",
       "name": "Restful Booker Platform",
-      "project": "test-projects/05-booker-platform",
+      "project": "test-projects/04-booker-platform",
       "objective": "在多服务新项目中先确认可运行基线、业务契约和最小 API 闭环",
       "days": 8
     }
