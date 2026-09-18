@@ -78,6 +78,11 @@
 - [Day 69：API 阶段验收](#day-69api-阶段验收)
 - [Day 70：部署勘察与 API 最小闭环](#day-70部署勘察与-api-最小闭环)
 - [Day 71：默认端口基线与服务身份](#day-71默认端口基线与服务身份)
+- [Day 72：安全处置与默认 Room 回归](#day-72安全处置与默认-room-回归)
+- [Day 73：UI/API 依赖边界与只读契约勘察](#day-73uiapi-依赖边界与只读契约勘察)
+- [Day 74：BFF 只读路由与错误归因](#day-74bff-只读路由与错误归因)
+- [Day 75：BFF 错误映射与可观测性审查](#day-75bff-错误映射与可观测性审查)
+- [Day 76：服务身份闸门与只读基线决策](#day-76服务身份闸门与只读基线决策)
 - [知识主题索引](#知识主题索引)
 
 ## 学习方式
@@ -7655,6 +7660,595 @@ curl.exe --silent --show-error --include `
 
 ---
 
+## Day 72：安全处置与默认 Room 回归
+
+### 核心知识点
+
+环境恢复不是“看到端口被占就结束占用进程”，而是一个带安全闸门的变更流程。必须先重新确认操作对象，再确认停止授权；恢复后还要证明目标服务身份和运行基线，才允许进入业务缺陷回归。
+
+本日的核心执行链是：
+
+```text
+Pre-snapshot
+→ PID identity re-check
+→ authorization gate
+→ controlled stop（仅在授权后）
+→ verify 3001 free
+→ start Platform Room
+→ Java/PID/模块/版本闭合
+→ health PASS
+→ 基础 Room GET PASS
+→ RoomBaselineReady
+→ 才允许 DELETE→GET 回归
+```
+
+### 它解决的问题
+
+它解决两类高风险错误：一是 PID 变化后误杀了新的、不相关的进程；二是环境、启动或错误服务产生的响应被误报为产品缺陷。没有授权 Gate 和基线 Gate，测试会把破坏性环境操作和业务判断混在一起，证据无法复现或归因。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **操作前快照（pre-snapshot）**：变更前记录端口、PID、进程身份、项目来源、版本、配置和只读 HTTP 原始结果。
+- **PID 身份再确认（PID identity re-check）**：终止前重新确认预期 PID 的命令行、父进程和项目来源，并确认端口仍由该 PID 监听。
+- **授权 Gate（authorization gate）**：没有明确授权时，流程只能执行只读检查；`stop_authorized` 默认必须是 `false`。
+- **RoomBaselineReady**：正确 Platform Room 进程监听默认端口、health 正常、基础 Room API 符合契约后才能成立的业务回归前置状态。
+- **前置失败（precondition failure）**：流程在端口释放、服务启动或 health/API 基线阶段失败时停止，不升级为业务缺陷。
+
+#### 心智模型或执行链
+
+环境变更要回答四个问题：
+
+```text
+我要操作谁？       → PID 与进程身份
+我是否被允许操作？ → 授权 Gate
+操作后环境是否正确？ → 端口、Java/模块/版本
+业务回归是否被允许？ → health、基础 GET、RoomBaselineReady
+```
+
+任一答案不成立，就记录当前阶段的阻塞并停止，不为了继续测试而修改产品配置或跳过前置。
+
+#### 最小代码骨架
+
+```python
+stop_authorized = False
+room_baseline_ready = False
+
+snapshot = capture_port_process_version_and_gets()
+rechecked = recheck_expected_pid_and_port(snapshot.pid)
+
+if not rechecked.identity_matches:
+    raise PreconditionFailed("identity_changed")
+if not stop_authorized:
+    raise Blocked("BLOCKED_BY_AUTHORIZATION")
+
+stop_external_process(snapshot.pid)
+assert port_is_free(3001)
+start_platform_room(commit="d36bd3f")
+assert room_process_listens_on(3001)
+assert health_is_up()
+assert room_root_matches_contract()
+room_baseline_ready = True
+```
+
+示例表达的是控制流和安全边界；真实停止命令、启动命令、状态码和响应结构必须来自当前环境与项目契约，不能由示例自行推断。
+
+#### 断言、数据或状态的含义
+
+| 状态 | 能证明什么 | 不能证明什么 |
+| --- | --- | --- |
+| `BLOCKED_BY_AUTHORIZATION` | 身份已知但没有安全操作授权 | 不是 Platform 启动失败或产品缺陷 |
+| `3001` 无监听者 | 旧占用已解除 | Platform Room 已启动 |
+| Java PID 监听 `3001` | 某个 Java 进程接管端口 | 它一定来自 Platform Room |
+| health `200/UP` | 目标健康端点通过 | 全部业务规则正确 |
+| 基础 `GET /room/` 通过 | Room 业务路由基线可用 | DELETE 后不存在资源契约正确 |
+| `RoomBaselineReady` | 允许进入业务回归 | 业务回归已经通过 |
+
+#### 适用场景与边界
+
+适用于本地多项目端口冲突、服务重启、容器/宿主机切换、PID 变化、受控测试环境恢复和缺陷回归前置。它不授权自动结束未知进程，也不替代正式的变更审批、服务运维流程或产品业务测试。
+
+#### 常见错误、反例与假通过
+
+1. 因为已经确认进程属于其他项目，就默认获得了停止授权。
+2. 只查当前 `3001` 的 PID 就直接结束，不重新核对进程身份。
+3. 旧 PID 变化后沿用旧的安全结论。
+4. 看到 `3001` 释放就直接进入 DELETE→GET，跳过 Java/模块/版本、health 和基础 API。
+5. health 返回 `500` 时立即写成业务产品缺陷，忽略启动日志、依赖和配置层证据。
+
+#### 记忆要点
+
+> 破坏性动作前验证操作对象，产品判断前验证运行基线。
+
+### 代码落地
+
+本日把默认 `3001` 恢复设计成带授权闸门的 runbook。`stop_authorized` 保持 `false`，因此只执行了操作前快照和身份复核：`3001` 仍由 PID `29528` 的 Node/Express 项目占用，两个 Room 路径仍返回 Express `404`；Platform HEAD 和默认配置已重新核对。
+
+因为未获得停止授权，没有执行终止、迁移、启动 Platform Room 或 DELETE→GET 回归。结果准确记录为 `BLOCKED_BY_AUTHORIZATION`，不是端口释放失败、Room 启动失败或产品缺陷。
+
+### 知识验收
+
+1. 为什么“已确认是外部项目”仍不等于“可以停止它”？
+2. PID 变化后，旧授权和旧安全判断为什么不能自动沿用？
+3. 为什么端口释放后仍要验证 Java/模块/版本、health 和基础 Room API？
+4. `BLOCKED_BY_AUTHORIZATION`、`PRECONDITION FAILED` 和产品缺陷分别对应流程的哪一层？
+
+### 关联产出
+
+- 恢复 runbook：[artifacts/day-072/recovery-runbook.md](artifacts/day-072/recovery-runbook.md)
+- 验证记录：[artifacts/day-072/verification.md](artifacts/day-072/verification.md)
+- 测试资产：[test-projects/05-booker-platform/README.md](test-projects/05-booker-platform/README.md)
+- 运行记录：[artifacts/day-072/run-record.json](artifacts/day-072/run-record.json)
+- 运行命令：`python tools/run_day_verification.py 72 --skip-service`
+- 仓库校验：`python tools/validate_repo.py`
+
+---
+
+## Day 73：UI/API 依赖边界与只读契约勘察
+
+### 核心知识点
+
+跨层 API 测试要把静态依赖事实和动态运行事实分成两层：A 层用源码建立 UI→BFF/API route→后端服务的依赖地图；B 层用端口、PID、进程来源和只读 GET 证明当前实际命中了谁。两层都重要，但互不替代。
+
+### 它解决的问题
+
+它避免把源码中的默认地址当成当前运行状态，也避免把 UI `200`、BFF `500` 或错误服务的 `404` 直接升级为后端产品缺陷。依赖身份未确认时，业务状态码没有足够的归因资格。
+
+### 理论基础
+
+#### 定义与关键概念
+
+- **A 层源码依赖地图**：记录 UI route、源码位置、BFF route、后端服务、默认 host/port、path/method、认证、只读性和环境变量覆盖点。
+- **B 层 live survey**：记录端口监听、PID、进程类型、命令行/父进程、HTTP 原始状态和服务身份。
+- **BFF（Backend for Frontend）分层**：前端调用的 `/api/*` route 可能把下游错误重新包装成另一个状态码；BFF 的响应不等于下游服务的原始响应。
+- **有效目标（effective target）**：环境变量覆盖后的运行地址；必须与源码默认值同时保留。
+
+#### 心智模型或执行链
+
+```text
+A 层：UI route
+  → BFF/API route
+  → 默认/override host
+  → 后端 path/method/auth
+
+B 层：effective target
+  → 端口监听
+  → PID/进程来源
+  → 原始 GET 响应
+  → 服务身份分类
+  → 身份成立后才比较契约
+```
+
+运行时分类优先级：
+
+```text
+无监听 / refused             → SERVICE_UNREACHABLE
+有响应但确认是其他程序       → SERVICE_IDENTITY_MISMATCH
+有响应但身份证据不足         → SERVICE_IDENTITY_UNCONFIRMED
+正确服务已确认且契约异常     → CONTRACT_OR_API_FAILURE
+```
+
+#### 最小代码骨架
+
+```python
+dependency = {
+    "default_target": "http://localhost:3001",
+    "effective_target": os.getenv("ROOM_API", "http://localhost:3001"),
+    "source": "assets/next.config.js",
+}
+
+live = inspect_port_pid_and_get(dependency["effective_target"])
+
+if live.connection_refused:
+    classification = "SERVICE_UNREACHABLE"
+elif not live.identity_matches_target:
+    classification = "SERVICE_IDENTITY_MISMATCH"
+elif not live.identity_confirmed:
+    classification = "SERVICE_IDENTITY_UNCONFIRMED"
+else:
+    classification = compare_response_to_confirmed_contract(live.response)
+```
+
+这段骨架只表达证据顺序；实际项目仍需保存原始命令、响应头、响应体特征和版本信息。
+
+#### 断言、数据或状态的含义
+
+| 观察结果 | 能证明什么 | 不能证明什么 |
+| --- | --- | --- |
+| 源码默认 `ROOM_API=3001` | 设计上的默认依赖 | 当前 3001 正确运行 |
+| `3000` connection refused | Booking 当前不可达 | Booking API 契约错误 |
+| `3001` Express `404` | 当前命中 Express 且路径不存在 | Platform Room 契约失败 |
+| `3003` connection refused | UI server 当前未运行 | UI 源码或页面一定有缺陷 |
+| UI 根页面 `200` | UI/代理入口可响应 | 后端依赖和业务链成功 |
+| `ROOM_API=3011` 下 GET 成功 | override 条件下目标可用 | 默认 3001 基线已通过 |
+
+#### 适用场景与边界
+
+适用于 UI/API 联合测试、BFF、代理、微服务、多环境配置、端口复用和服务身份不稳定的本地测试。它不替代业务闭环、浏览器 E2E 或契约回归；如果关键依赖身份不成立，应停在勘察层。
+
+#### 常见错误、反例与假通过
+
+1. 看到 UI `200` 就判定所有后端依赖正常。
+2. 看到 BFF `500` 就跳过下游 PID/服务身份检查，直接报告 Room 缺陷。
+3. 只记录 `ROOM_API=3011`，丢失源码默认 `3001`，导致默认基线和 override 运行混淆。
+4. 把外部 Express 服务返回的 `404` 与 Platform Room Controller 契约比较。
+5. 设计了 live survey，却没有执行或保存实际端口/PID/GET 结果，最后把真实分类写成“尚未建立”。
+
+#### 记忆要点
+
+> 源码证明依赖关系，live GET 证明当前状态；没有服务身份，就没有资格做产品契约归因。
+
+### 代码落地
+
+本日 A 层读取了 `assets/package.json`、`assets/next.config.js`、BFF route 和组件调用点，确认 UI `3003` 以及 Room `3001`、Booking `3000`、Auth `3004` 的默认依赖，并记录额外 Branding/Report/Message 静态依赖。
+
+B 层只读 survey 的实际结果为：`3000`、`3003`、`3004` 无监听并 connection refused，分类为 `SERVICE_UNREACHABLE`；`3001` 由 PID `29528` 的外部 Node/Express 项目监听，两个 Room GET 返回 Express `404`，分类为 `SERVICE_IDENTITY_MISMATCH`。本日未启动 UI、未执行 `run_locally.cmd`、未发送状态变更请求、未进入 E2E。
+
+### 知识验收
+
+1. A 层源码地图和 B 层 live survey 各自证明什么？
+2. 为什么错误服务的 `404` 不能直接写成目标 API 契约失败？
+3. `UI 200`、BFF `500` 和下游服务失败如何分层？
+4. 为什么 default target 和 effective target 必须同时记录？
+5. 当前 `3000`、`3001`、`3003`、`3004` 的 live 分类分别是什么？
+
+### 关联产出
+
+- 依赖地图：[artifacts/day-073/ui-api-dependency-map.md](artifacts/day-073/ui-api-dependency-map.md)
+- 验证记录：[artifacts/day-073/verification.md](artifacts/day-073/verification.md)
+- 测试资产：[test-projects/05-booker-platform/README.md](test-projects/05-booker-platform/README.md)
+- 运行记录：[artifacts/day-073/run-record.json](artifacts/day-073/run-record.json)
+- 运行命令：`python tools/run_day_verification.py 73 --skip-service`
+- 仓库校验：`python tools/validate_repo.py`
+
+---
+
+## Day 74：BFF 只读路由与错误归因
+
+### 核心知识点
+
+Day 74 把 Day 73 的 UI/API 依赖地图进一步收敛为 BFF 只读路由的安全勘察范围。核心链路是：
+
+```text
+源码确认 GET-only
+→ default / override
+→ resolved target
+→ BFF 可达
+→ 下游监听
+→ 下游服务身份
+→ 认证前置
+→ 目标 API 契约
+```
+
+只要某个硬前置不成立，就在该层停止，不能把后面的 HTTP 状态码、字段或业务数据升级为目标 API 契约证据。
+
+### 它解决的问题
+
+- 防止把 BFF 的 `200` 误判成下游 API 契约通过。
+- 防止把 BFF 的 `500` 直接写成 Room/Booking 产品失败。
+- 防止把错误端口、旧服务、Mock 或外部项目返回的 `200/404/500` 当成目标服务行为。
+- 防止为了继续 Booking 查询而调用登录 POST，突破只读和认证安全边界。
+- 保留 default、override 和 effective target，避免把 override 条件误写成默认基线。
+
+### 理论基础
+
+#### BFF 与目标服务是不同证据层
+
+```text
+UI → BFF route → resolved target → downstream service
+```
+
+UI 页面或 BFF 路由可达，只能证明前一层得到了响应；只有确认 resolved target 由预期的目标服务提供，才有资格比较目标 API 契约。
+
+#### 四条最小只读用例
+
+| 用例 | 重点 | 当前边界 |
+| --- | --- | --- |
+| R1 | Room 默认 `ROOM_API` 的 GET-only 解析与身份闸门 | BFF 未启动；默认 `3001` 另有身份不符证据 |
+| R2 | Room `ROOM_API` override 的目标解析 | 不设置或删除 override；身份未确认不能比较契约 |
+| B1 | Booking 默认 `BOOKING_API` 的认证态 GET | `3000` 无监听且无现成 token，不调用登录 |
+| B2 | Booking `BOOKING_API` override 的目标解析 | override 不跳过 token、监听和服务身份前置 |
+
+#### 分类含义
+
+| 分类 | 含义 | 不能推出 |
+| --- | --- | --- |
+| `BFF_UNAVAILABLE` | BFF 自身未启动或不可达 | 下游 API 契约失败 |
+| `DOWNSTREAM_UNAVAILABLE` | resolved target 无监听 | 目标服务业务缺陷 |
+| `SERVICE_IDENTITY_MISMATCH` | 有响应但不是预期目标服务 | 目标 API 返回了该状态码 |
+| `AUTH_PRECONDITION_UNMET` | 只读路由需要认证但没有现成合法上下文 | 认证后的目标 API 行为 |
+| `BFF_FAILURE` | 目标身份与认证前置成立后，BFF 转发/处理失败 | 必然是下游产品缺陷 |
+| `TARGET_API_CONTRACT_OBSERVATION` | 所有前置通过后才允许比较目标契约 | 不代表自动通过 |
+
+#### 最小判断伪代码
+
+```python
+target = resolve(default_value, existing_override)
+
+if not bff_reachable:
+    classify("BFF_UNAVAILABLE")
+elif not downstream_listening(target):
+    classify("DOWNSTREAM_UNAVAILABLE")
+elif not is_expected_service(target):
+    classify("SERVICE_IDENTITY_MISMATCH")
+elif auth_required and not existing_auth_context:
+    classify("AUTH_PRECONDITION_UNMET")
+else:
+    compare_target_contract()
+```
+
+这里的 `existing_override` 和 `existing_auth_context` 都是读取到的运行事实；本课不通过修改环境或调用登录接口来制造它们。
+
+### 代码落地
+
+学习者提交了四条用例的 BFF 只读证据矩阵，记录 route/method、default、override、resolved target、认证前置、原始证据字段、分类和停止层。教练将草稿落盘为：
+
+- `artifacts/day-074/read-only-scope.md`
+
+验证记录明确：本日没有新增 HTTP 请求、没有启动服务、没有终止进程、没有修改环境变量，也没有执行状态变更接口。`--skip-service` runner 只验证课程产物和仓库边界，不代表 Room/Booking live 契约通过。
+
+### 知识验收
+
+1. 为什么 BFF 返回 `200` 仍不能证明下游 API 契约通过？
+2. 为什么 BFF 返回 `500` 不能直接写成 Room/Booking 产品缺陷？
+3. `default`、`override` 和 `resolved target` 分别回答什么问题？
+4. 没有现成 Booking token 时，为什么不能调用登录 POST 来“补齐前置”？
+5. 当 resolved target 是其他项目的 Python/Node 服务时，应该使用什么分类？
+
+### 适用边界
+
+该方法适用于 UI→BFF→微服务、代理路由、多环境配置、端口复用和本地服务身份不稳定的测试场景。它不替代目标服务已经建立后的业务契约回归；身份或认证前置未成立时，正确产出是环境/链路证据，而不是业务缺陷结论。
+
+### 记忆要点
+
+> 代理有响应，不等于下游正确；先确认 resolved target 的服务身份，再解释 HTTP 状态，最后才比较目标契约。
+
+### 关联产出
+
+- 只读范围与证据矩阵：[artifacts/day-074/read-only-scope.md](artifacts/day-074/read-only-scope.md)
+- 验证记录：[artifacts/day-074/verification.md](artifacts/day-074/verification.md)
+- 运行记录：[artifacts/day-074/run-record.json](artifacts/day-074/run-record.json)
+- 项目资产：[test-projects/05-booker-platform/README.md](test-projects/05-booker-platform/README.md)
+
+## Day 75：BFF 错误映射与可观测性审查
+
+### 核心知识点
+
+Day 75 使用 BFF route + Mock HTTP client 审查代理层的错误映射和可观测性。重点不是证明真实 Room 服务发生了什么，而是控制下游输入，验证 BFF 对外响应、内部诊断和敏感信息边界。
+
+    BFF route
+    → Mock 下游输入
+    → 外部 status/body/headers
+    → 内部诊断字段
+    → 脱敏检查
+
+### 它解决的问题
+
+- 防止把 BFF 的 500 + [] 误写成下游 API 返回 500。
+- 防止只测 mapper 函数，却漏掉 route 是否捕获异常、headers 是否泄漏和日志是否可诊断。
+- 防止把 ConnectionError、Timeout、下游 404 和下游 500 压缩成不可区分的 request failed。
+- 防止为了增加诊断而把 token、Cookie、内部 host、堆栈或敏感 body 暴露到 response/log。
+
+### 理论基础
+
+#### 三个状态维度必须分开
+
+    bff_status
+    downstream_status
+    exception_category
+
+| 下游输入 | bff_status | downstream_status | exception_category |
+| --- | ---: | ---: | --- |
+| ConnectionError | 500 | None | connection_error |
+| 下游 404 | 500 | 404 | downstream_http_error |
+| 下游 500 | 500 | 500 | downstream_http_error |
+| Timeout | 500 | None | timeout |
+
+即使 BFF 和下游都显示数值 500，两个字段的语义仍然不同。连接拒绝和超时没有 HTTP response，不能伪造 downstream_status=500。
+
+#### Route-level Mock 优于只测 mapper
+
+Route-level Mock 可以同时观察 route 是否使用异常分支、真实 HTTP response、headers、日志调用和脱敏。若项目另有独立 mapper，再用更小粒度单测补充；mapper 单测不能证明 route 边界行为。
+
+#### 四类 Mock 输入的含义
+
+| 输入 | 可以证明 | 不能证明 |
+| --- | --- | --- |
+| ConnectionError | BFF 如何处理没有 HTTP response 的连接异常 | 真实 Room 是否不可用或返回 500 |
+| 下游 404 | BFF 如何映射已收到的下游 HTTP 404 | 真实 Room GET 是否返回 404 |
+| 下游 500 | BFF 如何映射并隐藏下游内部错误 | 真实 Room 是否发生内部错误或根因是什么 |
+| Timeout | BFF 如何处理超时及其分类 | 真实 Room 是否发生超时 |
+
+#### 外部统一错误与内部诊断不是一回事
+
+外部契约可以是统一的 HTTP 500、body=[]，但内部日志或结构化诊断仍应尽量保留安全的 route、logical_downstream_service、operation、bff_status、downstream_status、exception_category、request_id/trace_id 和 timestamp。
+
+如果实现实际只有 logger.error('request failed')，测试不能凭空要求完整字段通过；应报告当前诊断不足以区分 HTTP error、connection error 和 timeout。
+
+#### 脱敏边界
+
+Mock 可以故意注入 sentinel，例如 mock-secret-do-not-leak，并从两个出口检查：
+
+    BFF response
+    captured logger/diagnostic call
+
+不得泄漏 Authorization、Cookie、Set-Cookie、API key、token、credential、未经筛选的敏感 body、数据库错误、完整 stack trace 或内部拓扑。安全的错误类别、下游状态和 trace ID 仍然是有价值的诊断证据。
+
+### 代码落地
+
+学习者将四类输入、外部 response、内部诊断、脱敏检查和禁止的真实服务结论落成：
+
+- [BFF 错误映射与可观测性 Mock 矩阵](artifacts/day-075/bff-error-mapping-matrix.md)
+
+验证记录只执行仓库与 artifact 检查，并使用 skip-service runner；因此没有把 Mock 设计误报成真实 Room live 结果。
+
+### 适用场景与边界
+
+该方法适用于 BFF、API gateway、代理 route、微服务错误包装和不稳定下游依赖。它不替代真实服务身份、认证和业务契约验证；Mock 的结论严格限定在“BFF 对受控输入的处理”。
+
+### 常见错误与假通过
+
+1. 只断言 status=500，无法区分 BFF 500、下游 500 和无 HTTP response 的异常。
+2. 看到 BFF 500 + [] 就报告 Room/Payment API 契约失败。
+3. 只测试 mapper，漏掉 route 没有使用 mapper 或把下游 headers 原样透传。
+4. 为了验证日志而把真实 token、Cookie 或完整下游 body 写入日志。
+5. 凭空要求不存在的诊断 header，而没有先确认当前产品是否实现该字段。
+
+### 记忆要点
+
+> Mock 控制下游输入，Route 验证代理边界；分开 BFF status、下游 status 和异常类别，再检查诊断与脱敏，永远不要把 Mock 结果升级成真实下游契约结论。
+
+### 知识验收
+
+1. 为什么 route-level Mock 比只测 mapper 更适合审查 BFF 错误映射？
+2. 为什么下游 500 与 BFF 500 即使数值相同也不能合并？
+3. ConnectionError 和 Timeout 为什么应记录 downstream_status=None？
+4. 统一 500 + [] 时，内部诊断至少应保留哪些非敏感字段？
+5. 如何证明诊断信息增强没有造成 token、Cookie 或敏感 body 泄漏？
+
+### 关联产出
+
+- Mock 测试矩阵：[artifacts/day-075/bff-error-mapping-matrix.md](artifacts/day-075/bff-error-mapping-matrix.md)
+- 验证记录：[artifacts/day-075/verification.md](artifacts/day-075/verification.md)
+- 运行记录：[artifacts/day-075/run-record.json](artifacts/day-075/run-record.json)
+- 项目资产：[test-projects/05-booker-platform/README.md](test-projects/05-booker-platform/README.md)
+
+## Day 76：服务身份闸门与只读基线决策
+
+### 核心知识点
+
+服务身份闸门（service identity gate）要求在真实 API 契约断言前，逐层证明 resolved target、监听状态、监听进程和目标服务身份。默认路径与隔离路径是两条互不替代的证据链：前者确认真实环境前置，后者验证不依赖真实服务的配置、判定和代理逻辑。
+
+### 它解决的问题
+
+- 防止把“端口存在”或“GET 200 + JSON”误写成目标服务健康或契约通过。
+- 防止把历史时间点的身份不符证据延伸成当前 live 事实。
+- 防止把身份未知误写成身份不符，混淆“证据证明错误”和“证据不足”。
+- 防止把 pytest/ruff 不可用误报成测试、代码质量或产品失败。
+- 防止 BFF Mock、静态审查或配置测试替代真实 Room 服务身份和契约回归。
+
+### 理论基础
+
+#### 两条证据链
+
+默认路径用于真实环境前置：
+
+```text
+default / override
+    → resolved target
+    → listener state
+    → process identity
+    → service identity
+    → read-only health / GET
+    → target contract
+```
+
+隔离路径用于本地逻辑：
+
+```text
+config parser
+    → identity classifier
+    → BFF route + Mock client
+    → static route/logging review
+```
+
+默认路径未通过时，隔离路径仍可产生有效的本地逻辑结论；隔离路径通过时，也不能跳过默认路径进入真实契约。
+
+#### 证据状态与停止规则
+
+| 状态 | 能证明什么 | 是否进入真实契约 |
+| --- | --- | --- |
+| `listener absent` | 当前目标端口没有观察到监听 | 否，停在环境前置 |
+| `listener present` | 有某个进程监听端口 | 不能单独进入，继续确认身份 |
+| `service_identity = match` | 有依据证明监听者是目标服务 | 可继续认证、endpoint 和契约前置 |
+| `service_identity = mismatch` | 有依据证明监听者不是目标服务 | 否，停止并分类为 `service_identity_mismatch` |
+| `service_identity = unknown` | 证据不足以证明正确或错误 | 否，停止并分类为 `service_identity_unknown` |
+
+两个重要不等式是：
+
+```text
+监听存在 ≠ 目标服务身份成立
+HTTP 200 + JSON ≠ 目标 API 契约通过
+```
+
+历史证据和当前证据必须带时间边界。例如，历史曾观察到 `3001` 是 Express 身份不符，当前检查却无监听时，只能写成 `historical identity = mismatch`、`current listener = absent`、`current identity = not established`。
+
+#### 工具限制与产品结论分层
+
+工具不可用时，测试并未执行：
+
+```text
+pytest/ruff unavailable
+    → verification not executed
+    → result = not verified
+```
+
+这不能写成测试失败、Ruff 失败或 Room 产品失败。类似地，当前无监听只能形成 `real_environment_precondition_not_met`，不能直接证明 Room 宕机或存在产品缺陷。
+
+#### 最小证据字段
+
+可审计记录至少保留 `evidence_layer`、`target_source`、`resolved_target`、`listen_state`、`pid/process_identity`、`service_identity`、`identity_basis`、`http_method/request_path/observed_status`、`bff_status/downstream_status/exception_category`、`request_id/trace_id`、`result_classification` 和 `stop_reason`。
+
+结论应使用分层分类，例如 `config_verified`、`listener_present`、`service_identity_unknown`、`service_identity_mismatch`、`bff_mapping_verified` 和 `room_contract_not_reached`，不要把不同层的结果压缩为单一 `PASS/FAIL`。
+
+#### 最小伪代码
+
+```python
+target = resolve_target(default_url, override)
+if not is_listening(target):
+    return stop("real_environment_precondition_not_met", "listener_absent")
+
+identity = classify_service(read_only_process_and_http_evidence(target))
+if identity != "match":
+    return stop("real_contract_not_reached", f"service_identity_{identity}")
+
+return continue_to_contract_checks(target)
+```
+
+这个骨架只表达决策顺序；身份判定的输入必须有明确依据，不能把可达、可解析或 `200` 默认当作 `match`。
+
+### 代码落地
+
+学习者设计并提交了默认 D1–D4 与隔离 I1–I4 验证矩阵；教练将其结构化落盘为 [Day 76 验证矩阵](artifacts/day-076/verification-matrix.md)。本日没有修改产品代码或真实环境。只读检查形成了当前环境记录，并把历史身份证据、当前无监听和工具链缺口分开保存于 [环境检查](artifacts/day-076/environment-check.md)。
+
+仓库边界验证和 skip-service 统一验证通过；当前 Python 没有 pytest 模块，PowerShell 找不到 ruff，因此对应自动化检查标记为未执行/未验证。当前 `3001` 未观察到监听，真实 Room 回归未到达。
+
+### 适用场景与边界
+
+该方法适用于本地多服务、BFF、代理、端口复用、共享开发环境和服务身份不稳定的测试。它适合决定“当前证据能否进入下一层”，不替代目标服务已经确认后的业务契约、认证或状态变更回归。服务身份、认证或目标 endpoint 前置未成立时，正确产出是环境/链路证据，而不是产品缺陷结论。
+
+### 常见错误与假通过
+
+1. 看到端口监听就把监听进程当作目标 Room。
+2. 看到 GET `200` 或 JSON 可解析就报告目标服务健康。
+3. 把历史 `mismatch` 当作当前服务状态，忽略时间边界。
+4. 把无法读取进程身份的 `unknown` 写成 `mismatch`。
+5. pytest 或 ruff 不可用时写成测试失败或代码质量失败。
+6. BFF Mock 通过后跳过真实目标身份检查。
+7. 为获取身份而提权绕过访问控制、停止外部进程或抢占端口。
+
+### 记忆要点
+
+> 先判断证据属于哪一层；前置不成立就停在那一层。环境问题、工具问题、隔离测试结果和真实产品契约结论不能互相替代。
+
+### 知识验收
+
+1. `listener present` 为什么仍不足以进入真实 API 契约？
+2. `mismatch` 和 `unknown` 都停止时，为什么必须保留两个不同的分类？
+3. 当前无监听为什么不能直接写成 Room 服务挂掉？
+4. pytest/ruff 不可用时，验证结果应如何记录？
+5. BFF Mock 通过与真实 Room 契约通过之间缺少哪些证据？
+
+### 关联产出
+
+- 验证矩阵：[artifacts/day-076/verification-matrix.md](artifacts/day-076/verification-matrix.md)
+- 环境与工具检查：[artifacts/day-076/environment-check.md](artifacts/day-076/environment-check.md)
+- 正式验证记录：[artifacts/day-076/verification.md](artifacts/day-076/verification.md)
+- 机器运行记录：[artifacts/day-076/run-record.json](artifacts/day-076/run-record.json)
+- 步骤证据：[daily-log/day-076.session.json](daily-log/day-076.session.json)
+- 项目资产：[test-projects/05-booker-platform/README.md](test-projects/05-booker-platform/README.md)
+
 ## 知识主题索引
 
 | 主题 | 首次学习日 | 关联内容 |
@@ -7665,6 +8259,11 @@ curl.exe --silent --show-error --include `
 | API 阶段验收与证据边界 | Day 69 | 静态门禁、smoke/回归分层、服务 readiness、xfail/XPASS 审查、变更归属和限定范围结论 |
 | 测试基线、契约证据与分层故障归因 | Day 70 | 新项目事实确认、服务身份、认证分层、最小 API 闭环、资源关联和环境/实现问题边界 |
 | 默认端口基线与服务身份 | Day 71 | 端口到 PID 映射、进程来源、HTTP 身份、只读 preflight、环境阻塞与缺陷归因门槛 |
+| 安全处置与默认 Room 回归 | Day 72 | PID 身份再确认、授权 Gate、端口释放、RoomBaselineReady、前置失败分类与回归安全边界 |
+| UI/API 依赖边界与只读契约勘察 | Day 73 | A 层源码依赖地图、B 层 live survey、BFF 分层归因、override 双记录与 E2E Gate |
+| BFF 只读路由与错误归因 | Day 74 | GET-only 安全范围、default/override/resolved target、BFF/下游分层、服务身份闸门和认证前置 |
+| BFF 错误映射与可观测性审查 | Day 75 | Route-level Mock、BFF/downstream/exception 三类状态、诊断字段、脱敏和 Mock 结论边界 |
+| 服务身份闸门与只读基线决策 | Day 76 | 默认/隔离双证据链、present/mismatch/unknown、时间边界、工具限制分类和真实契约停止规则 |
 | 测试套件与质量检查 | Day 65 | 风险驱动 smoke、默认 regression、严格 marker、Ruff lint/format 和服务 readiness 分层 |
 | 并行隔离 | Day 64 | pytest-xdist、多进程 worker、唯一测试数据、资源所有权、顺序独立性和串并行证据 |
 | 重试边界 | Day 63 | 幂等性、超时结果未知、有界重试、临时网络异常、副作用请求和调用次数证明 |

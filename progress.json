@@ -1,5 +1,5 @@
 {
-  "current_day": 72,
+  "current_day": 77,
   "completed_days": [
     1,
     2,
@@ -71,7 +71,12 @@
     68,
     69,
     70,
-    71
+    71,
+    72,
+    73,
+    74,
+    75,
+    76
   ],
   "history": [
     {
@@ -499,6 +504,36 @@
       "date": "2026-09-17",
       "result": "完成默认端口服务身份只读 preflight：确认 3001 由外部 restful-booker Node/Express 项目占用，记录 PID/命令行/父进程/HTTP 证据；默认 Platform Room 基线因未确认安全处置而保留阻塞，未将其误判为产品缺陷。",
       "next_step": "获得安全处置依据后恢复 Platform Room 默认 3001，再验证 health、基础 GET 和 DELETE 后 GET 回归。"
+    },
+    {
+      "day": 72,
+      "date": "2026-09-17",
+      "result": "完成安全处置与默认 Room 回归前置：通过 pre-snapshot 和 PID identity re-check 复核外部 Node 占用；因未获得明确停止授权，准确记录 BLOCKED_BY_AUTHORIZATION，未结束进程、改端口、启动 Platform Room 或执行 DELETE→GET 回归。",
+      "next_step": "获得明确授权后按 runbook 重新确认 PID/端口，再恢复 Platform Room 默认 3001；否则继续保留只读阻塞证据。"
+    },
+    {
+      "day": 73,
+      "date": "2026-09-17",
+      "result": "完成 Day 73：已修正并固化 UI/API A 层源码依赖地图与 B 层 live survey。实际分类为 3000/3003/3004 = SERVICE_UNREACHABLE，3001 = SERVICE_IDENTITY_MISMATCH；保留外部 Express 占用证据，未启动服务、未修改环境、未执行 E2E 或状态变更。",
+      "next_step": "进入 Day 74 前，继续基于已确认的服务身份与环境边界选择安全的只读或获授权测试范围。"
+    },
+    {
+      "day": 74,
+      "date": "2026-09-17",
+      "result": "完成 Day 74：基于源码与既有环境证据建立 BFF 只读路由与错误归因矩阵，覆盖 Room/Booking 的 default、override、resolved target、BFF 可达、下游监听、服务身份和认证前置；四条用例均按最早前置层停止，未新增 HTTP 请求、未启动服务、未修改环境、未执行状态变更。",
+      "next_step": "Day 75 继续在不改变默认 Room/外部进程基线的前提下选择安全范围；如获得明确授权，再按 runbook 恢复并验证服务身份。"
+    },
+    {
+      "day": 75,
+      "date": "2026-09-18",
+      "result": "完成 Day 75：以 BFF route + Mock HTTP client 设计并固化 ConnectionError、下游 404、下游 500、Timeout 四类错误映射与可观测性审查；分离 bff_status、downstream_status、exception_category，验证 response/log 脱敏边界，并明确 Mock 不能替代真实 Room 契约。未启动真实服务、未修改环境、未执行状态变更。",
+      "next_step": "Day 76 继续保持默认 Room 环境边界；如获得明确授权，按服务身份 runbook 恢复真实基线，否则继续进行隔离 Mock 或静态审查。"
+    },
+    {
+      "day": 76,
+      "date": "2026-09-18",
+      "result": "完成 Day 76：建立默认/隔离双证据链，区分 listener present、service identity mismatch/unknown、历史与当前证据及工具未执行边界；仓库与 skip-service 验证通过，真实 Room 回归未到达。",
+      "next_step": "继续 Restful Booker Platform：仅在获得明确授权且重新证明服务身份后恢复真实基线；否则补充隔离验证和多服务测试设计。"
     }
   ]
 }
